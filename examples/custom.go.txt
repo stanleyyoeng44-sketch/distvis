@@ -1,0 +1,52 @@
+package main
+
+import (
+    "context"
+    "encoding/json"
+    "fmt"
+    "os"
+    "time"
+    "distvis/sdk"
+)
+
+func main() {
+    node, err := sdk.Open()
+    if err != nil { panic(err) }
+    must := func(err error) {
+        if err != nil { fmt.Fprintln(os.Stderr, err); os.Exit(1) }
+    }
+    must(node.DeclareInput([]sdk.InputAction{{
+        Action: "broadcast", Label: "发送应用消息",
+        Fields: []sdk.InputField{{Name: "text", Label: "消息内容", Type: "text", Required: true, MaxLength: 4096}},
+    }}))
+    go func() {
+        for cmd := range node.Commands {
+            var values struct { Text string }
+            if cmd.Action != "broadcast" || json.Unmarshal(cmd.Values, &values) != nil { continue }
+            for _, peer := range node.Nodes {
+                if peer != node.ID {
+                    must(node.Send(peer, map[string]any{"type": "Application", "text": values.Text, "inputId": cmd.ID}))
+                }
+            }
+        }
+    }()
+    must(node.Report(map[string]any{"role": "ready", "received": 0}))
+    go func() {
+        for {
+            for _, peer := range node.Nodes {
+                if peer != node.ID {
+                    must(node.Send(peer, map[string]any{"type": "Hello", "text": "你好"}))
+                }
+            }
+            time.Sleep(2 * time.Second)
+        }
+    }()
+    for count := 1; ; count++ {
+        msg, err := node.Receive(context.Background())
+        if err != nil { return }
+        must(node.Report(map[string]any{
+            "role": "ready", "received": count,
+            "lastFrom": msg.From, "payload": string(msg.Payload),
+        }))
+    }
+}

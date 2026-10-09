@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "distvis": {
+      "type": "stdio",
+      "command": "/home/stanley/.nvm/versions/node/v22.23.3/bin/node",
+      "args": [
+        "/home/stanley/distvis/mcp/server.js"
+      ],
+      "env": {
+        "DISTVIS_URL": "http://127.0.0.1:3000"
+      }
+    }
+  }
+}

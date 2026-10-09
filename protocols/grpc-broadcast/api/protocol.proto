@@ -1,0 +1,19 @@
+syntax = "proto3";
+package lesson;
+option go_package = "lesson/broadcast/api";
+
+service Application {
+  rpc Propose(NumberRequest) returns (NumberReply);
+}
+service Replication {
+  rpc Apply(NumberRequest) returns (NumberReply);
+}
+message NumberRequest {
+  int64 number = 1;
+  string note = 2;
+}
+message NumberReply {
+  bool accepted = 1;
+  int64 number = 2;
+  string node = 3;
+}

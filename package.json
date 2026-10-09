@@ -1,0 +1,21 @@
+{
+  "name": "distvis",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test tests/api.test.js tests/build.test.js tests/metadata.test.js tests/docs.test.js tests/inputs.test.js",
+    "test:browser": "node tests/dom-smoke.mjs && node tests/browser-smoke.mjs && node tests/browser-layout-smoke.mjs && node tests/browser-docs-smoke.mjs && node tests/browser-input-smoke.mjs && node tests/browser-rpc-smoke.mjs && node tests/browser-workspace-smoke.mjs",
+    "check": "node --check server/index.js && node --check server/experiments.js && node --check server/engine.js && node --check server/protocols.js && node --check server/inputs.js && node --check server/library.js && node --check server/metadata.js && node --check server/runtime.js && node --check server/build.js && node --check public/app.js && node --check server/docs.js && node --check public/docs.js && node --check mcp/server.js && node --check mcp/service.js",
+    "mcp": "node mcp/server.js",
+    "agent:install": "node scripts/install-agent.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^3.25.76"
+  }
+}

@@ -1,0 +1,78 @@
+import { cp, mkdir } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import assert from 'node:assert/strict';
+const { chromium }=await import(process.env.DISTVIS_PLAYWRIGHT_MODULE||'playwright');
+const base=process.env.DISTVIS_URL||'http://localhost:3000';
+async function api(path,data){
+  const r=await fetch(base+path,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Distvis-Purpose':'acceptance'},body:JSON.stringify(data)});
+  const value=await r.json();assert.ok(r.ok,JSON.stringify(value));return value;
+}
+assert.ok(!(await api('/api/runs')).some(r=>['running','starting'].includes(r.status)));
+const original=await api('/api/library');
+const userRoot=resolve(`artifacts/用户协议, custom library ${Date.now()}`);
+await mkdir(userRoot,{recursive:true});
+await cp('protocols/grpc-broadcast',resolve(userRoot,'my-grpc'),{recursive:true});
+const browser=await chromium.launch({headless:true,...(process.env.DISTVIS_BROWSER_PATH?{executablePath:process.env.DISTVIS_BROWSER_PATH}:{})});
+const page=await browser.newPage({viewport:{width:1440,height:1100}});
+const errors=[];await page.setExtraHTTPHeaders({'X-Distvis-Purpose':'acceptance'});
+page.on('pageerror',e=>errors.push(e.message));
+let id;
+try{
+  await page.goto(base);
+  await page.locator('#create-experiment').click();
+  await page.locator('.protocol-library summary').click();
+  await page.locator('#protocol-root').fill(userRoot);
+  await page.locator('#scan-protocols').click();
+  await page.waitForFunction(()=>document.querySelector('#project-form [name="protocol"] option[value="directory:my-grpc"]'));
+  await page.locator('#project-form [name="protocol"]').selectOption('directory:my-grpc');
+  await page.locator('#project-form [name="name"]').fill('浏览器验收 · gRPC 目录工作区');
+  await page.locator('#project-form [type="submit"]').click();
+  await page.locator('#workspace-title').filter({hasText:'gRPC 目录工作区'}).waitFor();
+  assert.equal(await page.locator('[data-file="distvis.json"]').count(),0);
+  assert.match(await page.locator('#source-editor').inputValue(),/distvis:name/);
+  await page.locator('#workspace-new-experiment').click();
+  await page.locator('#new-form [name="name"]').fill('独立参数实验');
+  await page.locator('#run-submit').click();
+  await page.locator('#breadcrumb-experiment').filter({hasText:'独立参数实验'}).waitFor();
+  await page.locator('#new-run').click();
+  await page.locator('#new-dialog[open]').waitFor();
+  await page.locator('#new-form [name="runtime"]').selectOption('docker');
+  assert.equal(await page.locator('#new-form [name="runtime"] option[value="simulation"]').evaluate(el=>el.disabled),true);
+  await page.locator('#new-form [name="nodeCount"]').fill('3');
+  await page.locator('#new-form [name="name"]').fill('浏览器验收 · 自动发现 gRPC');
+  await page.locator('#new-form [type="submit"]').click();
+  await page.waitForFunction(()=>localStorage.getItem('distvis-run:'+localStorage.getItem('distvis-last-experiment')));
+  id=await page.evaluate(()=>localStorage.getItem('distvis-run:'+localStorage.getItem('distvis-last-experiment')));
+  // Application input lives in the node popover.
+  await page.locator('#graph [data-node="node-1"]').click();
+  await page.locator('#application-panel [name="number"]').waitFor({timeout:600000});
+  assert.equal(await page.locator('#application-panel form').count(),1,'internal RPC is hidden');
+  await page.locator('#application-panel [name="number"]').fill('9223372036854775807');
+  await page.locator('#application-panel [name="note"]').fill('从 proto 自动生成 · 中文');
+  await page.locator('#application-panel [type="submit"]').click();
+  await page.waitForFunction(()=>document.querySelector('#application-result')?.textContent.includes('9223372036854775807'));
+  assert.ok((await page.locator('#application-result').textContent()).includes('true'));
+  await page.locator('#graph [data-node="node-2"]').click();
+  await page.waitForFunction(()=>document.querySelector('#node-panel [data-field="number"]')?.textContent.includes('9223372036854775807'));
+  await page.locator('[data-view="spacetime"]').click();
+  await page.locator('#spacetime-window').selectOption('30000');
+  await page.locator('.time-message').first().focus();
+  await page.keyboard.press('Enter');
+  await page.locator('#event-dialog[open]').waitFor();
+  assert.ok((await page.locator('#event-summary').textContent()).includes('/lesson.Replication/Apply'));
+  assert.ok((await page.locator('#event-summary').textContent()).includes('9223372036854775807'));
+  assert.equal(await page.locator('#event-summary [data-field="wire"]').count(),0,'show decoded body, not base64');
+  await page.locator('#event-dialog .close-dialog').click();
+  await page.locator('#spacetime [data-node="node-1"]').click();
+  await page.screenshot({path:'artifacts/rpc-directory.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.locator('#stop-run').click();
+  await page.waitForFunction(()=>document.querySelector('#run-status').textContent==='已结束');
+  assert.deepEqual(errors,[]);
+  console.log('PASS: user directory with Unicode/spaces/comma, automatic discovery, protobuf form, exact int64, actual Go response and decoded RPC replay.');
+}finally{
+  if(id&&(await api(`/api/runs/${id}`)).status==='running')await api(`/api/runs/${id}/stop`,{});
+  await api('/api/library',{root:original.root});
+  await browser.close();
+}

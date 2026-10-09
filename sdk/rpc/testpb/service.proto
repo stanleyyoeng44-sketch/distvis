@@ -1,0 +1,13 @@
+syntax = "proto3";
+package rpctest;
+option go_package = "distvis/sdk/rpc/testpb";
+service Application { rpc Echo(Request) returns (Reply); }
+service Internal { rpc Echo(Request) returns (Reply); }
+message Request {
+  int64 large = 1;
+  int32 count = 2;
+  bool enabled = 3;
+  string text = 4;
+  repeated string tags = 5;
+}
+message Reply { Request received = 1; string node = 2; }
