@@ -1,0 +1,2764 @@
+{
+  "startedAt": "2026-10-09T09:41:03.638Z",
+  "base": "http://127.0.0.1:3000",
+  "runtime": "docker",
+  "runs": [
+    {
+      "folder": "cristian",
+      "protocolId": "774468f3-c992-40e2-81c0-af062e747dab",
+      "revision": 1,
+      "experimentId": "32df081f-3ff0-423e-a388-67df97e34ba3",
+      "runId": "8e42ba28-23ca-4f33-bcfb-4bceb9666c55",
+      "checks": [
+        {
+          "name": "RTT midpoint correction and reported uncertainty",
+          "details": {
+            "sample": {
+              "server": "node-1",
+              "serverMS": 1791538873901.5618,
+              "rttMS": 87.242119,
+              "minDelayMS": 0,
+              "beforeMS": 1791538875144.8203,
+              "estimatedMS": 1791538873945.1829,
+              "correctionMS": -1199.637451171875,
+              "earliestMS": 1791538873901.5618,
+              "latestMS": 1791538873988.804,
+              "uncertaintyMS": 43.6210595
+            },
+            "observedOffsetMS": 1.259033203125
+          }
+        },
+        {
+          "name": "unavailable server leaves clock unchanged and clears busy",
+          "details": {
+            "observedOffsetMS": 600.090576171875
+          }
+        },
+        {
+          "name": "asymmetric path produces expected residual bias",
+          "details": {
+            "observedOffsetMS": -149.204833984375,
+            "sample": {
+              "server": "node-1",
+              "serverMS": 1791538877986.4392,
+              "rttMS": 347.82363599999996,
+              "minDelayMS": 0,
+              "beforeMS": 1791538879309.2703,
+              "estimatedMS": 1791538878160.351,
+              "correctionMS": -1148.919189453125,
+              "earliestMS": 1791538877986.4392,
+              "latestMS": 1791538878334.263,
+              "uncertaintyMS": 173.91181799999998
+            }
+          }
+        }
+      ],
+      "commands": [
+        {
+          "node": "node-1",
+          "method": "ConfigureClock",
+          "commandId": "input-13",
+          "seq": 15,
+          "error": null,
+          "result": {
+            "node": "node-1",
+            "role": "reference-server",
+            "server": "node-1",
+            "clock": {
+              "timeMS": 1791538873230.0005,
+              "hostOffsetMS": 0.00048828125,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "ConfigureClock",
+          "commandId": "input-16",
+          "seq": 18,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "client",
+            "server": "node-1",
+            "clock": {
+              "timeMS": 1791538874639.001,
+              "hostOffsetMS": 1200.0009765625,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "ConfigureClock",
+          "commandId": "input-19",
+          "seq": 21,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "client",
+            "server": "node-1",
+            "clock": {
+              "timeMS": 1791538875148.0007,
+              "hostOffsetMS": 1500.000732421875,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Sync",
+          "commandId": "input-22",
+          "seq": 30,
+          "error": null,
+          "result": {
+            "server": "node-1",
+            "serverMS": 1791538873901.5618,
+            "rttMS": 87.242119,
+            "minDelayMS": 0,
+            "beforeMS": 1791538875144.8203,
+            "estimatedMS": 1791538873945.1829,
+            "correctionMS": -1199.637451171875,
+            "earliestMS": 1791538873901.5618,
+            "latestMS": 1791538873988.804,
+            "uncertaintyMS": 43.6210595
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Read",
+          "commandId": "input-31",
+          "seq": 33,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "client",
+            "server": "node-1",
+            "clock": {
+              "timeMS": 1791538874065.259,
+              "hostOffsetMS": 1.259033203125,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": {
+              "server": "node-1",
+              "serverMS": 1791538873901.5618,
+              "rttMS": 87.242119,
+              "minDelayMS": 0,
+              "beforeMS": 1791538875144.8203,
+              "estimatedMS": 1791538873945.1829,
+              "correctionMS": -1199.637451171875,
+              "earliestMS": 1791538873901.5618,
+              "latestMS": 1791538873988.804,
+              "uncertaintyMS": 43.6210595
+            },
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "ConfigureClock",
+          "commandId": "input-34",
+          "seq": 36,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "client",
+            "server": "node-1",
+            "clock": {
+              "timeMS": 1791538874874.0005,
+              "hostOffsetMS": 600.00048828125,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Sync",
+          "commandId": "input-38",
+          "seq": 42,
+          "error": "TimeService.Time: no reply within 3s; remote outcome unknown",
+          "result": null
+        },
+        {
+          "node": "node-2",
+          "method": "Read",
+          "commandId": "input-43",
+          "seq": 45,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "client",
+            "server": "node-1",
+            "clock": {
+              "timeMS": 1791538878137.0906,
+              "hostOffsetMS": 600.090576171875,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": null,
+            "lastError": "TimeService.Time: no reply within 3s; remote outcome unknown"
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "ConfigureClock",
+          "commandId": "input-47",
+          "seq": 49,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "client",
+            "server": "node-1",
+            "clock": {
+              "timeMS": 1791538878748.0007,
+              "hostOffsetMS": 1000.000732421875,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Sync",
+          "commandId": "input-52",
+          "seq": 60,
+          "error": null,
+          "result": {
+            "server": "node-1",
+            "serverMS": 1791538877986.4392,
+            "rttMS": 347.82363599999996,
+            "minDelayMS": 0,
+            "beforeMS": 1791538879309.2703,
+            "estimatedMS": 1791538878160.351,
+            "correctionMS": -1148.919189453125,
+            "earliestMS": 1791538877986.4392,
+            "latestMS": 1791538878334.263,
+            "uncertaintyMS": 173.91181799999998
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Read",
+          "commandId": "input-61",
+          "seq": 63,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "client",
+            "server": "node-1",
+            "clock": {
+              "timeMS": 1791538878225.7952,
+              "hostOffsetMS": -149.204833984375,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": {
+              "server": "node-1",
+              "serverMS": 1791538877986.4392,
+              "rttMS": 347.82363599999996,
+              "minDelayMS": 0,
+              "beforeMS": 1791538879309.2703,
+              "estimatedMS": 1791538878160.351,
+              "correctionMS": -1148.919189453125,
+              "earliestMS": 1791538877986.4392,
+              "latestMS": 1791538878334.263,
+              "uncertaintyMS": 173.91181799999998
+            },
+            "lastError": ""
+          }
+        }
+      ],
+      "passed": true,
+      "eventCount": 63,
+      "finalStatus": "completed"
+    },
+    {
+      "folder": "ntp",
+      "protocolId": "069c20f9-7cb2-47d4-bee3-37557bd306b9",
+      "revision": 1,
+      "experimentId": "324de1bc-b968-441c-badc-8a3a0cfd7e52",
+      "runId": "126f287d-43d1-48c6-a157-906807e9ea12",
+      "checks": [
+        {
+          "name": "unsynchronized upstream is rejected",
+          "details": {}
+        },
+        {
+          "name": "four timestamps subtract server work and select minimum delay",
+          "details": {
+            "round": {
+              "samples": [
+                {
+                  "server": "node-1",
+                  "number": 1,
+                  "t0": 1791538884703.7773,
+                  "t1": 1791538883546.3313,
+                  "t2": 1791538883697.101,
+                  "t3": 1791538884941.1553,
+                  "delayMS": 86.608154296875,
+                  "offsetMS": -1200.7501220703125,
+                  "stratum": 1
+                },
+                {
+                  "server": "node-1",
+                  "number": 2,
+                  "t0": 1791538884703.8777,
+                  "t1": 1791538883546.2422,
+                  "t2": 1791538883696.8967,
+                  "t3": 1791538884941.1604,
+                  "delayMS": 86.628173828125,
+                  "offsetMS": -1200.9495849609375,
+                  "stratum": 1
+                },
+                {
+                  "server": "node-1",
+                  "number": 3,
+                  "t0": 1791538884703.7468,
+                  "t1": 1791538883547.8574,
+                  "t2": 1791538883698.2593,
+                  "t3": 1791538884941.159,
+                  "delayMS": 87.01025390625,
+                  "offsetMS": -1199.39453125,
+                  "stratum": 1
+                }
+              ],
+              "selected": 0
+            },
+            "observedOffsetMS": -1.49755859375
+          }
+        },
+        {
+          "name": "hierarchy propagates reference through strata 1, 2, 3",
+          "details": {
+            "leaf": {
+              "node": "node-3",
+              "role": "time-server/client",
+              "stratum": 3,
+              "upstream": "node-2",
+              "eligibleServers": [
+                "node-1",
+                "node-2"
+              ],
+              "clock": {
+                "timeMS": 1791538884336.533,
+                "hostOffsetMS": 0.532958984375,
+                "driftPPM": 0
+              },
+              "busy": false,
+              "last": {
+                "samples": [
+                  {
+                    "server": "node-2",
+                    "number": 1,
+                    "t0": 1791538883424.5935,
+                    "t1": 1791538884166.6196,
+                    "t2": 1791538884166.6204,
+                    "t3": 1791538883508.5542,
+                    "delayMS": 83.9599609375,
+                    "offsetMS": 700.046142578125,
+                    "stratum": 2
+                  },
+                  {
+                    "server": "node-2",
+                    "number": 2,
+                    "t0": 1791538883424.674,
+                    "t1": 1791538884169.8982,
+                    "t2": 1791538884169.8987,
+                    "t3": 1791538883514.43,
+                    "delayMS": 89.75537109375,
+                    "offsetMS": 700.346435546875,
+                    "stratum": 2
+                  },
+                  {
+                    "server": "node-2",
+                    "number": 3,
+                    "t0": 1791538883424.575,
+                    "t1": 1791538884166.7017,
+                    "t2": 1791538884166.7026,
+                    "t3": 1791538883509.685,
+                    "delayMS": 85.109130859375,
+                    "offsetMS": 699.5721435546875,
+                    "stratum": 2
+                  }
+                ],
+                "selected": 0
+              },
+              "lastError": ""
+            }
+          }
+        },
+        {
+          "name": "failed upstream samples are excluded while another server succeeds",
+          "details": {
+            "partial": {
+              "samples": [
+                {
+                  "server": "node-1",
+                  "number": 1,
+                  "t0": 1791538884549.4453,
+                  "t1": 1791538884590.3293,
+                  "t2": 1791538884590.3303,
+                  "t3": 1791538884632.3765,
+                  "delayMS": 82.93017578125,
+                  "offsetMS": -0.5810546875,
+                  "stratum": 1
+                },
+                {
+                  "server": "node-1",
+                  "number": 2,
+                  "t0": 1791538884549.4639,
+                  "t1": 1791538884590.2322,
+                  "t2": 1791538884590.233,
+                  "t3": 1791538884630.929,
+                  "delayMS": 81.46435546875,
+                  "offsetMS": 0.0361328125,
+                  "stratum": 1
+                },
+                {
+                  "server": "node-2",
+                  "number": 1,
+                  "t0": 1791538884549.4805,
+                  "t1": 0,
+                  "t2": 0,
+                  "t3": 1791538887551.0378,
+                  "delayMS": 0,
+                  "offsetMS": 0,
+                  "stratum": 0,
+                  "error": "TimeService.Exchange: no reply within 3s; remote outcome unknown"
+                },
+                {
+                  "server": "node-2",
+                  "number": 2,
+                  "t0": 1791538884549.352,
+                  "t1": 0,
+                  "t2": 0,
+                  "t3": 1791538887551.0454,
+                  "delayMS": 0,
+                  "offsetMS": 0,
+                  "stratum": 0,
+                  "error": "TimeService.Exchange: no reply within 3s; remote outcome unknown"
+                }
+              ],
+              "selected": 1
+            }
+          }
+        }
+      ],
+      "commands": [
+        {
+          "node": "node-1",
+          "method": "ConfigureClock",
+          "commandId": "input-13",
+          "seq": 15,
+          "error": null,
+          "result": {
+            "node": "node-1",
+            "role": "laboratory-reference",
+            "stratum": 1,
+            "upstream": "",
+            "eligibleServers": [],
+            "clock": {
+              "timeMS": 1791538882460.0005,
+              "hostOffsetMS": 0.00048828125,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "ConfigureClock",
+          "commandId": "input-16",
+          "seq": 18,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "time-server/client",
+            "stratum": 16,
+            "upstream": "",
+            "eligibleServers": [
+              "node-1"
+            ],
+            "clock": {
+              "timeMS": 1791538883870.0005,
+              "hostOffsetMS": 1200.00048828125,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "ConfigureClock",
+          "commandId": "input-19",
+          "seq": 21,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "time-server/client",
+            "stratum": 16,
+            "upstream": "",
+            "eligibleServers": [
+              "node-1",
+              "node-2"
+            ],
+            "clock": {
+              "timeMS": 1791538882178.0005,
+              "hostOffsetMS": -699.99951171875,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Sync",
+          "commandId": "input-22",
+          "seq": 30,
+          "error": "no valid synchronized upstream sample; clock left unchanged",
+          "result": null
+        },
+        {
+          "node": "node-3",
+          "method": "Read",
+          "commandId": "input-31",
+          "seq": 33,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "time-server/client",
+            "stratum": 16,
+            "upstream": "",
+            "eligibleServers": [
+              "node-1",
+              "node-2"
+            ],
+            "clock": {
+              "timeMS": 1791538882594.0542,
+              "hostOffsetMS": -699.94580078125,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": {
+              "samples": [
+                {
+                  "server": "node-2",
+                  "number": 1,
+                  "t0": 1791538882386.7688,
+                  "t1": 0,
+                  "t2": 0,
+                  "t3": 1791538882475.168,
+                  "delayMS": 0,
+                  "offsetMS": 0,
+                  "stratum": 0,
+                  "error": "node-2 has not synchronized yet; synchronize it upstream first"
+                }
+              ],
+              "selected": -1
+            },
+            "lastError": "no valid synchronized upstream sample; clock left unchanged"
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Sync",
+          "commandId": "input-34",
+          "seq": 54,
+          "error": null,
+          "result": {
+            "samples": [
+              {
+                "server": "node-1",
+                "number": 1,
+                "t0": 1791538884703.7773,
+                "t1": 1791538883546.3313,
+                "t2": 1791538883697.101,
+                "t3": 1791538884941.1553,
+                "delayMS": 86.608154296875,
+                "offsetMS": -1200.7501220703125,
+                "stratum": 1
+              },
+              {
+                "server": "node-1",
+                "number": 2,
+                "t0": 1791538884703.8777,
+                "t1": 1791538883546.2422,
+                "t2": 1791538883696.8967,
+                "t3": 1791538884941.1604,
+                "delayMS": 86.628173828125,
+                "offsetMS": -1200.9495849609375,
+                "stratum": 1
+              },
+              {
+                "server": "node-1",
+                "number": 3,
+                "t0": 1791538884703.7468,
+                "t1": 1791538883547.8574,
+                "t2": 1791538883698.2593,
+                "t3": 1791538884941.159,
+                "delayMS": 87.01025390625,
+                "offsetMS": -1199.39453125,
+                "stratum": 1
+              }
+            ],
+            "selected": 0
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Read",
+          "commandId": "input-55",
+          "seq": 57,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "time-server/client",
+            "stratum": 2,
+            "upstream": "node-1",
+            "eligibleServers": [
+              "node-1"
+            ],
+            "clock": {
+              "timeMS": 1791538883914.5024,
+              "hostOffsetMS": -1.49755859375,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": {
+              "samples": [
+                {
+                  "server": "node-1",
+                  "number": 1,
+                  "t0": 1791538884703.7773,
+                  "t1": 1791538883546.3313,
+                  "t2": 1791538883697.101,
+                  "t3": 1791538884941.1553,
+                  "delayMS": 86.608154296875,
+                  "offsetMS": -1200.7501220703125,
+                  "stratum": 1
+                },
+                {
+                  "server": "node-1",
+                  "number": 2,
+                  "t0": 1791538884703.8777,
+                  "t1": 1791538883546.2422,
+                  "t2": 1791538883696.8967,
+                  "t3": 1791538884941.1604,
+                  "delayMS": 86.628173828125,
+                  "offsetMS": -1200.9495849609375,
+                  "stratum": 1
+                },
+                {
+                  "server": "node-1",
+                  "number": 3,
+                  "t0": 1791538884703.7468,
+                  "t1": 1791538883547.8574,
+                  "t2": 1791538883698.2593,
+                  "t3": 1791538884941.159,
+                  "delayMS": 87.01025390625,
+                  "offsetMS": -1199.39453125,
+                  "stratum": 1
+                }
+              ],
+              "selected": 0
+            },
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Sync",
+          "commandId": "input-58",
+          "seq": 78,
+          "error": null,
+          "result": {
+            "samples": [
+              {
+                "server": "node-2",
+                "number": 1,
+                "t0": 1791538883424.5935,
+                "t1": 1791538884166.6196,
+                "t2": 1791538884166.6204,
+                "t3": 1791538883508.5542,
+                "delayMS": 83.9599609375,
+                "offsetMS": 700.046142578125,
+                "stratum": 2
+              },
+              {
+                "server": "node-2",
+                "number": 2,
+                "t0": 1791538883424.674,
+                "t1": 1791538884169.8982,
+                "t2": 1791538884169.8987,
+                "t3": 1791538883514.43,
+                "delayMS": 89.75537109375,
+                "offsetMS": 700.346435546875,
+                "stratum": 2
+              },
+              {
+                "server": "node-2",
+                "number": 3,
+                "t0": 1791538883424.575,
+                "t1": 1791538884166.7017,
+                "t2": 1791538884166.7026,
+                "t3": 1791538883509.685,
+                "delayMS": 85.109130859375,
+                "offsetMS": 699.5721435546875,
+                "stratum": 2
+              }
+            ],
+            "selected": 0
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Read",
+          "commandId": "input-79",
+          "seq": 81,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "time-server/client",
+            "stratum": 3,
+            "upstream": "node-2",
+            "eligibleServers": [
+              "node-1",
+              "node-2"
+            ],
+            "clock": {
+              "timeMS": 1791538884336.533,
+              "hostOffsetMS": 0.532958984375,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": {
+              "samples": [
+                {
+                  "server": "node-2",
+                  "number": 1,
+                  "t0": 1791538883424.5935,
+                  "t1": 1791538884166.6196,
+                  "t2": 1791538884166.6204,
+                  "t3": 1791538883508.5542,
+                  "delayMS": 83.9599609375,
+                  "offsetMS": 700.046142578125,
+                  "stratum": 2
+                },
+                {
+                  "server": "node-2",
+                  "number": 2,
+                  "t0": 1791538883424.674,
+                  "t1": 1791538884169.8982,
+                  "t2": 1791538884169.8987,
+                  "t3": 1791538883514.43,
+                  "delayMS": 89.75537109375,
+                  "offsetMS": 700.346435546875,
+                  "stratum": 2
+                },
+                {
+                  "server": "node-2",
+                  "number": 3,
+                  "t0": 1791538883424.575,
+                  "t1": 1791538884166.7017,
+                  "t2": 1791538884166.7026,
+                  "t3": 1791538883509.685,
+                  "delayMS": 85.109130859375,
+                  "offsetMS": 699.5721435546875,
+                  "stratum": 2
+                }
+              ],
+              "selected": 0
+            },
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Sync",
+          "commandId": "input-83",
+          "seq": 101,
+          "error": null,
+          "result": {
+            "samples": [
+              {
+                "server": "node-1",
+                "number": 1,
+                "t0": 1791538884549.4453,
+                "t1": 1791538884590.3293,
+                "t2": 1791538884590.3303,
+                "t3": 1791538884632.3765,
+                "delayMS": 82.93017578125,
+                "offsetMS": -0.5810546875,
+                "stratum": 1
+              },
+              {
+                "server": "node-1",
+                "number": 2,
+                "t0": 1791538884549.4639,
+                "t1": 1791538884590.2322,
+                "t2": 1791538884590.233,
+                "t3": 1791538884630.929,
+                "delayMS": 81.46435546875,
+                "offsetMS": 0.0361328125,
+                "stratum": 1
+              },
+              {
+                "server": "node-2",
+                "number": 1,
+                "t0": 1791538884549.4805,
+                "t1": 0,
+                "t2": 0,
+                "t3": 1791538887551.0378,
+                "delayMS": 0,
+                "offsetMS": 0,
+                "stratum": 0,
+                "error": "TimeService.Exchange: no reply within 3s; remote outcome unknown"
+              },
+              {
+                "server": "node-2",
+                "number": 2,
+                "t0": 1791538884549.352,
+                "t1": 0,
+                "t2": 0,
+                "t3": 1791538887551.0454,
+                "delayMS": 0,
+                "offsetMS": 0,
+                "stratum": 0,
+                "error": "TimeService.Exchange: no reply within 3s; remote outcome unknown"
+              }
+            ],
+            "selected": 1
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Read",
+          "commandId": "input-102",
+          "seq": 104,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "time-server/client",
+            "stratum": 2,
+            "upstream": "node-1",
+            "eligibleServers": [
+              "node-1",
+              "node-2"
+            ],
+            "clock": {
+              "timeMS": 1791538887615.8162,
+              "hostOffsetMS": -0.183837890625,
+              "driftPPM": 0
+            },
+            "busy": false,
+            "last": {
+              "samples": [
+                {
+                  "server": "node-1",
+                  "number": 1,
+                  "t0": 1791538884549.4453,
+                  "t1": 1791538884590.3293,
+                  "t2": 1791538884590.3303,
+                  "t3": 1791538884632.3765,
+                  "delayMS": 82.93017578125,
+                  "offsetMS": -0.5810546875,
+                  "stratum": 1
+                },
+                {
+                  "server": "node-1",
+                  "number": 2,
+                  "t0": 1791538884549.4639,
+                  "t1": 1791538884590.2322,
+                  "t2": 1791538884590.233,
+                  "t3": 1791538884630.929,
+                  "delayMS": 81.46435546875,
+                  "offsetMS": 0.0361328125,
+                  "stratum": 1
+                },
+                {
+                  "server": "node-2",
+                  "number": 1,
+                  "t0": 1791538884549.4805,
+                  "t1": 0,
+                  "t2": 0,
+                  "t3": 1791538887551.0378,
+                  "delayMS": 0,
+                  "offsetMS": 0,
+                  "stratum": 0,
+                  "error": "TimeService.Exchange: no reply within 3s; remote outcome unknown"
+                },
+                {
+                  "server": "node-2",
+                  "number": 2,
+                  "t0": 1791538884549.352,
+                  "t1": 0,
+                  "t2": 0,
+                  "t3": 1791538887551.0454,
+                  "delayMS": 0,
+                  "offsetMS": 0,
+                  "stratum": 0,
+                  "error": "TimeService.Exchange: no reply within 3s; remote outcome unknown"
+                }
+              ],
+              "selected": 1
+            },
+            "lastError": ""
+          }
+        }
+      ],
+      "passed": true,
+      "eventCount": 105,
+      "finalStatus": "completed"
+    },
+    {
+      "folder": "berkeley",
+      "protocolId": "df602570-ece1-420e-acbf-8a9eb6070af1",
+      "revision": 1,
+      "experimentId": "151cfd67-803a-48a1-8301-16cbe8e787bc",
+      "runId": "1d0f567c-32be-4593-b37b-c5f97902f12a",
+      "checks": [
+        {
+          "name": "relative adjustments slew continuously toward group mean",
+          "details": {
+            "round": {
+              "number": 1,
+              "medianMS": 119.36328125,
+              "meanMS": 119.75919596354167,
+              "thresholdMS": 1000,
+              "samples": [
+                {
+                  "node": "node-1",
+                  "offsetMS": 0,
+                  "rttMS": 0,
+                  "included": true,
+                  "deltaMS": 119.75919596354167,
+                  "scheduled": true,
+                  "instance": "6EYMB2AY4NH4POTAVQ6ALAPTGE",
+                  "generation": 1
+                },
+                {
+                  "node": "node-2",
+                  "offsetMS": 119.36328125,
+                  "rttMS": 87.81228100000001,
+                  "included": true,
+                  "deltaMS": 0.3959147135416714,
+                  "scheduled": true,
+                  "instance": "PSO3BWEZPE45I5JZIXCQJX6IY5",
+                  "generation": 1
+                },
+                {
+                  "node": "node-3",
+                  "offsetMS": 239.914306640625,
+                  "rttMS": 87.883723,
+                  "included": true,
+                  "deltaMS": -120.15511067708333,
+                  "scheduled": true,
+                  "instance": "3EQ3JXUL4LRMPFYDKQ7NWF6LXZ",
+                  "generation": 1
+                }
+              ]
+            },
+            "finalOffsetsMS": [
+              119.73583984375,
+              120.786865234375,
+              120.626953125
+            ]
+          }
+        },
+        {
+          "name": "unreachable participant is excluded without fabricating its offset",
+          "details": {
+            "partial": {
+              "number": 2,
+              "medianMS": 49.3272705078125,
+              "meanMS": 49.3272705078125,
+              "thresholdMS": 500,
+              "samples": [
+                {
+                  "node": "node-1",
+                  "offsetMS": 0,
+                  "rttMS": 0,
+                  "included": true,
+                  "deltaMS": 49.3272705078125,
+                  "scheduled": true,
+                  "instance": "6EYMB2AY4NH4POTAVQ6ALAPTGE",
+                  "generation": 3
+                },
+                {
+                  "node": "node-2",
+                  "offsetMS": 98.654541015625,
+                  "rttMS": 86.449605,
+                  "included": true,
+                  "deltaMS": -49.3272705078125,
+                  "scheduled": true,
+                  "instance": "PSO3BWEZPE45I5JZIXCQJX6IY5",
+                  "generation": 3
+                },
+                {
+                  "node": "node-3",
+                  "offsetMS": 0,
+                  "rttMS": 3001.628588,
+                  "included": false,
+                  "deltaMS": 0,
+                  "scheduled": false,
+                  "error": "TimeService.Poll: no reply within 3s; remote outcome unknown",
+                  "instance": "",
+                  "generation": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "outlier cannot bias mean but still receives a gradual correction",
+          "details": {
+            "filtered": {
+              "number": 3,
+              "medianMS": 99.41943359375,
+              "meanMS": 49.709716796875,
+              "thresholdMS": 500,
+              "samples": [
+                {
+                  "node": "node-1",
+                  "offsetMS": 0,
+                  "rttMS": 0,
+                  "included": true,
+                  "deltaMS": 49.709716796875,
+                  "scheduled": true,
+                  "instance": "6EYMB2AY4NH4POTAVQ6ALAPTGE",
+                  "generation": 5
+                },
+                {
+                  "node": "node-2",
+                  "offsetMS": 99.41943359375,
+                  "rttMS": 87.385226,
+                  "included": true,
+                  "deltaMS": -49.709716796875,
+                  "scheduled": true,
+                  "instance": "PSO3BWEZPE45I5JZIXCQJX6IY5",
+                  "generation": 5
+                },
+                {
+                  "node": "node-3",
+                  "offsetMS": 10000.430419921875,
+                  "rttMS": 87.296513,
+                  "included": false,
+                  "deltaMS": -9950.720703125,
+                  "scheduled": true,
+                  "instance": "3EQ3JXUL4LRMPFYDKQ7NWF6LXZ",
+                  "generation": 4
+                }
+              ]
+            },
+            "outlier": {
+              "node": "node-3",
+              "role": "participant",
+              "coordinator": "node-1",
+              "clock": {
+                "timeMS": 1791538908756.0178,
+                "hostOffsetMS": 9992.017822265625,
+                "driftPPM": 0,
+                "pendingMS": -9942.527369525,
+                "slewRateFraction": 0.1
+              },
+              "busy": false,
+              "lastAppliedRound": 3,
+              "lastDeltaMS": -9950.720703125,
+              "lastRound": null,
+              "lastError": ""
+            }
+          }
+        }
+      ],
+      "commands": [
+        {
+          "node": "node-1",
+          "method": "ConfigureClock",
+          "commandId": "input-13",
+          "seq": 15,
+          "error": null,
+          "result": {
+            "node": "node-1",
+            "role": "coordinator",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538891702.0005,
+              "hostOffsetMS": 0.00048828125,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 0,
+            "lastDeltaMS": 0,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "ConfigureClock",
+          "commandId": "input-16",
+          "seq": 18,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538892029.0007,
+              "hostOffsetMS": 120.000732421875,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 0,
+            "lastDeltaMS": 0,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "ConfigureClock",
+          "commandId": "input-19",
+          "seq": 21,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538892357.0005,
+              "hostOffsetMS": 240.00048828125,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 0,
+            "lastDeltaMS": 0,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Sync",
+          "commandId": "input-22",
+          "seq": 51,
+          "error": null,
+          "result": {
+            "number": 1,
+            "medianMS": 119.36328125,
+            "meanMS": 119.75919596354167,
+            "thresholdMS": 1000,
+            "samples": [
+              {
+                "node": "node-1",
+                "offsetMS": 0,
+                "rttMS": 0,
+                "included": true,
+                "deltaMS": 119.75919596354167,
+                "scheduled": true,
+                "instance": "6EYMB2AY4NH4POTAVQ6ALAPTGE",
+                "generation": 1
+              },
+              {
+                "node": "node-2",
+                "offsetMS": 119.36328125,
+                "rttMS": 87.81228100000001,
+                "included": true,
+                "deltaMS": 0.3959147135416714,
+                "scheduled": true,
+                "instance": "PSO3BWEZPE45I5JZIXCQJX6IY5",
+                "generation": 1
+              },
+              {
+                "node": "node-3",
+                "offsetMS": 239.914306640625,
+                "rttMS": 87.883723,
+                "included": true,
+                "deltaMS": -120.15511067708333,
+                "scheduled": true,
+                "instance": "3EQ3JXUL4LRMPFYDKQ7NWF6LXZ",
+                "generation": 1
+              }
+            ]
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Read",
+          "commandId": "input-52",
+          "seq": 54,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538892763.3848,
+              "hostOffsetMS": 232.384765625,
+              "driftPPM": 0,
+              "pendingMS": -112.63949107708333,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": -120.15511067708333,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Read",
+          "commandId": "input-55",
+          "seq": 58,
+          "error": null,
+          "result": {
+            "node": "node-1",
+            "role": "coordinator",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538892774.5425,
+              "hostOffsetMS": 33.54248046875,
+              "driftPPM": 0,
+              "pendingMS": 86.76520636354167,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": 119.75919596354167,
+            "lastRound": {
+              "number": 1,
+              "medianMS": 119.36328125,
+              "meanMS": 119.75919596354167,
+              "thresholdMS": 1000,
+              "samples": [
+                {
+                  "node": "node-1",
+                  "offsetMS": 0,
+                  "rttMS": 0,
+                  "included": true,
+                  "deltaMS": 119.75919596354167,
+                  "scheduled": true,
+                  "instance": "6EYMB2AY4NH4POTAVQ6ALAPTGE",
+                  "generation": 1
+                },
+                {
+                  "node": "node-2",
+                  "offsetMS": 119.36328125,
+                  "rttMS": 87.81228100000001,
+                  "included": true,
+                  "deltaMS": 0.3959147135416714,
+                  "scheduled": true,
+                  "instance": "PSO3BWEZPE45I5JZIXCQJX6IY5",
+                  "generation": 1
+                },
+                {
+                  "node": "node-3",
+                  "offsetMS": 239.914306640625,
+                  "rttMS": 87.883723,
+                  "included": true,
+                  "deltaMS": -120.15511067708333,
+                  "scheduled": true,
+                  "instance": "3EQ3JXUL4LRMPFYDKQ7NWF6LXZ",
+                  "generation": 1
+                }
+              ]
+            },
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Read",
+          "commandId": "input-56",
+          "seq": 60,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538892863.671,
+              "hostOffsetMS": 120.6708984375,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": 0.3959147135416714,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Read",
+          "commandId": "input-61",
+          "seq": 63,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538892957.5469,
+              "hostOffsetMS": 211.546875,
+              "driftPPM": 0,
+              "pendingMS": -91.06592817708332,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": -120.15511067708333,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Read",
+          "commandId": "input-66",
+          "seq": 72,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538893149.474,
+              "hostOffsetMS": 189.47412109375,
+              "driftPPM": 0,
+              "pendingMS": -69.74066017708333,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": -120.15511067708333,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Read",
+          "commandId": "input-64",
+          "seq": 68,
+          "error": null,
+          "result": {
+            "node": "node-1",
+            "role": "coordinator",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538893012.3025,
+              "hostOffsetMS": 55.302490234375,
+              "driftPPM": 0,
+              "pendingMS": 65.15066466354168,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": 119.75919596354167,
+            "lastRound": {
+              "number": 1,
+              "medianMS": 119.36328125,
+              "meanMS": 119.75919596354167,
+              "thresholdMS": 1000,
+              "samples": [
+                {
+                  "node": "node-1",
+                  "offsetMS": 0,
+                  "rttMS": 0,
+                  "included": true,
+                  "deltaMS": 119.75919596354167,
+                  "scheduled": true,
+                  "instance": "6EYMB2AY4NH4POTAVQ6ALAPTGE",
+                  "generation": 1
+                },
+                {
+                  "node": "node-2",
+                  "offsetMS": 119.36328125,
+                  "rttMS": 87.81228100000001,
+                  "included": true,
+                  "deltaMS": 0.3959147135416714,
+                  "scheduled": true,
+                  "instance": "PSO3BWEZPE45I5JZIXCQJX6IY5",
+                  "generation": 1
+                },
+                {
+                  "node": "node-3",
+                  "offsetMS": 239.914306640625,
+                  "rttMS": 87.883723,
+                  "included": true,
+                  "deltaMS": -120.15511067708333,
+                  "scheduled": true,
+                  "instance": "3EQ3JXUL4LRMPFYDKQ7NWF6LXZ",
+                  "generation": 1
+                }
+              ]
+            },
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Read",
+          "commandId": "input-65",
+          "seq": 70,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538893079.3516,
+              "hostOffsetMS": 120.3515625,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": 0.3959147135416714,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Read",
+          "commandId": "input-74",
+          "seq": 79,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538893494.516,
+              "hostOffsetMS": 120.51611328125,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": 0.3959147135416714,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Read",
+          "commandId": "input-75",
+          "seq": 81,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538893524.1316,
+              "hostOffsetMS": 148.131591796875,
+              "driftPPM": 0,
+              "pendingMS": -28.112075577083317,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": -120.15511067708333,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Read",
+          "commandId": "input-73",
+          "seq": 77,
+          "error": null,
+          "result": {
+            "node": "node-1",
+            "role": "coordinator",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538893469.9717,
+              "hostOffsetMS": 95.9716796875,
+              "driftPPM": 0,
+              "pendingMS": 23.544366163541653,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": 119.75919596354167,
+            "lastRound": {
+              "number": 1,
+              "medianMS": 119.36328125,
+              "meanMS": 119.75919596354167,
+              "thresholdMS": 1000,
+              "samples": [
+                {
+                  "node": "node-1",
+                  "offsetMS": 0,
+                  "rttMS": 0,
+                  "included": true,
+                  "deltaMS": 119.75919596354167,
+                  "scheduled": true,
+                  "instance": "6EYMB2AY4NH4POTAVQ6ALAPTGE",
+                  "generation": 1
+                },
+                {
+                  "node": "node-2",
+                  "offsetMS": 119.36328125,
+                  "rttMS": 87.81228100000001,
+                  "included": true,
+                  "deltaMS": 0.3959147135416714,
+                  "scheduled": true,
+                  "instance": "PSO3BWEZPE45I5JZIXCQJX6IY5",
+                  "generation": 1
+                },
+                {
+                  "node": "node-3",
+                  "offsetMS": 239.914306640625,
+                  "rttMS": 87.883723,
+                  "included": true,
+                  "deltaMS": -120.15511067708333,
+                  "scheduled": true,
+                  "instance": "3EQ3JXUL4LRMPFYDKQ7NWF6LXZ",
+                  "generation": 1
+                }
+              ]
+            },
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Read",
+          "commandId": "input-82",
+          "seq": 86,
+          "error": null,
+          "result": {
+            "node": "node-1",
+            "role": "coordinator",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538893910.7358,
+              "hostOffsetMS": 119.73583984375,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": 119.75919596354167,
+            "lastRound": {
+              "number": 1,
+              "medianMS": 119.36328125,
+              "meanMS": 119.75919596354167,
+              "thresholdMS": 1000,
+              "samples": [
+                {
+                  "node": "node-1",
+                  "offsetMS": 0,
+                  "rttMS": 0,
+                  "included": true,
+                  "deltaMS": 119.75919596354167,
+                  "scheduled": true,
+                  "instance": "6EYMB2AY4NH4POTAVQ6ALAPTGE",
+                  "generation": 1
+                },
+                {
+                  "node": "node-2",
+                  "offsetMS": 119.36328125,
+                  "rttMS": 87.81228100000001,
+                  "included": true,
+                  "deltaMS": 0.3959147135416714,
+                  "scheduled": true,
+                  "instance": "PSO3BWEZPE45I5JZIXCQJX6IY5",
+                  "generation": 1
+                },
+                {
+                  "node": "node-3",
+                  "offsetMS": 239.914306640625,
+                  "rttMS": 87.883723,
+                  "included": true,
+                  "deltaMS": -120.15511067708333,
+                  "scheduled": true,
+                  "instance": "3EQ3JXUL4LRMPFYDKQ7NWF6LXZ",
+                  "generation": 1
+                }
+              ]
+            },
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Read",
+          "commandId": "input-83",
+          "seq": 88,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538893912.7869,
+              "hostOffsetMS": 120.786865234375,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": 0.3959147135416714,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Read",
+          "commandId": "input-84",
+          "seq": 90,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538893912.627,
+              "hostOffsetMS": 120.626953125,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": -120.15511067708333,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "ConfigureClock",
+          "commandId": "input-91",
+          "seq": 93,
+          "error": null,
+          "result": {
+            "node": "node-1",
+            "role": "coordinator",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538894006.0007,
+              "hostOffsetMS": 0.000732421875,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": 0,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "ConfigureClock",
+          "commandId": "input-94",
+          "seq": 96,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538894316.0007,
+              "hostOffsetMS": 100.000732421875,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": 0,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "ConfigureClock",
+          "commandId": "input-97",
+          "seq": 99,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538894627.0005,
+              "hostOffsetMS": 200.00048828125,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": 0,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Sync",
+          "commandId": "input-101",
+          "seq": 119,
+          "error": null,
+          "result": {
+            "number": 2,
+            "medianMS": 49.3272705078125,
+            "meanMS": 49.3272705078125,
+            "thresholdMS": 500,
+            "samples": [
+              {
+                "node": "node-1",
+                "offsetMS": 0,
+                "rttMS": 0,
+                "included": true,
+                "deltaMS": 49.3272705078125,
+                "scheduled": true,
+                "instance": "6EYMB2AY4NH4POTAVQ6ALAPTGE",
+                "generation": 3
+              },
+              {
+                "node": "node-2",
+                "offsetMS": 98.654541015625,
+                "rttMS": 86.449605,
+                "included": true,
+                "deltaMS": -49.3272705078125,
+                "scheduled": true,
+                "instance": "PSO3BWEZPE45I5JZIXCQJX6IY5",
+                "generation": 3
+              },
+              {
+                "node": "node-3",
+                "offsetMS": 0,
+                "rttMS": 3001.628588,
+                "included": false,
+                "deltaMS": 0,
+                "scheduled": false,
+                "error": "TimeService.Poll: no reply within 3s; remote outcome unknown",
+                "instance": "",
+                "generation": 0
+              }
+            ]
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "ConfigureClock",
+          "commandId": "input-121",
+          "seq": 123,
+          "error": null,
+          "result": {
+            "node": "node-1",
+            "role": "coordinator",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538897915.0005,
+              "hostOffsetMS": 0.00048828125,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 2,
+            "lastDeltaMS": 0,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "ConfigureClock",
+          "commandId": "input-124",
+          "seq": 126,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538898226.0007,
+              "hostOffsetMS": 100.000732421875,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 2,
+            "lastDeltaMS": 0,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "ConfigureClock",
+          "commandId": "input-127",
+          "seq": 129,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538908339.0007,
+              "hostOffsetMS": 10000.000732421875,
+              "driftPPM": 0,
+              "pendingMS": 0,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 1,
+            "lastDeltaMS": 0,
+            "lastRound": null,
+            "lastError": ""
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Sync",
+          "commandId": "input-130",
+          "seq": 159,
+          "error": null,
+          "result": {
+            "number": 3,
+            "medianMS": 99.41943359375,
+            "meanMS": 49.709716796875,
+            "thresholdMS": 500,
+            "samples": [
+              {
+                "node": "node-1",
+                "offsetMS": 0,
+                "rttMS": 0,
+                "included": true,
+                "deltaMS": 49.709716796875,
+                "scheduled": true,
+                "instance": "6EYMB2AY4NH4POTAVQ6ALAPTGE",
+                "generation": 5
+              },
+              {
+                "node": "node-2",
+                "offsetMS": 99.41943359375,
+                "rttMS": 87.385226,
+                "included": true,
+                "deltaMS": -49.709716796875,
+                "scheduled": true,
+                "instance": "PSO3BWEZPE45I5JZIXCQJX6IY5",
+                "generation": 5
+              },
+              {
+                "node": "node-3",
+                "offsetMS": 10000.430419921875,
+                "rttMS": 87.296513,
+                "included": false,
+                "deltaMS": -9950.720703125,
+                "scheduled": true,
+                "instance": "3EQ3JXUL4LRMPFYDKQ7NWF6LXZ",
+                "generation": 4
+              }
+            ]
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Read",
+          "commandId": "input-160",
+          "seq": 162,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "role": "participant",
+            "coordinator": "node-1",
+            "clock": {
+              "timeMS": 1791538908756.0178,
+              "hostOffsetMS": 9992.017822265625,
+              "driftPPM": 0,
+              "pendingMS": -9942.527369525,
+              "slewRateFraction": 0.1
+            },
+            "busy": false,
+            "lastAppliedRound": 3,
+            "lastDeltaMS": -9950.720703125,
+            "lastRound": null,
+            "lastError": ""
+          }
+        }
+      ],
+      "passed": true,
+      "eventCount": 162,
+      "finalStatus": "completed"
+    },
+    {
+      "folder": "logical-clocks",
+      "protocolId": "306689ba-e07c-422a-b997-7202f487341a",
+      "revision": 1,
+      "experimentId": "414e1627-4790-4921-ac49-3c00ffbeebdd",
+      "runId": "daaa96e0-6c49-403a-a8f7-9f510373396d",
+      "checks": [
+        {
+          "name": "exact six-event lecture trace, including concurrent Local inputs",
+          "details": {
+            "events": {
+              "a": {
+                "id": "node-1:1",
+                "node": "node-1",
+                "kind": "local",
+                "label": "a",
+                "timestamp": {
+                  "lamport": 1,
+                  "vector": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "total": 3
+                }
+              },
+              "b": {
+                "id": "node-1:2",
+                "node": "node-1",
+                "kind": "send",
+                "label": "b",
+                "peer": "node-2",
+                "messageID": "node-1:2",
+                "payload": "m1",
+                "timestamp": {
+                  "lamport": 2,
+                  "vector": [
+                    2,
+                    0,
+                    0
+                  ],
+                  "total": 6
+                }
+              },
+              "c": {
+                "id": "node-2:1",
+                "node": "node-2",
+                "kind": "receive",
+                "label": "c",
+                "peer": "node-1",
+                "messageID": "node-1:2",
+                "payload": "m1",
+                "timestamp": {
+                  "lamport": 3,
+                  "vector": [
+                    2,
+                    1,
+                    0
+                  ],
+                  "total": 10
+                }
+              },
+              "d": {
+                "id": "node-2:2",
+                "node": "node-2",
+                "kind": "send",
+                "label": "d",
+                "peer": "node-3",
+                "messageID": "node-2:2",
+                "payload": "m2",
+                "timestamp": {
+                  "lamport": 4,
+                  "vector": [
+                    2,
+                    2,
+                    0
+                  ],
+                  "total": 13
+                }
+              },
+              "e": {
+                "id": "node-3:1",
+                "node": "node-3",
+                "kind": "local",
+                "label": "e",
+                "timestamp": {
+                  "lamport": 1,
+                  "vector": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "total": 5
+                }
+              },
+              "f": {
+                "id": "node-3:2",
+                "node": "node-3",
+                "kind": "receive",
+                "label": "f",
+                "peer": "node-2",
+                "messageID": "node-2:2",
+                "payload": "m2",
+                "timestamp": {
+                  "lamport": 5,
+                  "vector": [
+                    2,
+                    2,
+                    2
+                  ],
+                  "total": 17
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "causality, concurrency and equality; no observer/ack increments",
+          "details": {
+            "before": {
+              "relation": "happens-before",
+              "note": "Vector relation describes modeled data events. Lamport L(a)<L(b), or N*L+i ordering, alone does NOT prove causality."
+            },
+            "concurrent": {
+              "relation": "concurrent",
+              "note": "Vector relation describes modeled data events. Lamport L(a)<L(b), or N*L+i ordering, alone does NOT prove causality."
+            },
+            "equal": {
+              "relation": "equal",
+              "note": "Vector relation describes modeled data events. Lamport L(a)<L(b), or N*L+i ordering, alone does NOT prove causality."
+            }
+          }
+        },
+        {
+          "name": "crash/recover restores counters without reusing an event ID",
+          "details": {
+            "restoredClock": {
+              "lamport": 4,
+              "vector": [
+                2,
+                2,
+                0
+              ],
+              "total": 13
+            },
+            "next": {
+              "id": "node-2:3",
+              "node": "node-2",
+              "kind": "local",
+              "label": "after recovery",
+              "timestamp": {
+                "lamport": 5,
+                "vector": [
+                  2,
+                  3,
+                  0
+                ],
+                "total": 16
+              }
+            }
+          }
+        },
+        {
+          "name": "lost acknowledgement leaves durable receive and unconfirmed send",
+          "details": {
+            "uncertain": {
+              "event": {
+                "id": "node-1:3",
+                "node": "node-1",
+                "kind": "send",
+                "label": "ack-lost-send",
+                "peer": "node-2",
+                "messageID": "node-1:3",
+                "payload": "one-way test",
+                "timestamp": {
+                  "lamport": 3,
+                  "vector": [
+                    3,
+                    0,
+                    0
+                  ],
+                  "total": 9
+                }
+              },
+              "delivery": {
+                "messageID": "node-1:3",
+                "to": "node-2",
+                "confirmed": false,
+                "error": "ClockService.Deliver: no reply within 3s; remote outcome unknown"
+              }
+            },
+            "receiverClock": {
+              "lamport": 6,
+              "vector": [
+                3,
+                4,
+                0
+              ],
+              "total": 19
+            }
+          }
+        }
+      ],
+      "commands": [
+        {
+          "node": "node-1",
+          "method": "Local",
+          "commandId": "input-13",
+          "seq": 16,
+          "error": null,
+          "result": {
+            "id": "node-1:1",
+            "node": "node-1",
+            "kind": "local",
+            "label": "a",
+            "timestamp": {
+              "lamport": 1,
+              "vector": [
+                1,
+                0,
+                0
+              ],
+              "total": 3
+            }
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Local",
+          "commandId": "input-14",
+          "seq": 18,
+          "error": null,
+          "result": {
+            "id": "node-3:1",
+            "node": "node-3",
+            "kind": "local",
+            "label": "e",
+            "timestamp": {
+              "lamport": 1,
+              "vector": [
+                0,
+                0,
+                1
+              ],
+              "total": 5
+            }
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Send",
+          "commandId": "input-19",
+          "seq": 29,
+          "error": null,
+          "result": {
+            "event": {
+              "id": "node-1:2",
+              "node": "node-1",
+              "kind": "send",
+              "label": "b",
+              "peer": "node-2",
+              "messageID": "node-1:2",
+              "payload": "m1",
+              "timestamp": {
+                "lamport": 2,
+                "vector": [
+                  2,
+                  0,
+                  0
+                ],
+                "total": 6
+              }
+            },
+            "delivery": {
+              "messageID": "node-1:2",
+              "to": "node-2",
+              "confirmed": true
+            }
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Send",
+          "commandId": "input-30",
+          "seq": 40,
+          "error": null,
+          "result": {
+            "event": {
+              "id": "node-2:2",
+              "node": "node-2",
+              "kind": "send",
+              "label": "d",
+              "peer": "node-3",
+              "messageID": "node-2:2",
+              "payload": "m2",
+              "timestamp": {
+                "lamport": 4,
+                "vector": [
+                  2,
+                  2,
+                  0
+                ],
+                "total": 13
+              }
+            },
+            "delivery": {
+              "messageID": "node-2:2",
+              "to": "node-3",
+              "confirmed": true
+            }
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Read",
+          "commandId": "input-41",
+          "seq": 45,
+          "error": null,
+          "result": {
+            "node": "node-1",
+            "members": [
+              "node-1",
+              "node-2",
+              "node-3"
+            ],
+            "clock": {
+              "lamport": 2,
+              "vector": [
+                2,
+                0,
+                0
+              ],
+              "total": 6
+            },
+            "events": [
+              {
+                "id": "node-1:1",
+                "node": "node-1",
+                "kind": "local",
+                "label": "a",
+                "timestamp": {
+                  "lamport": 1,
+                  "vector": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "total": 3
+                }
+              },
+              {
+                "id": "node-1:2",
+                "node": "node-1",
+                "kind": "send",
+                "label": "b",
+                "peer": "node-2",
+                "messageID": "node-1:2",
+                "payload": "m1",
+                "timestamp": {
+                  "lamport": 2,
+                  "vector": [
+                    2,
+                    0,
+                    0
+                  ],
+                  "total": 6
+                }
+              }
+            ],
+            "lastDelivery": {
+              "messageID": "node-1:2",
+              "to": "node-2",
+              "confirmed": true
+            },
+            "storageError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Read",
+          "commandId": "input-42",
+          "seq": 47,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "members": [
+              "node-1",
+              "node-2",
+              "node-3"
+            ],
+            "clock": {
+              "lamport": 4,
+              "vector": [
+                2,
+                2,
+                0
+              ],
+              "total": 13
+            },
+            "events": [
+              {
+                "id": "node-2:1",
+                "node": "node-2",
+                "kind": "receive",
+                "label": "c",
+                "peer": "node-1",
+                "messageID": "node-1:2",
+                "payload": "m1",
+                "timestamp": {
+                  "lamport": 3,
+                  "vector": [
+                    2,
+                    1,
+                    0
+                  ],
+                  "total": 10
+                }
+              },
+              {
+                "id": "node-2:2",
+                "node": "node-2",
+                "kind": "send",
+                "label": "d",
+                "peer": "node-3",
+                "messageID": "node-2:2",
+                "payload": "m2",
+                "timestamp": {
+                  "lamport": 4,
+                  "vector": [
+                    2,
+                    2,
+                    0
+                  ],
+                  "total": 13
+                }
+              }
+            ],
+            "lastDelivery": {
+              "messageID": "node-2:2",
+              "to": "node-3",
+              "confirmed": true
+            },
+            "storageError": ""
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Read",
+          "commandId": "input-43",
+          "seq": 49,
+          "error": null,
+          "result": {
+            "node": "node-3",
+            "members": [
+              "node-1",
+              "node-2",
+              "node-3"
+            ],
+            "clock": {
+              "lamport": 5,
+              "vector": [
+                2,
+                2,
+                2
+              ],
+              "total": 17
+            },
+            "events": [
+              {
+                "id": "node-3:1",
+                "node": "node-3",
+                "kind": "local",
+                "label": "e",
+                "timestamp": {
+                  "lamport": 1,
+                  "vector": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "total": 5
+                }
+              },
+              {
+                "id": "node-3:2",
+                "node": "node-3",
+                "kind": "receive",
+                "label": "f",
+                "peer": "node-2",
+                "messageID": "node-2:2",
+                "payload": "m2",
+                "timestamp": {
+                  "lamport": 5,
+                  "vector": [
+                    2,
+                    2,
+                    2
+                  ],
+                  "total": 17
+                }
+              }
+            ],
+            "lastDelivery": null,
+            "storageError": ""
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Compare",
+          "commandId": "input-50",
+          "seq": 51,
+          "error": null,
+          "result": {
+            "relation": "happens-before",
+            "note": "Vector relation describes modeled data events. Lamport L(a)<L(b), or N*L+i ordering, alone does NOT prove causality."
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Compare",
+          "commandId": "input-52",
+          "seq": 53,
+          "error": null,
+          "result": {
+            "relation": "concurrent",
+            "note": "Vector relation describes modeled data events. Lamport L(a)<L(b), or N*L+i ordering, alone does NOT prove causality."
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Compare",
+          "commandId": "input-54",
+          "seq": 55,
+          "error": null,
+          "result": {
+            "relation": "equal",
+            "note": "Vector relation describes modeled data events. Lamport L(a)<L(b), or N*L+i ordering, alone does NOT prove causality."
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Read",
+          "commandId": "input-56",
+          "seq": 58,
+          "error": null,
+          "result": {
+            "node": "node-1",
+            "members": [
+              "node-1",
+              "node-2",
+              "node-3"
+            ],
+            "clock": {
+              "lamport": 2,
+              "vector": [
+                2,
+                0,
+                0
+              ],
+              "total": 6
+            },
+            "events": [
+              {
+                "id": "node-1:1",
+                "node": "node-1",
+                "kind": "local",
+                "label": "a",
+                "timestamp": {
+                  "lamport": 1,
+                  "vector": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "total": 3
+                }
+              },
+              {
+                "id": "node-1:2",
+                "node": "node-1",
+                "kind": "send",
+                "label": "b",
+                "peer": "node-2",
+                "messageID": "node-1:2",
+                "payload": "m1",
+                "timestamp": {
+                  "lamport": 2,
+                  "vector": [
+                    2,
+                    0,
+                    0
+                  ],
+                  "total": 6
+                }
+              }
+            ],
+            "lastDelivery": {
+              "messageID": "node-1:2",
+              "to": "node-2",
+              "confirmed": true
+            },
+            "storageError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Read",
+          "commandId": "input-65",
+          "seq": 67,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "members": [
+              "node-1",
+              "node-2",
+              "node-3"
+            ],
+            "clock": {
+              "lamport": 4,
+              "vector": [
+                2,
+                2,
+                0
+              ],
+              "total": 13
+            },
+            "events": [
+              {
+                "id": "node-2:1",
+                "node": "node-2",
+                "kind": "receive",
+                "label": "c",
+                "peer": "node-1",
+                "messageID": "node-1:2",
+                "payload": "m1",
+                "timestamp": {
+                  "lamport": 3,
+                  "vector": [
+                    2,
+                    1,
+                    0
+                  ],
+                  "total": 10
+                }
+              },
+              {
+                "id": "node-2:2",
+                "node": "node-2",
+                "kind": "send",
+                "label": "d",
+                "peer": "node-3",
+                "messageID": "node-2:2",
+                "payload": "m2",
+                "timestamp": {
+                  "lamport": 4,
+                  "vector": [
+                    2,
+                    2,
+                    0
+                  ],
+                  "total": 13
+                }
+              }
+            ],
+            "lastDelivery": null,
+            "storageError": ""
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Local",
+          "commandId": "input-68",
+          "seq": 70,
+          "error": null,
+          "result": {
+            "id": "node-2:3",
+            "node": "node-2",
+            "kind": "local",
+            "label": "after recovery",
+            "timestamp": {
+              "lamport": 5,
+              "vector": [
+                2,
+                3,
+                0
+              ],
+              "total": 16
+            }
+          }
+        },
+        {
+          "node": "node-1",
+          "method": "Send",
+          "commandId": "input-72",
+          "seq": 81,
+          "error": null,
+          "result": {
+            "event": {
+              "id": "node-1:3",
+              "node": "node-1",
+              "kind": "send",
+              "label": "ack-lost-send",
+              "peer": "node-2",
+              "messageID": "node-1:3",
+              "payload": "one-way test",
+              "timestamp": {
+                "lamport": 3,
+                "vector": [
+                  3,
+                  0,
+                  0
+                ],
+                "total": 9
+              }
+            },
+            "delivery": {
+              "messageID": "node-1:3",
+              "to": "node-2",
+              "confirmed": false,
+              "error": "ClockService.Deliver: no reply within 3s; remote outcome unknown"
+            }
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Read",
+          "commandId": "input-82",
+          "seq": 84,
+          "error": null,
+          "result": {
+            "node": "node-2",
+            "members": [
+              "node-1",
+              "node-2",
+              "node-3"
+            ],
+            "clock": {
+              "lamport": 6,
+              "vector": [
+                3,
+                4,
+                0
+              ],
+              "total": 19
+            },
+            "events": [
+              {
+                "id": "node-2:1",
+                "node": "node-2",
+                "kind": "receive",
+                "label": "c",
+                "peer": "node-1",
+                "messageID": "node-1:2",
+                "payload": "m1",
+                "timestamp": {
+                  "lamport": 3,
+                  "vector": [
+                    2,
+                    1,
+                    0
+                  ],
+                  "total": 10
+                }
+              },
+              {
+                "id": "node-2:2",
+                "node": "node-2",
+                "kind": "send",
+                "label": "d",
+                "peer": "node-3",
+                "messageID": "node-2:2",
+                "payload": "m2",
+                "timestamp": {
+                  "lamport": 4,
+                  "vector": [
+                    2,
+                    2,
+                    0
+                  ],
+                  "total": 13
+                }
+              },
+              {
+                "id": "node-2:3",
+                "node": "node-2",
+                "kind": "local",
+                "label": "after recovery",
+                "timestamp": {
+                  "lamport": 5,
+                  "vector": [
+                    2,
+                    3,
+                    0
+                  ],
+                  "total": 16
+                }
+              },
+              {
+                "id": "node-2:4",
+                "node": "node-2",
+                "kind": "receive",
+                "label": "ack-lost-receive",
+                "peer": "node-1",
+                "messageID": "node-1:3",
+                "payload": "one-way test",
+                "timestamp": {
+                  "lamport": 6,
+                  "vector": [
+                    3,
+                    4,
+                    0
+                  ],
+                  "total": 19
+                }
+              }
+            ],
+            "lastDelivery": null,
+            "storageError": ""
+          }
+        }
+      ],
+      "passed": true,
+      "eventCount": 85,
+      "finalStatus": "completed"
+    }
+  ],
+  "finishedAt": "2026-10-09T09:41:48.785Z",
+  "passed": true
+}
