@@ -27,7 +27,7 @@ async function open(nodeCount) {
   await page.goto('about:blank');
   await page.goto(`${base}/#experiment/${run.config.experimentId}/visual`);
   await page.waitForFunction(count => document.querySelectorAll('#graph .graph-node').length === count, nodeCount);
-  await page.locator('#run-status').filter({ hasText: '运行中' }).waitFor();
+  await page.locator('#run-status').filter({ hasText: 'Running' }).waitFor();
   return run;
 }
 async function stop(run) { await api(`/api/runs/${run.id}/stop`, {}); }
@@ -148,11 +148,11 @@ try {
     .evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(); return { id: el.id || el.textContent.trim().slice(0, 20), w: r.width, h: r.height }; }));
   const tooSmall = targets => targets.filter(t => t.w < 36 || t.h < 36);
   const nodeTargets = await sheetTargets();
-  assert.ok(nodeTargets.some(t => t.id.startsWith('完整状态')), 'the raw-state summary is measured');
+  assert.ok(nodeTargets.some(t => t.id.startsWith('Full state')), 'the raw-state summary is measured');
   assert.deepEqual(tooSmall(nodeTargets), [], 'node sheet targets are at least 40px');
   await page.locator('#peer-links [data-peer="node-2"]').click();
   const linkTargets = await sheetTargets();
-  assert.ok(linkTargets.some(t => t.id.startsWith('中断')), 'the link checkbox label is measured');
+  assert.ok(linkTargets.some(t => t.id.startsWith('Block')), 'the link checkbox label is measured');
   assert.deepEqual(tooSmall(linkTargets), [], 'link sheet targets are at least 40px');
   await page.keyboard.press('Escape');
   await page.screenshot({ path: 'artifacts/layout-mobile.png' });

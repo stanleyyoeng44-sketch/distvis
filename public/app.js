@@ -27,8 +27,8 @@ function icon(name) { return `<svg viewBox="0 0 24 24" aria-hidden="true">${icon
 function hydrateIcons() { $$('[data-icon]').forEach(el => { el.innerHTML = icon(el.dataset.icon); }); }
 hydrateIcons();
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const labels = { send: '发送消息', receive: '接收消息', deliver: '送达 SDK', state: '状态变化', fault: '故障注入', drop: '丢弃消息', lifecycle: '实验状态', runtime: '运行环境', node: '节点状态', command: '运行操作', input_schema: '可运行操作', command_error: '运行失败', command_result: '运行返回', stderr: '程序日志', stdout: '程序输出' };
-const statuses = { created: '已创建', starting: '启动中', running: '运行中', completed: '已结束', failed: '启动失败', interrupted: '已中断' };
+const labels = { send: 'Message sent', receive: 'Message received', deliver: 'Delivered to SDK', state: 'State change', fault: 'Fault injected', drop: 'Message dropped', lifecycle: 'Run lifecycle', runtime: 'Runtime', node: 'Node status', command: 'Run operation', input_schema: 'Available operations', command_error: 'Operation failed', command_result: 'Operation result', stderr: 'Program log', stdout: 'Program output' };
+const statuses = { created: 'Created', starting: 'Starting', running: 'Running', completed: 'Completed', failed: 'Failed to start', interrupted: 'Interrupted' };
 const roleLabels = { leader: 'LEADER', follower: 'FOLLOWER', candidate: 'CANDIDATE', critical: 'CRITICAL', waiting: 'WAITING', replica: 'REPLICA', ready: 'READY' };
 let protocolProject=null, protocolProjects=[], runFormMode='run';
 let experiment=null, experiments=[], directoryProjects=[], workspaceView='library', codeDirty=false, codeEdits=0, loadingExperiment=0;
@@ -53,7 +53,7 @@ let spaceStart = 0, spaceFollow = true, spaceNode = 'all', hideHeartbeats = fals
 let spaceDrag = null, suppressSpaceClick = false;
 const ends = new Map();
 const sends = new Map();
-const fields = { role: '角色', term: '任期', votedFor: '投票给', leader: 'Leader', candidate: '候选节点', granted: '是否同意', hasToken: '持有令牌', entries: '进入临界区次数', round: '轮次', version: '逻辑版本', store: '副本数据', key: '键', value: '值', writer: '写入节点', text: '内容', received: '已接收条数', lastFrom: '上一发送方' };
+const fields = { role: 'Role', term: 'Term', votedFor: 'Voted for', leader: 'Leader', candidate: 'Candidate', granted: 'Granted', hasToken: 'Holds token', entries: 'Critical-section entries', round: 'Round', version: 'Logical version', store: 'Replica data', key: 'Key', value: 'Value', writer: 'Writer node', text: 'Text', received: 'Received count', lastFrom: 'Last sender' };
 function valueText(value) {
   if (value === null) return 'null';
   if (value === undefined) return '—';
@@ -68,11 +68,11 @@ function fieldRows(value, { omit = [], limit = 12 } = {}) {
     ? Object.entries(value).filter(([key]) => !omit.includes(key))
     : [['value', value]];
   const rows = entries.slice(0, limit).map(([key, val]) => `<div class="detail-row payload-field" data-field="${esc(key)}"><span>${esc(fields[key] || key)}<small>${esc(key)}</small></span><strong title="${esc(valueText(val))}">${esc(short(val, 240))}</strong></div>`).join('');
-  return rows + (entries.length > limit ? '<p class="form-help">更多字段见完整 JSON。</p>' : '');
+  return rows + (entries.length > limit ? '<p class="form-help">See the full JSON for the remaining fields.</p>' : '');
 }
 function messageLabel(e) {
   const payload = e.payload;
-  if (payload?.rpcId) return short(`${payload.type === 'RPCRequest' ? '调用' : payload.type === 'RPCResponse' ? '返回' : '取消'} ${payload.method} · ${payload.error || JSON.stringify(payload.body ?? {})}`, 100);
+  if (payload?.rpcId) return short(`${payload.type === 'RPCRequest' ? 'Call' : payload.type === 'RPCResponse' ? 'Return' : 'Cancel'} ${payload.method} · ${payload.error || JSON.stringify(payload.body ?? {})}`, 100);
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return short(payload, 55);
   const pairs = Object.entries(payload).filter(([key]) => key !== 'type');
   return short([payload.type || 'Message', ...pairs.slice(0, 2).map(([k, v]) => `${k}=${short(v, 28)}`)].join(' · '), 85);
@@ -88,7 +88,7 @@ function notify(message) {
 async function api(path, data) {
   const response = await fetch(path, data === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error || '请求失败');
+  if (!response.ok) throw new Error(result.error || 'Request failed');
   return result;
 }
 function guard(fn) {
@@ -184,21 +184,21 @@ async function openRun(id, asLive = false) {
   localStorage.setItem(`distvis-run:${experiment.id}`, id);
   stream = new EventSource(`/api/runs/${id}/events?after=${events.at(-1)?.seq || 0}`);
   stream.onmessage = message => { if(run?.id===id)receiveEvent(JSON.parse(message.data)); };
-  stream.onerror = () => { $('#connection-status').textContent = '重连中'; };
-  stream.onopen = () => { $('#connection-status').textContent = '已连接'; };
+  stream.onerror = () => { $('#connection-status').textContent = 'Reconnecting'; };
+  stream.onopen = () => { $('#connection-status').textContent = 'Connected'; };
   render();
 }
 function populateNodes() {
-  $('#spacetime-node').innerHTML = '<option value="all">全部节点</option>' + nodes().map(n => `<option>${n}</option>`).join('');
+  $('#spacetime-node').innerHTML = '<option value="all">All nodes</option>' + nodes().map(n => `<option>${n}</option>`).join('');
 }
 function jitterText(model, jitter) { return model === 'exponential' ? ` + Exp(${jitter})` : ''; }
 // Experiment-level packet policy (server/network.js). Percentages in the form, rates in the API.
 function networkText(n) {
   if (!n) return '';
   const pct = r => `${+(r * 100).toFixed(1)}%`, parts = [];
-  if (n.lossRate > 0) parts.push(`丢包 ${pct(n.lossRate)}`);
-  if (n.reorderRate > 0) parts.push(`${n.ordering === 'unordered' ? '乱序' : '延后'} ${pct(n.reorderRate)}`);
-  else if (n.ordering === 'unordered') parts.push('允许乱序');
+  if (n.lossRate > 0) parts.push(`Loss ${pct(n.lossRate)}`);
+  if (n.reorderRate > 0) parts.push(`${n.ordering === 'unordered' ? 'reordered' : 'delayed'} ${pct(n.reorderRate)}`);
+  else if (n.ordering === 'unordered') parts.push('Reordering allowed');
   return parts.length ? ` · ${parts.join(' · ')}` : '';
 }
 function fillNetworkForm(form, n = {}) {
@@ -213,9 +213,9 @@ function networkFromForm(form) {
   const e = form.elements, rate = v => Number((Number(v) / 100).toFixed(4));
   return { lossRate: rate(e.lossPercent.value), ordering: e.ordering.value, reorderRate: rate(e.reorderPercent.value), reorderMin: Number(e.reorderMin.value), reorderMax: Number(e.reorderMax.value) };
 }
-function ruleText(rule) { return !rule ? '默认' : rule.blocked ? '中断' : `${rule.latency}${jitterText(rule.delayModel, rule.jitter)} ms · ${rule.bandwidth} KiB/s`; }
+function ruleText(rule) { return !rule ? 'Default' : rule.blocked ? 'Blocked' : `${rule.latency}${jitterText(rule.delayModel, rule.jitter)} ms · ${rule.bandwidth} KiB/s`; }
 function faultText(f) {
-  return { network: `网络策略${networkText(f.network) || ' · 无丢包/乱序'}`, crash: `${f.node} 崩溃`, recover: `${f.node} 恢复`, heal: '恢复全部链路', link: `${f.from} ${f.bidirectional ? '↔' : '→'} ${f.to} · ${f.blocked ? '中断' : `${f.latency}${jitterText(f.delayModel, f.jitter)}ms / ${f.bandwidth} KiB/s`}` }[f.kind];
+  return { network: `Network policy${networkText(f.network) || ' · no loss/reordering'}`, crash: `${f.node} crashed`, recover: `${f.node} recovered`, heal: 'Restored all links', link: `${f.from} ${f.bidirectional ? '↔' : '→'} ${f.to} · ${f.blocked ? 'blocked' : `${f.latency}${jitterText(f.delayModel, f.jitter)}ms / ${f.bandwidth} KiB/s`}` }[f.kind];
 }
 function eventContent(e) {
   if (e.type === 'command_result') return `${e.commandId} ${e.error || JSON.stringify(e.result)}`;
@@ -249,8 +249,8 @@ function drawGraph(state) {
     const from = list[i], to = list[j], a = positions[from], b = positions[to];
     const forward = state.links[`${from}>${to}`], reverse = state.links[`${to}>${from}`];
     const blocked = forward?.blocked || reverse?.blocked, chosen = linkSel?.a === from && linkSel?.b === to;
-    const summary = `${from} → ${to}：${ruleText(forward)}；${to} → ${from}：${ruleText(reverse)}`;
-    parts.push(`<path class="link-line ${blocked ? 'blocked' : ''} ${chosen ? 'selected' : ''}" d="M${a.x} ${a.y}L${b.x} ${b.y}"/><path class="link-hit" data-from="${from}" data-to="${to}" role="button" tabindex="-1" aria-label="${esc(`${from} 与 ${to} 之间的链路。${summary}`)}" d="M${a.x} ${a.y}L${b.x} ${b.y}"><title>${esc(summary)}\n点击配置链路</title></path>`);
+    const summary = `${from} → ${to}: ${ruleText(forward)}; ${to} → ${from}: ${ruleText(reverse)}`;
+    parts.push(`<path class="link-line ${blocked ? 'blocked' : ''} ${chosen ? 'selected' : ''}" d="M${a.x} ${a.y}L${b.x} ${b.y}"/><path class="link-hit" data-from="${from}" data-to="${to}" role="button" tabindex="-1" aria-label="${esc(`Link between ${from} and ${to}. ${summary}`)}" d="M${a.x} ${a.y}L${b.x} ${b.y}"><title>${esc(summary)}\nClick to configure this link</title></path>`);
   }
   parts.push(`<text class="center-label" x="${geo.cx}" y="${geo.cy - 3}" text-anchor="middle">DISTRIBUTED</text><text class="center-protocol" x="${geo.cx}" y="${geo.cy + 17}" text-anchor="middle">${esc({ raft: 'RAFT', token: 'TOKEN RING', gossip: 'LWW STORE', custom: 'YOUR PROTOCOL' }[experiment?.protocol || run.config.protocol] || 'RPC PROTOCOL')}</text>`);
   // The packet's position comes from recorded send/receive times and the playback clock.
@@ -289,8 +289,8 @@ function drawGraph(state) {
     const fill = !online ? '#fdf3f3' : active ? '#f0faf5' : '#ffffff';
     const { w, h } = geo, actions = (liveState?.schemas[node] || []).length;
     // Input badges follow the live schema: inputs always go to the running node.
-    const badge = actions ? `<g class="input-badge" data-input-node="${node}" role="button" tabindex="-1" aria-label="${esc(`在 ${node} 运行操作`)}"><title>在 ${node} 运行 · ${actions} 个操作</title><rect x="${-w / 2 - 10}" y="${-h / 2 - 10}" width="${actions > 1 ? 50 : 38}" height="20" rx="10"/><text x="${-w / 2 + (actions > 1 ? 15 : 9)}" y="${-h / 2 + 4}" text-anchor="middle">运行${actions > 1 ? ` ${actions}` : ''}</text></g>` : '';
-    parts.push(`<g class="graph-node ${!online ? 'node-offline' : ''}" data-node="${node}" tabindex="0" role="button" aria-label="${node}, ${online ? st.role || '启动中' : '离线'}${actions ? '，可在该节点运行操作' : ''}" transform="translate(${p.x},${p.y})"><title>点击打开 ${node} 的操作面板</title>${chosen ? `<rect x="${-w / 2 - 5}" y="${-h / 2 - 5}" width="${w + 10}" height="${h + 10}" rx="16" fill="none" stroke="${color}" opacity=".35" stroke-dasharray="3 3"/>` : ''}<rect class="node-box" x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" rx="11" fill="${fill}" stroke="${chosen || active ? color : '#dfe8ec'}" stroke-width="${active ? 1.5 : 1}" filter="url(#shadow)"/><circle cx="${-w / 2 + 13}" cy="${-h / 2 + 13}" r="3" fill="${color}"/><path d="M-7 -13h14v6H-7zm0 9h14v6H-7z" fill="none" stroke="${color}" stroke-width="1.2" transform="translate(0,-3)"/><text class="node-name" x="0" y="15" text-anchor="middle" style="font-size:${count > 8 ? 11 : 13}px">${node}</text><text class="node-role" x="0" y="${h / 2 + 18}" text-anchor="middle">${online ? esc(roleLabels[st.role] || st.role || 'STARTING') : 'OFFLINE'}${run.config.protocol === 'raft' ? ` · T${st.term || 0}` : ''}</text>${active && online ? `<rect x="${w / 2 - 8}" y="${-h / 2 - 7}" width="16" height="16" rx="5" fill="${color}"/><path d="m${w / 2 - 4} ${-h / 2 + 1} 3 3 5-6" stroke="#fff" fill="none" stroke-width="1.5"/>` : ''}${badge}</g>`);
+    const badge = actions ? `<g class="input-badge" data-input-node="${node}" role="button" tabindex="-1" aria-label="${esc(`Run an operation on ${node}`)}"><title>Run on ${node} · ${actions} operations</title><rect x="${-w / 2 - 10}" y="${-h / 2 - 10}" width="${actions > 1 ? 50 : 38}" height="20" rx="10"/><text x="${-w / 2 + (actions > 1 ? 15 : 9)}" y="${-h / 2 + 4}" text-anchor="middle">Run${actions > 1 ? ` ${actions}` : ''}</text></g>` : '';
+    parts.push(`<g class="graph-node ${!online ? 'node-offline' : ''}" data-node="${node}" tabindex="0" role="button" aria-label="${node}, ${online ? st.role || 'starting' : 'offline'}${actions ? '; operations can run on this node' : ''}" transform="translate(${p.x},${p.y})"><title>Click to open the action panel for ${node}</title>${chosen ? `<rect x="${-w / 2 - 5}" y="${-h / 2 - 5}" width="${w + 10}" height="${h + 10}" rx="16" fill="none" stroke="${color}" opacity=".35" stroke-dasharray="3 3"/>` : ''}<rect class="node-box" x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" rx="11" fill="${fill}" stroke="${chosen || active ? color : '#dfe8ec'}" stroke-width="${active ? 1.5 : 1}" filter="url(#shadow)"/><circle cx="${-w / 2 + 13}" cy="${-h / 2 + 13}" r="3" fill="${color}"/><path d="M-7 -13h14v6H-7zm0 9h14v6H-7z" fill="none" stroke="${color}" stroke-width="1.2" transform="translate(0,-3)"/><text class="node-name" x="0" y="15" text-anchor="middle" style="font-size:${count > 8 ? 11 : 13}px">${node}</text><text class="node-role" x="0" y="${h / 2 + 18}" text-anchor="middle">${online ? esc(roleLabels[st.role] || st.role || 'STARTING') : 'OFFLINE'}${run.config.protocol === 'raft' ? ` · T${st.term || 0}` : ''}</text>${active && online ? `<rect x="${w / 2 - 8}" y="${-h / 2 - 7}" width="16" height="16" rx="5" fill="${color}"/><path d="m${w / 2 - 4} ${-h / 2 + 1} 3 3 5-6" stroke="#fff" fill="none" stroke-width="1.5"/>` : ''}${badge}</g>`);
   }
   replaceGraph(svg, parts.join(''));
 }
@@ -342,7 +342,7 @@ function drawSpaceTime(state) {
   const ys = Object.fromEntries(list.map((n, i) => [n, 94 + i * 100]));
   const x = t => left + (t - start) / spaceWindow * plotWidth;
   const parts = [`<defs><marker id="time-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#8871bb"/></marker><marker id="time-drop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#cb7b7c"/></marker><clipPath id="time-clip"><rect x="${left}" y="52" width="${plotWidth}" height="${height - 85}"/></clipPath></defs>`];
-  parts.push(`<text x="${left}" y="19" class="time-axis-title">时间 →</text>`);
+  parts.push(`<text x="${left}" y="19" class="time-axis-title">Time →</text>`);
   const steps = Math.max(1, Math.floor(plotWidth / 112));
   for (let i = 0; i <= steps; i++) {
     const t = start + spaceWindow * i / steps, xx = x(t);
@@ -373,7 +373,7 @@ function drawSpaceTime(state) {
   for (const { e, end, endAt } of messages) {
     const x1 = x(e.time), x2 = x(endAt), y1 = ys[e.from], y2 = ys[e.to];
     const dropped = end?.type === 'drop', kind = dropped ? 'dropped' : end ? 'received' : 'pending';
-    const status = dropped ? `丢弃：${end.reason}` : end ? '已接收' : '截至当前位置尚未接收';
+    const status = dropped ? `Dropped: ${end.reason}` : end ? 'Received' : 'Not yet received at the current position';
     const path = e.from === e.to ? `M${x1} ${y1}C${x1 - 16} ${y1 - 52},${x2 + 16} ${y2 - 52},${x2} ${y2}` : `M${x1} ${y1}L${x2} ${y2}`;
     const text = short(messageLabel(e), Math.min(36, Math.floor((plotWidth - 16) / 7)));
     const labelWidth = Math.min(plotWidth - 8, [...text].reduce((w, c) => w + (c.charCodeAt(0) > 255 ? 11 : 6.5), 12));
@@ -401,27 +401,27 @@ function drawSpaceTime(state) {
   }
   for (const { e, n } of changes.slice(-150)) {
     const xx = x(e.time), yy = (ys[n] ?? 57) - (e.type === 'command' ? 16 : 0);
-    parts.push(`<g class="time-state ${e.type === 'command' ? 'application-input' : ''} ${e.type === 'fault' || e.type === 'node' ? 'fault' : ''}" data-event="${e.seq}" tabindex="0" role="button" aria-label="${esc(`${n || '全局'} ${eventContent(e)}`)}"><title>${esc(`#${e.seq} ${n || '全局'} ${eventContent(e)}`)}</title><rect x="${xx - 8}" y="${yy - 8}" width="16" height="16" fill="transparent"/><path d="M${xx} ${yy - 4}l4 4-4 4-4-4Z"/></g>`);
+    parts.push(`<g class="time-state ${e.type === 'command' ? 'application-input' : ''} ${e.type === 'fault' || e.type === 'node' ? 'fault' : ''}" data-event="${e.seq}" tabindex="0" role="button" aria-label="${esc(`${n || 'global'} ${eventContent(e)}`)}"><title>${esc(`#${e.seq} ${n || 'global'} ${eventContent(e)}`)}</title><rect x="${xx - 8}" y="${yy - 8}" width="16" height="16" fill="transparent"/><path d="M${xx} ${yy - 4}l4 4-4 4-4-4Z"/></g>`);
   }
   const currentX = x(playTime);
   parts.push(`<line x1="${currentX}" y1="52" x2="${currentX}" y2="${height - 33}" class="time-playhead"/>`);
   parts.push('</g>');
   for (const node of list) {
     const st = state.states[node] || {}, yy = ys[node];
-    parts.push(`<g data-node="${node}" tabindex="0" role="button" aria-label="查看 ${node} 状态" class="time-node ${selected === node ? 'selected' : ''}"><rect x="9" y="${yy - 25}" width="91" height="50" rx="8"/><text x="54" y="${yy - 3}" text-anchor="middle" class="node-name">${node}</text><text x="54" y="${yy + 14}" text-anchor="middle" class="node-role">${state.online[node] ? esc(short(st.role || '等待上报', 13)) : 'OFFLINE'}</text></g>`);
+    parts.push(`<g data-node="${node}" tabindex="0" role="button" aria-label="View ${node} state" class="time-node ${selected === node ? 'selected' : ''}"><rect x="9" y="${yy - 25}" width="91" height="50" rx="8"/><text x="54" y="${yy - 3}" text-anchor="middle" class="node-name">${node}</text><text x="54" y="${yy + 14}" text-anchor="middle" class="node-role">${state.online[node] ? esc(short(st.role || 'no report yet', 13)) : 'OFFLINE'}</text></g>`);
   }
-  parts.push(`<text x="${left}" y="${height - 12}" class="time-current">回放 ${time(playTime, true)} · #${cursor}</text>`);
+  parts.push(`<text x="${left}" y="${height - 12}" class="time-current">Replay ${time(playTime, true)} · #${cursor}</text>`);
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
   svg.style.height = `${height}px`;
   svg.dataset.start = String(start); svg.dataset.end = String(finish);
   replaceGraph(svg, parts.join(''));
   $('#spacetime-follow').setAttribute('aria-pressed', String(spaceFollow));
-  $('#spacetime-follow').textContent = spaceFollow ? '跟随播放' : '回到播放位置';
+  $('#spacetime-follow').textContent = spaceFollow ? 'Follow playback' : 'Back to play position';
   $('#spacetime-range').textContent = `${time(start, true)} — ${time(finish, true)}`;
   $('#spacetime-pan').max = String(Math.ceil(spaceMaxStart()));
   $('#spacetime-pan').value = String(start);
   $('#spacetime-pan').disabled = spaceMaxStart() === 0;
-  $('#spacetime-count').textContent = `消息 ${messages.length}/${total}${filtered ? ` · 已筛除 ${filtered}` : ''} · 状态变化/故障 ${Math.min(changes.length, 150)}/${changes.length}${total > 250 || changes.length > 150 ? '（请放大时间轴）' : ''}`;
+  $('#spacetime-count').textContent = `Messages ${messages.length}/${total}${filtered ? ` · filtered out ${filtered}` : ''} · state changes/faults ${Math.min(changes.length, 150)}/${changes.length}${total > 250 || changes.length > 150 ? ' (zoom in the timeline)' : ''}`;
 }
 function switchView(view) {
   graphView = view;
@@ -449,7 +449,7 @@ function chosenAction(node = selected) {
 // The protocol's own `// distvis:start` comment names the node and input that begin message traffic.
 function runStart() { return run?.config.project?.start; }
 function startAction(node = selected) { const s = runStart(); return s?.node === node ? nodeInputSchema(node).find(a => a.label === s.method)?.action : undefined; }
-function startText(s) { return `从 ${s.node} 调用 ${s.method}${Object.keys(s.values || {}).length ? ` ${JSON.stringify(s.values)}` : ''} 开始${s.note ? `：${s.note}` : ''}`; }
+function startText(s) { return `Start by calling ${s.method}${Object.keys(s.values || {}).length ? ` ${JSON.stringify(s.values)}` : ''} on ${s.node}${s.note ? `: ${s.note}` : ''}`; }
 // Operation identities: an input action, a node's crash/recover toggle, or one direction of a link.
 function inputOperation(node, action) { return `${run.id}:node:${node}:input:${action}`; }
 function toggleOperation(node) { return `${run.id}:node:${node}:toggle`; }
@@ -466,7 +466,7 @@ function isCurrent(token) {
 // Each request remembers the run, load generation and element it was sent for. A late reply
 // after the user switched runs or elements only clears its own pending flag.
 async function mutate({ key, path, body, fault = false, scope = 'target', success }) {
-  if (!run) throw new Error('请先运行实验');
+  if (!run) throw new Error('Run an experiment first');
   const token = { loadGen: loadingRun, runId: run.id, key, scope };
   pending.add(key); if (fault) faultsInFlight.set(token.runId, (faultsInFlight.get(token.runId) || 0) + 1);
   if (isCurrent(token)) popoverError = null;
@@ -499,7 +499,7 @@ function draftValue(field, entry) {
 function destinations() { return nodes().filter(n => n !== selected); }
 function pickedNodes(form, field) { return [...form.querySelectorAll('[data-node-choice]')].filter(b => b.dataset.nodeChoice === field && b.checked).map(b => b.value); }
 function nodePicker(f, saved) {
-  return `<details class="node-picker" data-field="${esc(f.name)}"><summary>${esc(saved.length ? saved.join('、') : '选择节点（可多选）')}</summary><div class="node-picker-list">${destinations().map(n => `<label class="checkbox"><input type="checkbox" data-node-choice="${esc(f.name)}" value="${esc(n)}" ${saved.includes(n) ? 'checked' : ''}>${esc(n)}</label>`).join('')}</div></details>`;
+  return `<details class="node-picker" data-field="${esc(f.name)}"><summary>${esc(saved.length ? saved.join(', ') : 'Choose nodes (multi-select)')}</summary><div class="node-picker-list">${destinations().map(n => `<label class="checkbox"><input type="checkbox" data-node-choice="${esc(f.name)}" value="${esc(n)}" ${saved.includes(n) ? 'checked' : ''}>${esc(n)}</label>`).join('')}</div></details>`;
 }
 function applicationForm(s, values) {
   const controls = s.fields.map(f => {
@@ -507,16 +507,16 @@ function applicationForm(s, values) {
     const required = f.required ? 'required' : '';
     let control;
     if (f.type === 'boolean') control = `<input name="${name}" type="checkbox" ${saved === true ? 'checked' : ''}>`;
-    else if (f.type === 'select') control = `<select name="${name}" ${required}>${!f.required ? '<option value="">使用默认值</option>' : ''}${f.options.map(o => `<option value="${esc(o)}" ${saved === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
-    else if (f.type === 'node') control = `<select name="${name}" ${required}><option value="">${f.required ? '选择节点' : '不指定'}</option>${destinations().map(n => `<option value="${esc(n)}" ${saved === n ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
+    else if (f.type === 'select') control = `<select name="${name}" ${required}>${!f.required ? '<option value="">Use default</option>' : ''}${f.options.map(o => `<option value="${esc(o)}" ${saved === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+    else if (f.type === 'node') control = `<select name="${name}" ${required}><option value="">${f.required ? 'Choose a node' : 'Unspecified'}</option>${destinations().map(n => `<option value="${esc(n)}" ${saved === n ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
     else if (f.type === 'nodes') return `<div class="field"><span>${esc(f.label)}</span>${nodePicker(f, saved)}</div>`;
     else if (f.type === 'json') control = `<textarea name="${name}" rows="3" ${required} placeholder='{"value":42}'>${esc(saved)}</textarea>`;
     else control = `<input name="${name}" type="${f.type === 'number' ? 'number' : 'text'}" value="${esc(saved)}" ${required} ${f.type === 'number' ? `step="${f.integer ? '1' : 'any'}"` : `maxlength="${f.maxLength || 8192}"`} ${f.min !== undefined ? `min="${f.min}"` : ''} ${f.max !== undefined ? `max="${f.max}"` : ''}>`;
     return `<label class="${f.type === 'boolean' ? 'checkbox' : 'field'}">${esc(f.label)}${control}</label>`;
   }).join('');
   const peers = nodes().filter(n => n !== selected), picked = concurrentPicks.get(inputDraftKey()) || new Set();
-  const concurrent = peers.length ? `<fieldset class="concurrent-targets"><legend>同时在其他节点运行（并发事件）</legend><div class="concurrent-list">${peers.map(n => `<label class="checkbox"><input type="checkbox" data-concurrent="${esc(n)}" ${picked.has(n) ? 'checked' : ''}>${esc(n)}</label>`).join('')}</div><p class="form-help">勾选的节点在同一时刻运行同一操作和参数，彼此之间没有因果关系。</p></fieldset>` : '';
-  return `<form class="application-form" data-action="${esc(s.action)}" data-label="${esc(s.label)}"><h4>${esc(s.label)}</h4>${s.description ? `<p class="form-help">${esc(s.description)}</p>` : ''}${controls}${concurrent}<button type="submit" class="button primary">在 ${esc(selected)} 运行</button></form>`;
+  const concurrent = peers.length ? `<fieldset class="concurrent-targets"><legend>Run on other nodes at the same time (concurrent events)</legend><div class="concurrent-list">${peers.map(n => `<label class="checkbox"><input type="checkbox" data-concurrent="${esc(n)}" ${picked.has(n) ? 'checked' : ''}>${esc(n)}</label>`).join('')}</div><p class="form-help">Picked nodes run the same operation with the same arguments at the same instant; there is no causal ordering between them.</p></fieldset>` : '';
+  return `<form class="application-form" data-action="${esc(s.action)}" data-label="${esc(s.label)}"><h4>${esc(s.label)}</h4>${s.description ? `<p class="form-help">${esc(s.description)}</p>` : ''}${controls}${concurrent}<button type="submit" class="button primary">Run on ${esc(selected)}</button></form>`;
 }
 function renderApplicationInput() {
   const panel = $('#application-panel'), node = selected, schema = nodeInputSchema(node), key = inputDraftKey(node);
@@ -529,9 +529,9 @@ function renderApplicationInput() {
     const focus = active && { action: active.closest('form')?.dataset.action, name: active.name, id: active.id, start: active.selectionStart, end: active.selectionEnd };
     panel.dataset.stamp = stamp;
     const draft = inputDrafts.get(key) || {};
-    const chooser = schema.length > 1 ? `<label class="field action-choice">操作<select id="input-action" aria-label="选择要运行的操作">${schema.map(s => `<option value="${esc(s.action)}">${esc(s.label)}</option>`).join('')}</select></label>` : '';
-    const start = runStart(), startNote = start ? `<p class="form-help start-note">${esc(start.node === node ? `协议起点（代码注释 distvis:start）：${startText(start)}` : `协议起点在 ${start.node}：${startText(start)}`)}</p>` : '';
-    panel.innerHTML = `<div class="inspector-section-title">在 ${esc(node)} 运行 <span class="live-tag">实时</span></div>` + startNote + (schema.length ? chooser + schema.map(s => applicationForm(s, draft[s.action] || {})).join('') : '<p class="form-help">此节点尚未声明应用输入接口。</p>') + '<p id="application-note" class="form-help"></p><div id="application-result"></div>';
+    const chooser = schema.length > 1 ? `<label class="field action-choice">Action<select id="input-action" aria-label="Choose the operation to run">${schema.map(s => `<option value="${esc(s.action)}">${esc(s.label)}</option>`).join('')}</select></label>` : '';
+    const start = runStart(), startNote = start ? `<p class="form-help start-note">${esc(start.node === node ? `Protocol start (distvis:start comment): ${startText(start)}` : `The protocol starts on ${start.node}: ${startText(start)}`)}</p>` : '';
+    panel.innerHTML = `<div class="inspector-section-title">Run on ${esc(node)} <span class="live-tag">live</span></div>` + startNote + (schema.length ? chooser + schema.map(s => applicationForm(s, draft[s.action] || {})).join('') : '<p class="form-help">This node has not declared an application input interface.</p>') + '<p id="application-note" class="form-help"></p><div id="application-result"></div>';
     if (focus?.id === 'input-action') $('#input-action')?.focus();
     else if (focus?.name) {
       const form = [...panel.querySelectorAll('form')].find(f => f.dataset.action === focus.action);
@@ -541,7 +541,7 @@ function renderApplicationInput() {
     }
   }
   if ($('#input-action') && $('#input-action').value !== chosen) $('#input-action').value = chosen;
-  const reason = run.status !== 'running' ? '实验未运行，无法运行操作。' : !liveOnline(node) ? `${node} 当前离线，无法运行操作。` : '';
+  const reason = run.status !== 'running' ? 'The experiment is not running, so operations cannot run.' : !liveOnline(node) ? `${node} is offline right now; operations cannot run on it.` : '';
   const picked = concurrentPicks.get(key) || new Set();
   for (const form of panel.querySelectorAll('form.application-form')) {
     form.hidden = form.dataset.action !== chosen;
@@ -549,21 +549,21 @@ function renderApplicationInput() {
     for (const box of form.querySelectorAll('[data-concurrent]')) {
       const peer = box.dataset.concurrent, ok = !!peerAction(peer, form.dataset.label);
       box.disabled = !ok; box.checked = ok && picked.has(peer);
-      box.parentElement.title = ok ? '' : liveOnline(peer) ? `${peer} 没有声明 ${form.dataset.label}` : `${peer} 离线`;
+      box.parentElement.title = ok ? '' : liveOnline(peer) ? `${peer} has not declared ${form.dataset.label}` : `${peer} is offline`;
       if (box.checked) targets++;
     }
     const button = form.querySelector('button[type="submit"]');
     button.disabled = !!reason || pending.has(inputOperation(node, form.dataset.action));
-    button.textContent = targets ? `同时在 ${node} 等 ${targets + 1} 个节点运行` : `在 ${node} 运行`;
+    button.textContent = targets ? `Run on ${node} and ${targets} other node${targets > 1 ? 's' : ''}` : `Run on ${node}`;
   }
-  $('#application-note').textContent = reason || (live ? '操作在实时节点上运行，并记录在事件流和时空图中。' : '当前为回放；操作仍在正在运行的实时节点上运行。');
+  $('#application-note').textContent = reason || (live ? 'The operation runs on the live node and is recorded in the event stream and the space-time diagram.' : 'You are viewing a replay; the operation still runs on the live node of the running experiment.');
   $('#application-note').classList.toggle('warning', !!reason);
   // The latest reply comes from live events, even when the playback cursor is earlier.
   const result = liveState.results[node], resultPanel = $('#application-result');
   if (resultPanel.dataset.seq !== String(result?.seq ?? '')) {
     resultPanel.dataset.seq = String(result?.seq ?? '');
     const failure = result?.error || result?.message;
-    resultPanel.innerHTML = result ? `<div class="inspector-section-title">${result.type === 'command_error' ? '最近运行失败' : '最近 RPC 返回'} <span>${esc(result.commandId || `#${result.commandSeq}`)}</span></div>${failure ? `<p class="form-help warning">${esc(failure)}</p>` : fieldRows(result.result)}` : '';
+    resultPanel.innerHTML = result ? `<div class="inspector-section-title">${result.type === 'command_error' ? 'Last operation failed' : 'Last RPC reply'} <span>${esc(result.commandId || `#${result.commandSeq}`)}</span></div>${failure ? `<p class="form-help warning">${esc(failure)}</p>` : fieldRows(result.result)}` : '';
   }
 }
 $('#application-panel').addEventListener('input', e => {
@@ -573,7 +573,7 @@ $('#application-panel').addEventListener('input', e => {
     (draft[form.dataset.action] ||= {})[field] = { value: picked, type: 'nodes' };
     inputDrafts.set(key, draft);
     const summary = [...form.querySelectorAll('.node-picker')].find(d => d.dataset.field === field)?.querySelector('summary');
-    if (summary) summary.textContent = picked.length ? picked.join('、') : '选择节点（可多选）';
+    if (summary) summary.textContent = picked.length ? picked.join(', ') : 'Choose nodes (multi-select)';
     return;
   }
   if (e.target.dataset.concurrent) {
@@ -600,18 +600,18 @@ $('#application-panel').addEventListener('submit', guard(async e => {
   e.preventDefault();
   const form = e.target, action = form.dataset.action, node = selected;
   const schema = nodeInputSchema(node).find(s => s.action === action), values = {};
-  if (!schema) throw new Error('输入声明已变更，请重新填写');
+  if (!schema) throw new Error('The input declaration changed; fill in the form again');
   for (const f of schema.fields) {
     if (f.type === 'nodes') {
       const picked = pickedNodes(form, f.name);
-      if (f.required && !picked.length) throw new Error(`请选择 ${f.label}`);
+      if (f.required && !picked.length) throw new Error(`Choose ${f.label}`);
       values[f.name] = picked; continue;
     }
     const el = form.elements.namedItem(f.name);
     if (f.type === 'boolean') values[f.name] = el.checked;
     else if (el.value !== '' || f.required) {
       if (f.type === 'json') {
-        try { values[f.name] = JSON.parse(el.value); } catch { throw new Error(`${f.label} 不是有效 JSON`); }
+        try { values[f.name] = JSON.parse(el.value); } catch { throw new Error(`${f.label} is not valid JSON`); }
       } else values[f.name] = f.type === 'number' ? Number(el.value) : el.value;
     }
   }
@@ -621,34 +621,34 @@ $('#application-panel').addEventListener('submit', guard(async e => {
       success: (result, current) => {
         if (!current) return;
         const failed = result.commands.filter(c => c.error);
-        notify(failed.length ? `并发运行部分失败：${failed.map(c => `${c.node} ${c.error}`).join('；')}` : `已同时在 ${result.commands.map(c => c.node).join('、')} 运行`);
+        notify(failed.length ? `Some concurrent operations failed: ${failed.map(c => `${c.node} ${c.error}`).join('; ')}` : `Ran concurrently on ${result.commands.map(c => c.node).join(', ')}`);
       } });
     return;
   }
   await mutate({ key: inputOperation(node, action), path: `/api/runs/${run.id}/commands`, body: { node, action, values },
-    success: (result, current) => { if (current) notify(`已在 ${node} 运行 · #${result.commandSeq}`); } });
+    success: (result, current) => { if (current) notify(`Ran on ${node} · #${result.commandSeq}`); } });
 }));
 function faultBlockReason() {
-  return run.status !== 'running' ? '实验未运行，无法注入故障。' : faultBusy() ? '上一项故障操作正在执行…' : '';
+  return run.status !== 'running' ? 'The experiment is not running, so faults cannot be injected.' : faultBusy() ? 'A previous fault operation is still in progress…' : '';
 }
 function renderNodePopover(state) {
   const node = selected, online = liveOnline(node);
   $('#popover-title').textContent = node;
-  $('#popover-status').textContent = online ? '在线' : '离线';
+  $('#popover-status').textContent = online ? 'Online' : 'Offline';
   $('#popover-status').className = `badge ${online ? '' : 'failed'}`;
-  $('#popover-status').title = '实时状态';
+  $('#popover-status').title = 'Live status';
   renderApplicationInput();
-  const toggle = $('#node-toggle'), reason = faultBlockReason(), label = online ? '模拟崩溃' : '恢复节点';
+  const toggle = $('#node-toggle'), reason = faultBlockReason(), label = online ? 'Simulate crash' : 'Recover node';
   toggle.dataset.nodeAction = online ? 'crash' : 'recover';
   if (toggle.dataset.label !== label) { toggle.dataset.label = label; toggle.innerHTML = icon('bolt') + label; }
   toggle.disabled = !!reason || pending.has(toggleOperation(node));
-  $('#node-toggle-note').textContent = reason || (live ? '作用于实时实验。' : '当前为回放；此操作作用于实时实验。');
+  $('#node-toggle-note').textContent = reason || (live ? 'Acts on the live experiment.' : 'You are viewing a replay; this action still acts on the live experiment.');
   const peers = nodes().filter(p => p !== node).map(p => [p, liveState.links[pairKey(node, p)], liveState.links[pairKey(p, node)]]);
   const list = $('#peer-links'), peerStamp = JSON.stringify([run.id, node, peers]);
   if (list.dataset.stamp !== peerStamp) {
     const focusedPeer = list.contains(document.activeElement) ? document.activeElement.dataset.peer : null;
     list.dataset.stamp = peerStamp;
-    list.innerHTML = peers.map(([p, out, back]) => `<button class="peer-link ${out?.blocked || back?.blocked ? 'blocked' : ''}" data-peer="${p}" aria-label="${esc(`配置 ${node} 与 ${p} 之间的链路：发出 ${ruleText(out)}，收到 ${ruleText(back)}`)}"><strong>${p}</strong><span>→ ${ruleText(out)}</span><span>← ${ruleText(back)}</span></button>`).join('');
+    list.innerHTML = peers.map(([p, out, back]) => `<button class="peer-link ${out?.blocked || back?.blocked ? 'blocked' : ''}" data-peer="${p}" aria-label="${esc(`Configure the link between ${node} and ${p}: outgoing ${ruleText(out)}, incoming ${ruleText(back)}`)}"><strong>${p}</strong><span>→ ${ruleText(out)}</span><span>← ${ruleText(back)}</span></button>`).join('');
     if (focusedPeer) list.querySelector(`[data-peer="${focusedPeer}"]`)?.focus();
   }
   // State rows follow the playback cursor and say so, unlike the live controls above them.
@@ -657,7 +657,7 @@ function renderNodePopover(state) {
   if (panel.dataset.stamp !== stamp) {
     const rawOpen = panel.dataset.node === node && panel.querySelector('.state-raw')?.open, hadFocus = panel.contains(document.activeElement);
     panel.dataset.node = node; panel.dataset.stamp = stamp;
-    panel.innerHTML = `<div class="inspector-section-title">${live ? '当前状态' : `回放 @ ${time(playTime)}`}<span>${!live && replayOnline === false ? '回放时刻离线 · ' : ''}发送 ${state.sentBy[node] || 0} / 接收 ${state.receivedBy[node] || 0}</span></div><div class="node-key-state">${fieldRows(st)}</div><details class="state-raw" ${rawOpen ? 'open' : ''}><summary>完整状态 JSON</summary><pre class="json-state">${esc(JSON.stringify(st, null, 2))}</pre></details>`;
+    panel.innerHTML = `<div class="inspector-section-title">${live ? 'Current state' : `Replay @ ${time(playTime)}`}<span>${!live && replayOnline === false ? 'offline at replay time · ' : ''}Sent ${state.sentBy[node] || 0} / Received ${state.receivedBy[node] || 0}</span></div><div class="node-key-state">${fieldRows(st)}</div><details class="state-raw" ${rawOpen ? 'open' : ''}><summary>Full state JSON</summary><pre class="json-state">${esc(JSON.stringify(st, null, 2))}</pre></details>`;
     if (hadFocus) panel.querySelector('.state-raw summary')?.focus();
   }
 }
@@ -677,7 +677,7 @@ function liveLinkValues() {
 function renderLinkPopover() {
   const { a, b, dir } = linkSel, ab = linkRule(a, b), ba = linkRule(b, a);
   $('#popover-title').textContent = `${a} ↔ ${b}`;
-  $('#popover-status').textContent = '链路'; $('#popover-status').className = 'badge neutral'; $('#popover-status').title = '';
+  $('#popover-status').textContent = 'Link'; $('#popover-status').className = 'badge neutral'; $('#popover-status').title = '';
   const rules = JSON.stringify([a, b, ab, ba]);
   if ($('#link-rules').dataset.stamp !== rules) {
     $('#link-rules').dataset.stamp = rules;
@@ -692,10 +692,10 @@ function renderLinkPopover() {
   form.dataset.key = key; form.dataset.base = base;
   $('#link-changed').hidden = !draft || draft.base === base;
   $('#link-notice').hidden = dir !== 'both';
-  $('#link-notice').textContent = JSON.stringify(ab || null) !== JSON.stringify(ba || null) ? '两个方向当前的规则不同；应用后两个方向都会被覆盖为下面的相同设置。' : '将同时应用到两个方向。';
+  $('#link-notice').textContent = JSON.stringify(ab || null) !== JSON.stringify(ba || null) ? 'The two directions currently have different rules; applying overwrites both with the same settings below.' : 'Applies to both directions at once.';
   const reason = faultBlockReason();
   $('#apply-link').disabled = !!reason || pending.has(linkOperation());
-  $('#link-note').textContent = reason || (live ? '作用于实时实验。' : '当前为回放；此设置作用于实时实验。');
+  $('#link-note').textContent = reason || (live ? 'Acts on the live experiment.' : 'You are viewing a replay; this setting still acts on the live experiment.');
 }
 function renderPopover(state) {
   const pop = $('#element-popover');
@@ -775,7 +775,7 @@ function closePopover() {
 function renderEvents() {
   const filter = $('#event-filter').value, query = $('#event-search').value.toLowerCase();
   const subset = events.slice(0, cursor).filter(e => (filter === 'all' || e.type === filter) && (!query || JSON.stringify(e).toLowerCase().includes(query))).slice(-100).reverse();
-  $('#event-rows').innerHTML = subset.map(e => `<tr data-event="${e.seq}" class="${e.seq === cursor ? 'current-event' : ''}"><td><span class="event-time">#${String(e.seq).padStart(3, '0')}</span>${time(e.time, true)}</td><td><span class="event-tag ${e.type}">${labels[e.type] || esc(e.type)}</span></td><td>${esc(e.from ? `${e.from} → ${e.to}` : e.node || 'coordinator')}</td><td title="${esc(eventContent(e))}">${esc(eventContent(e))}</td></tr>`).join('') || '<tr><td colspan="4" class="empty-table">当前位置没有匹配的事件。</td></tr>';
+  $('#event-rows').innerHTML = subset.map(e => `<tr data-event="${e.seq}" class="${e.seq === cursor ? 'current-event' : ''}"><td><span class="event-time">#${String(e.seq).padStart(3, '0')}</span>${time(e.time, true)}</td><td><span class="event-tag ${e.type}">${labels[e.type] || esc(e.type)}</span></td><td>${esc(e.from ? `${e.from} → ${e.to}` : e.node || 'coordinator')}</td><td title="${esc(eventContent(e))}">${esc(eventContent(e))}</td></tr>`).join('') || '<tr><td colspan="4" class="empty-table">No matching events at the current position.</td></tr>';
   $('#event-count').textContent = cursor.toLocaleString();
 }
 // The run shown on screen and the globally active run can differ (history replay, another
@@ -791,19 +791,19 @@ function renderControls() {
   const state = runControlState(), start = $('#new-run'), stop = $('#stop-run');
   stop.hidden = !['stop', 'starting'].includes(state.mode); start.hidden = !stop.hidden;
   if (!stop.hidden) {
-    const label = state.mode === 'starting' ? '启动中…' : stopPending() ? '正在结束…' : '结束实验';
+    const label = state.mode === 'starting' ? 'Starting…' : stopPending() ? 'Stopping…' : 'Stop run';
     if (stop.dataset.label !== label) { stop.dataset.label = label; stop.innerHTML = icon('stop') + label; }
     stop.disabled = state.mode === 'starting' || stopPending();
-    stop.title = state.mode === 'starting' ? '节点构建完成后才能结束实验' : '';
+    stop.title = state.mode === 'starting' ? 'Stop the run once the nodes finish building' : '';
   } else {
-    const label = { run: '运行实验', rerun: '重新运行', failed: '重新运行', goto: '前往运行中的实验' }[state.mode];
+    const label = { run: 'Run experiment', rerun: 'Run again', failed: 'Run again', goto: 'Go to the running experiment' }[state.mode];
     if (start.dataset.label !== label) { start.dataset.label = label; start.innerHTML = icon(state.mode === 'goto' ? 'network' : 'play') + label; }
     start.dataset.mode = state.mode;
-    start.title = state.mode === 'goto' ? `「${state.name}」正在运行` : '';
+    start.title = state.mode === 'goto' ? `"${state.name}" is running` : '';
   }
   $('#view-error').hidden = state.mode !== 'failed';
   // The run history offers the same entry point; while a run is active it leads back to it.
-  const historyLabel = stop.hidden ? start.dataset.label : '查看运行中的实验';
+  const historyLabel = stop.hidden ? start.dataset.label : 'View the running experiment';
   if ($('#history-run').textContent !== historyLabel) $('#history-run').textContent = historyLabel;
 }
 // Everything the drawing depends on about the popover selection, including a link's direction.
@@ -831,28 +831,28 @@ function renderStartHint() {
   $('#start-hint').hidden = !quiet;
   if (!quiet) return;
   const ready = !!startAction(s.node);
-  $('#start-hint-text').textContent = `还没有消息。${startText(s)}`;
+  $('#start-hint-text').textContent = `No messages yet. ${startText(s)}`;
   $('#start-hint-open').hidden = !ready;
-  $('#start-hint-open').textContent = `准备在 ${s.node} 运行`;
+  $('#start-hint-open').textContent = `Prepare to run on ${s.node}`;
 }
 function renderPanels(state) {
   if (run) {
     $('#experiment-name').textContent = run.config.name;
-    $('#experiment-meta').textContent = `${run.config.nodeCount} 个节点 · ${ { simulation: '内置参考模型', docker: 'Docker / 真实 Go', kubernetes: 'K8s / 真实 Go' }[run.config.runtime]} · ${run.config.latency}${jitterText(run.config.delayModel, run.config.jitter)} ms 延迟${networkText(run.config.network)}${run.config.runtime==='simulation'?` · Seed ${run.config.seed}`:''}`;
+    $('#experiment-meta').textContent = `${run.config.nodeCount} nodes · ${ { simulation: 'Built-in reference model', docker: 'Docker / real Go', kubernetes: 'K8s / real Go' }[run.config.runtime]} · ${run.config.latency}${jitterText(run.config.delayModel, run.config.jitter)} ms latency${networkText(run.config.network)}${run.config.runtime==='simulation'?` · Seed ${run.config.seed}`:''}`;
     $('#run-status').textContent = statuses[run.status];
     $('#run-status').className = `badge ${run.status === 'running' ? '' : run.status === 'failed' ? 'failed' : 'neutral'}`;
-    $('#mode-label').textContent = live ? '● 实时观察' : playing ? `▶ ${speed}× 回放` : 'Ⅱ 回放已暂停';
+    $('#mode-label').textContent = live ? '● Live' : playing ? `▶ ${speed}× replay` : 'Ⅱ Replay paused';
     // Startup diagnostics are run-level information, also visible at replay position 0.
     $('#run-error').hidden = run.status !== 'failed';
     if (run.status === 'failed') {
       const failure = events.find(e => e.level === 'error' && e.phase === 'startup')
-        || events.find(e => e.type === 'runtime' && /失败|Error|error/.test(e.message || ''));
-      const message = failure?.message || '请查看事件流中的运行环境日志。';
+        || events.find(e => e.type === 'runtime' && /失败|[Ee]rror|[Ff]ailed/.test(e.message || ''));
+      const message = failure?.message || 'Check the runtime logs in the event stream.';
       $('#run-error-hint').textContent = message.split('\n')[0];
       $('#run-error-log').textContent = message;
     }
   }
-  if(!run){$('#experiment-name').textContent='尚未运行';$('#experiment-meta').textContent='使用所属协议的代码和本实验参数开始运行';$('#run-status').textContent='就绪';$('#run-status').className='badge neutral';$('#run-error').hidden=true;$('#mode-label').textContent='准备就绪';}
+  if(!run){$('#experiment-name').textContent='Not run yet';$('#experiment-meta').textContent='Start a run using the code of the owning protocol and the settings of this experiment';$('#run-status').textContent='Ready';$('#run-status').className='badge neutral';$('#run-error').hidden=true;$('#mode-label').textContent='Ready';}
   renderControls();
   $('#view-run-source').disabled=!run;$('#export-run').disabled=!run;
   $('#metric-nodes').innerHTML = run ? `${Object.values(state.online).filter(Boolean).length}<span>/ ${run.config.nodeCount}</span>` : '—';
@@ -869,7 +869,7 @@ function renderPanels(state) {
   const faultStamp = run ? `${run.id}:${liveState.faults.length}` : '';
   if ($('#fault-history').dataset.stamp !== faultStamp) {
     $('#fault-history').dataset.stamp = faultStamp;
-    $('#fault-history').innerHTML = run ? liveState.faults.slice(-6).reverse().map(e => `<div class="fault-item"><span>${esc(faultText(e.fault))}</span><span>${time(e.time)}</span></div>`).join('') || '暂无故障' : '暂无故障';
+    $('#fault-history').innerHTML = run ? liveState.faults.slice(-6).reverse().map(e => `<div class="fault-item"><span>${esc(faultText(e.fault))}</span><span>${time(e.time)}</span></div>`).join('') || 'No faults yet' : 'No faults yet';
   }
   if (run) renderPopover(state); else $('#element-popover').hidden = true;
   renderEvents();
@@ -885,13 +885,13 @@ function eventDetail(seq, { locate = true } = {}) {
   if (locate) seek(event.seq);
   else { live = false; playing = false; renderDirty = true; render(); }
   const message = ['send', 'receive', 'deliver', 'drop'].includes(event.type);
-  $('#event-title').textContent = message ? '消息详情' : event.type === 'state' ? `${event.node} · 状态上报` : '事件详情';
+  $('#event-title').textContent = message ? 'Message details' : event.type === 'state' ? `${event.node} · state report` : 'Event details';
   let summary = '';
   if (message) {
     const send = sends.get(event.id) || event;
     const end = observedEnd(send);
-    const status = end?.type === 'drop' ? `已丢弃 · ${end.reason}` : end ? '已接收' : '截至当前位置尚未接收';
-    summary = `<div class="message-route"><span>${esc(event.from)}</span><b>→</b><span>${esc(event.to)}</span></div><p class="message-kind">${esc(event.payload?.method || event.payload?.type || 'Message')}</p><div class="detail-row"><span>消息 ID</span><strong>${esc(event.id)}</strong></div><div class="detail-row"><span>发送时刻</span><strong>${time(send.time, true)} · #${send.seq}</strong></div><div class="detail-row"><span>当前位置的状态</span><strong>${esc(status)}</strong></div>${end ? `<div class="detail-row"><span>${end.type === 'drop' ? '丢弃' : '接收'}时刻</span><strong>${time(end.time, true)} · #${end.seq}</strong></div>` : ''}<div class="inspector-section-title">消息内容 <span>PAYLOAD</span></div>${event.payload?.rpcId ? `<div class="detail-row"><span>RPC / 阶段</span><strong>${esc(event.payload.rpcId)} · ${esc(event.payload.type)}</strong></div>${event.payload.error ? `<p class="form-help">${esc(event.payload.error)}</p>` : ''}${fieldRows(event.payload.body)}` : fieldRows(event.payload, { omit: ['type'] })}`;
+    const status = end?.type === 'drop' ? `Dropped · ${end.reason}` : end ? 'Received' : 'Not yet received at the current position';
+    summary = `<div class="message-route"><span>${esc(event.from)}</span><b>→</b><span>${esc(event.to)}</span></div><p class="message-kind">${esc(event.payload?.method || event.payload?.type || 'Message')}</p><div class="detail-row"><span>Message ID</span><strong>${esc(event.id)}</strong></div><div class="detail-row"><span>Sent at</span><strong>${time(send.time, true)} · #${send.seq}</strong></div><div class="detail-row"><span>Status at the current position</span><strong>${esc(status)}</strong></div>${end ? `<div class="detail-row"><span>${end.type === 'drop' ? 'Dropped' : 'Received'} at</span><strong>${time(end.time, true)} · #${end.seq}</strong></div>` : ''}<div class="inspector-section-title">Message content <span>PAYLOAD</span></div>${event.payload?.rpcId ? `<div class="detail-row"><span>RPC / phase</span><strong>${esc(event.payload.rpcId)} · ${esc(event.payload.type)}</strong></div>${event.payload.error ? `<p class="form-help">${esc(event.payload.error)}</p>` : ''}${fieldRows(event.payload.body)}` : fieldRows(event.payload, { omit: ['type'] })}`;
   } else if (event.type === 'command_result') {
     summary = `<p class="message-kind">${esc(event.node)} · ${esc(event.commandId)}</p>${event.error ? `<p>${esc(event.error)}</p>` : fieldRows(event.result)}`;
   } else if (event.type === 'command') {
@@ -996,7 +996,7 @@ $('#node-toggle').onclick = guard(async () => {
   if (!run || linkSel) return;
   const node = selected, action = $('#node-toggle').dataset.nodeAction;
   await mutate({ key: toggleOperation(node), fault: true, path: `/api/runs/${run.id}/faults`, body: { kind: action, node },
-    success: (result, current) => { if (current) notify(action === 'crash' ? `${node} 已崩溃 · 实时实验` : `${node} 已恢复 · 实时实验`); } });
+    success: (result, current) => { if (current) notify(action === 'crash' ? `${node} crashed · live experiment` : `${node} recovered · live experiment`); } });
 });
 $('#peer-links').onclick = e => { const peer = e.target.closest('[data-peer]'); if (peer) openLinkPopover(selected, peer.dataset.peer, 'node'); };
 $('.direction-choice').onclick = e => {
@@ -1021,19 +1021,19 @@ $('#link-form').addEventListener('submit', guard(async e => {
   const delayModel = $('#link-model').value, jitter = delayModel === 'fixed' ? '0' : String($('#link-jitter').value).trim();
   const valid = (text, min, max) => /^\d+$/.test(text) && Number(text) >= min && Number(text) <= max;
   if (!valid(latency, 0, 30000) || !valid(bandwidth, 1, 100000) || !valid(jitter, delayModel === 'fixed' ? 0 : 1, 30000)) {
-    popoverError = { target: linkOperation(), message: '延迟须为 0–30000 的整数毫秒，带宽须为 1–100000 的整数 KiB/s，指数抖动均值须为 1–30000 毫秒。' };
+    popoverError = { target: linkOperation(), message: 'Latency must be whole milliseconds in 0–30000, bandwidth must be whole KiB/s in 1–100000, and the exponential jitter mean must be 1–30000 ms.' };
     renderDirty = true; render(); return;
   }
   await mutate({ key: linkOperation(), fault: true, path: `/api/runs/${run.id}/faults`,
     body: { kind: 'link', from, to, latency: Number(latency), bandwidth: Number(bandwidth), blocked: $('#link-blocked').checked, bidirectional: dir === 'both', delayModel, jitter: Number(jitter) },
     // Edits typed while the request was in flight are newer than what was sent; keep them.
     // Only a reply the user is still looking at retires the draft, and only the exact draft that was sent.
-    success: (result, current) => { if (!current) return; if (linkDrafts.get(key) === submitted) { linkDrafts.delete(key); $('#link-form').dataset.key = ''; } notify('链路设置已应用并归档'); } });
+    success: (result, current) => { if (!current) return; if (linkDrafts.get(key) === submitted) { linkDrafts.delete(key); $('#link-form').dataset.key = ''; } notify('Link settings applied and recorded'); } });
 }));
 $('#heal-links').onclick = guard(async () => {
   if (!run) return;
   await mutate({ key: `${run.id}:heal`, scope: 'run', fault: true, path: `/api/runs/${run.id}/faults`, body: { kind: 'heal' },
-    success: (result, current) => { if (current) notify('已恢复全部链路的默认设置'); } });
+    success: (result, current) => { if (current) notify('All links restored to their default settings'); } });
 });
 $('#view-error').onclick = () => { $('#run-error-details').open = true; $('#run-error').scrollIntoView?.({ block: 'nearest' }); $('#run-error-details summary')?.focus?.(); };
 $('#play').onclick = () => {
@@ -1076,14 +1076,14 @@ $('#stop-run').onclick = guard(async () => {
   try {
     const info = await api(`/api/runs/${token.runId}/stop`, {});
     setRunStatus(token.runId, info.status);
-    if (isCurrent(token)) notify('实验已结束，完整记录已保存');
+    if (isCurrent(token)) notify('The run has ended; the full record is saved');
     await refreshRuns();
   } catch (error) {
     // A failure for a run the user has already left is not reported on the page they are now on.
     if (isCurrent(token)) notify(error.message);
   } finally { stopsInFlight.delete(token.runId); renderDirty = true; }
 });
-$('#export-run').onclick = () => { if (run) location.href = `/api/runs/${run.id}/export`; else notify('请先创建实验'); };
+$('#export-run').onclick = () => { if (run) location.href = `/api/runs/${run.id}/export`; else notify('Create an experiment first'); };
 function protocolChanged() {
   const form=$('#project-form'), protocol=form.elements.protocol.value;
   $('#protocol-description').textContent=directoryProjects.find(p=>p.id===protocol)?.description || '';
@@ -1095,23 +1095,23 @@ async function refreshProtocols() {
   // Known example paths retain their optional reference model, but every visible
   // choice comes from the selected directory, with no separate template catalog.
   directoryProjects=library.entries.map(p=>({...p,id:templates.find(t=>t.directory===p.directory)?.id || p.id}));
-  select.innerHTML=directoryProjects.length?directoryProjects.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${esc(p.folder)}</option>`).join(''):'<option value="">目录中没有可用的 Go 项目</option>';
+  select.innerHTML=directoryProjects.length?directoryProjects.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${esc(p.folder)}</option>`).join(''):'<option value="">No usable Go projects in the directory</option>';
   select.value=directoryProjects.some(p=>p.id===current)?current:directoryProjects.find(p=>p.id==='raft')?.id || directoryProjects[0]?.id || '';
   select.disabled=!directoryProjects.length;
   $('#project-form [type="submit"]').disabled=!directoryProjects.length;
   $('#project-form .protocol-library').open=!directoryProjects.length;
   $('#protocol-root').value=library.root;
-  $('#library-status').textContent=`发现 ${library.entries.length} 个项目${library.errors.length?' · '+library.errors.join('；'):''}`;
+  $('#library-status').textContent=`Found ${library.entries.length} projects${library.errors.length?' · '+library.errors.join('; '):''}`;
 }
 function scopedRuns() { return runs.filter(r=>r.config.experimentId===experiment?.id); }
 function experimentCard(item) {
   const active=['running','starting'].includes(item.latestRun?.status);
-  return `<button class="experiment-card" data-experiment="${esc(item.id)}"><span class="item-icon">${icon('flask')}</span><span class="item-main"><strong>${esc(item.name)}</strong><small>${item.settings.nodeCount} 节点 · ${item.settings.latency}${jitterText(item.settings.delayModel, item.settings.jitter)} ms${esc(networkText(item.settings.network))} · ${esc(item.settings.runtime)} · ${item.runCount} 次运行</small></span>${active?`<span class="badge">${statuses[item.latestRun.status]}</span>`:''}<span class="item-arrow" aria-hidden="true">→</span></button>`;
+  return `<button class="experiment-card" data-experiment="${esc(item.id)}"><span class="item-icon">${icon('flask')}</span><span class="item-main"><strong>${esc(item.name)}</strong><small>${item.settings.nodeCount} nodes · ${item.settings.latency}${jitterText(item.settings.delayModel, item.settings.jitter)} ms${esc(networkText(item.settings.network))} · ${esc(item.settings.runtime)} · ${item.runCount} runs</small></span>${active?`<span class="badge">${statuses[item.latestRun.status]}</span>`:''}<span class="item-arrow" aria-hidden="true">→</span></button>`;
 }
 function renderLibrary() {
   const query=$('#experiment-search').value.toLowerCase();
   const matches=protocolProjects.filter(p=>p.name.toLowerCase().includes(query));
-  $('#experiment-cards').innerHTML=matches.filter(p=>!p.archived).map(parentCard).join('') || '<div class="library-empty"><h3>创建或打开一个协议</h3><p>协议保存 Go 代码，实验保存参数和执行记录。</p></div>';
+  $('#experiment-cards').innerHTML=matches.filter(p=>!p.archived).map(parentCard).join('') || '<div class="library-empty"><h3>Create or open a protocol</h3><p>Protocols hold the Go code; experiments hold parameters and execution records.</p></div>';
   const imported=matches.filter(p=>p.archived);$('#imported-cards').innerHTML=imported.map(parentCard).join('');$('#imported-experiments').hidden=!imported.length;$('#imported-count').textContent=imported.length;
   if(query && imported.length)$('#imported-experiments').open=true;
   $('#recent-experiments').innerHTML=protocolProjects.filter(p=>!p.archived).slice(0,7).map(p=>`<button class="recent-experiment ${p.id===protocolProject?.id?'selected':''}" data-protocol-project="${esc(p.id)}"><span class="protocol-dot teal"></span><span>${esc(p.name)}</span></button>`).join('');
@@ -1119,7 +1119,7 @@ function renderLibrary() {
   const active=experiments.find(e=>['starting','running'].includes(e.latestRun?.status));
   for(const selector of ['#active-experiment-notice','#running-elsewhere']){
     const el=$(selector);el.hidden=!active || (selector==='#running-elsewhere' && active.id===experiment?.id && run?.id===active.latestRun?.id);
-    el.innerHTML=active?`<span><i class="status-dot"></i><strong>${esc(active.name)}</strong> 正在${active.latestRun.status==='starting'?'启动':'运行'}</span><button class="button small" data-experiment="${esc(active.id)}" data-active-run="true">进入可视化 →</button>`:'';
+    el.innerHTML=active?`<span><i class="status-dot"></i><strong>${esc(active.name)}</strong> is ${active.latestRun.status==='starting'?'starting':'running'}</span><button class="button small" data-experiment="${esc(active.id)}" data-active-run="true">Open visualization →</button>`:'';
   }
   renderDirty=true;
 }
@@ -1133,7 +1133,7 @@ async function refreshRuns() {
   experiments=items;
   // A poll that started before a lifecycle event must not bring an ended run back to life.
   for(const item of experiments)if(item.latestRun)item.latestRun.status=noteStatus(item.latestRun.id,item.latestRun.status);
-  renderLibrary();$('#connection-status').textContent='已连接';
+  renderLibrary();$('#connection-status').textContent='Connected';
   if(id!==experiment?.id)return;
   for(const item of history)item.status=noteStatus(item.id,item.status);
   runs=history;$('#history-count').textContent=scopedRuns().length;
@@ -1147,7 +1147,7 @@ function clearRun() {
   resetPopover();$('#element-popover').hidden=true;
   for(const id of ['#node-panel','#application-panel','#peer-links','#link-rules']){$(id).innerHTML='';delete $(id).dataset.stamp;}
   $('#link-form').dataset.key='';
-  $('#fault-history').textContent='暂无故障';
+  $('#fault-history').textContent='No faults yet';
   $('#event-dialog').close();renderDirty=true;render();
 }
 function viewWorkspace(view) {
@@ -1184,29 +1184,29 @@ async function showLibrary() {
 }
 async function openNew() {
   await refreshProtocols();const form=$('#project-form');
-  form.elements.name.value=directoryProjects.find(p=>p.id===form.elements.protocol.value)?.name?.split(' · ')[0] || '我的协议';
+  form.elements.name.value=directoryProjects.find(p=>p.id===form.elements.protocol.value)?.name?.split(' · ')[0] || 'My protocol';
   protocolChanged();$('#project-dialog').showModal();
 }
 async function configureRun() {
   runFormMode='run';
-  $('#run-dialog-title').textContent='运行当前实验';$('#run-name-label').textContent='本次运行名称';$('#run-submit').textContent='开始运行 →';$('#run-dialog-note').textContent='运行后自动进入可视化';$('#save-experiment-settings').hidden=false;
-  if(!experiment)throw new Error('请先打开一个实验');
-  if(codeArchive){viewWorkspace('code');throw new Error('正在查看历史代码，请先返回当前代码，或用此版本继续编辑');}
+  $('#run-dialog-title').textContent='Run this experiment';$('#run-name-label').textContent='Run name';$('#run-submit').textContent='Start run →';$('#run-dialog-note').textContent='Opens the visualization after starting';$('#save-experiment-settings').hidden=false;
+  if(!experiment)throw new Error('Open an experiment first');
+  if(codeArchive){viewWorkspace('code');throw new Error('You are viewing historical code; go back to the current code or continue editing from this version');}
   await refreshRuns();
   const active=experiments.find(e=>['starting','running'].includes(e.latestRun?.status));
-  if(active)throw new Error(`「${active.name}」仍在运行，请先结束该次运行`);
+  if(active)throw new Error(`"${active.name}" is still running; stop that run first`);
   const form=$('#new-form');
   form.elements.delayModel.value='fixed';form.elements.jitter.value=0;
   for(const [key,value] of Object.entries(experiment.settings))if(form.elements[key])form.elements[key].value=value;
   fillNetworkForm(form,experiment.settings.network);
   syncJitterField(form.elements.delayModel,form.elements.jitter);
-  form.elements.name.value=`${experiment.name} · 第 ${scopedRuns().length+1} 次运行`.slice(0,100);
+  form.elements.name.value=`${experiment.name} · Run ${scopedRuns().length+1}`.slice(0,100);
   const model=form.elements.runtime.querySelector('[value="simulation"]');model.disabled=!['raft','token','gossip'].includes(experiment.protocol);
   if(model.disabled && form.elements.runtime.value==='simulation')form.elements.runtime.value='docker';
-  $('#run-project-name').textContent=`${protocolProject.name} / ${experiment.name} · 协议 v${protocolProject.revision}`;
+  $('#run-project-name').textContent=`${protocolProject.name} / ${experiment.name} · protocol v${protocolProject.revision}`;
   $('#new-dialog').showModal();
 }
-$('#scan-protocols').onclick=guard(async()=>{await api('/api/library',{root:$('#protocol-root').value});await refreshProtocols();protocolChanged();notify('协议目录已更新');});
+$('#scan-protocols').onclick=guard(async()=>{await api('/api/library',{root:$('#protocol-root').value});await refreshProtocols();protocolChanged();notify('Protocol directory updated');});
 $('#create-experiment').onclick=$('#create-experiment-side').onclick=guard(()=>openNew());
 for(const selector of ['#experiment-cards','#imported-cards','#recent-experiments','#active-experiment-notice','#running-elsewhere'])$(selector).onclick=guard(e=>{const p=e.target.closest('[data-protocol-project]');if(p)return openProtocol(p.dataset.protocolProject);const b=e.target.closest('[data-experiment]');if(b)return openExperiment(b.dataset.experiment,b.dataset.activeRun?'visual':undefined);});
 $('#experiment-search').oninput=renderLibrary;
@@ -1219,7 +1219,7 @@ $('#new-run').onclick=$('#history-run').onclick=guard(()=>{
 $('#project-form').elements.protocol.onchange=protocolChanged;
 $('#project-form').onsubmit=guard(async e=>{
   e.preventDefault();const button=e.target.querySelector('[type="submit"]');button.disabled=true;
-  try{const item=await api('/api/protocol-projects',Object.fromEntries(new FormData(e.target)));$('#project-dialog').close();await refreshRuns();await openProtocol(item.id,'code');notify('协议已创建，可以编辑代码并添加实验');}finally{button.disabled=false;}
+  try{const item=await api('/api/protocol-projects',Object.fromEntries(new FormData(e.target)));$('#project-dialog').close();await refreshRuns();await openProtocol(item.id,'code');notify('Protocol created; you can edit the code and add experiments');}finally{button.disabled=false;}
 });
 $('#new-form').onsubmit=guard(async e=>{
   e.preventDefault();const button=e.target.querySelector('[type="submit"]');button.disabled=true;
@@ -1231,19 +1231,19 @@ $('#new-form').onsubmit=guard(async e=>{
       $('#new-dialog').close();await refreshRuns();await openExperiment(item.id);return;
     }
     const owner=experiment.id;
-    if(codeDirty)throw new Error('协议有未保存修改，请先到协议代码页保存，或重新打开已保存版本');
+    if(codeDirty)throw new Error('The protocol has unsaved edits; save them on the protocol code page first, or reopen the saved version');
     experiment=await api(`/api/experiments/${owner}`,{revision:experiment.revision,settings});
-    if(experiment?.id!==owner)throw new Error('当前实验已切换，未启动运行');
+    if(experiment?.id!==owner)throw new Error('The experiment changed underneath; no run was started');
     const result=await api('/api/runs',{...input,experimentId:owner});
     $('#new-dialog').close();await openRun(result.id,true);viewWorkspace('visual');await refreshRuns();
-    notify(input.runtime==='simulation'?'参考模型已启动':'正在构建并启动当前实验的 Go 节点');
+    notify(input.runtime==='simulation'?'The reference model has started':'Building and starting the Go nodes for this experiment');
   }finally{button.disabled=false;}
 });
 function renderHistory() {
   const expanded=new Set($$('#history-list details[open]').map(d=>d.dataset.runInfo));
   const history=scopedRuns();
   $('#history-count').textContent=history.length;
-  $('#history-list').innerHTML=history.map(r=>`<article class="history-row"><span class="metric-icon teal-bg">${icon('history')}</span><div><h3>${esc(r.config.name)} <span class="badge neutral">${statuses[r.status]}</span></h3><p>${r.config.nodeCount} 节点 · ${esc(r.config.runtime)} · ${new Date(r.createdAt).toLocaleString('zh-CN')} · ${r.eventCount} 事件</p><details class="history-config" data-run-info="${r.id}" ${expanded.has(r.id)?'open':''}><summary>配置与代码</summary><p>延迟 ${r.config.latency}${jitterText(r.config.delayModel, r.config.jitter)} ms · 带宽 ${r.config.bandwidth} KiB/s · 协议 v${r.config.protocolRevision || '旧版'} · 代码 ${esc(r.config.project?.sha256?.slice(0,8) || '旧版快照')}</p><div class="workspace-buttons"><button class="button small" data-source-run="${r.id}">查看代码</button><button class="button small" data-export="${r.id}">导出记录</button></div></details></div><button class="button" data-history="${r.id}">${['running','starting'].includes(r.status)?'进入运行':'回放'} →</button></article>`).join('') || '<div class="library-empty"><h3>这个实验还没有运行记录</h3><p>点击上方「运行实验」。每次运行及其故障、代码都会保存在这里。</p></div>';
+  $('#history-list').innerHTML=history.map(r=>`<article class="history-row"><span class="metric-icon teal-bg">${icon('history')}</span><div><h3>${esc(r.config.name)} <span class="badge neutral">${statuses[r.status]}</span></h3><p>${r.config.nodeCount} nodes · ${esc(r.config.runtime)} · ${new Date(r.createdAt).toLocaleString('en-US')} · ${r.eventCount} events</p><details class="history-config" data-run-info="${r.id}" ${expanded.has(r.id)?'open':''}><summary>Settings and code</summary><p>Latency ${r.config.latency}${jitterText(r.config.delayModel, r.config.jitter)} ms · bandwidth ${r.config.bandwidth} KiB/s · protocol v${r.config.protocolRevision || 'legacy'} · code ${esc(r.config.project?.sha256?.slice(0,8) || 'legacy snapshot')}</p><div class="workspace-buttons"><button class="button small" data-source-run="${r.id}">View code</button><button class="button small" data-export="${r.id}">Export record</button></div></details></div><button class="button" data-history="${r.id}">${['running','starting'].includes(r.status)?'Open run':'Replay'} →</button></article>`).join('') || '<div class="library-empty"><h3>This experiment has no runs yet</h3><p>Click \"Run experiment\" above. Every run, with its faults and code, is saved here.</p></div>';
 }
 async function showHistory(){viewWorkspace('history');await refreshRuns();}
 $('#history-list').onclick=guard(async e=>{
@@ -1267,14 +1267,14 @@ document.addEventListener('click',e=>{for(const menu of $$('.more-menu[open], .l
 $$('.close-dialog').forEach(b=>{b.onclick=()=>b.closest('dialog').close();});
 $$('dialog').forEach(d=>{d.addEventListener('click',e=>{if(e.target===d&&(e.clientX<d.getBoundingClientRect().left||e.clientX>d.getBoundingClientRect().right||e.clientY<d.getBoundingClientRect().top||e.clientY>d.getBoundingClientRect().bottom))d.close();});});
 let codeFile = 'main.go', codeArchive = null;
-function legacyProject(source, name = '迁移的 Go 项目') {
+function legacyProject(source, name = 'Migrated Go project') {
   return {name, entry:'.', files:[
     {path:'main.go', content:source, encoding:'utf8'},
     {path:'go.mod', content:'module lesson/custom\n\ngo 1.24\n\nrequire distvis v0.0.0\n', encoding:'utf8'},
   ]};
 }
 function editableProject(project) {
-  return {name:project.name || '我的 Go 协议', entry:project.entry || '.', files:project.files.map(file => {
+  return {name:project.name || 'My Go protocol', entry:project.entry || '.', files:project.files.map(file => {
     if ((file.encoding || project.encoding) !== 'base64') return {...file,encoding:'utf8'};
     try {
       const bytes=Uint8Array.from(atob(file.content), c=>c.charCodeAt(0));
@@ -1288,16 +1288,16 @@ function currentCode() { const projects=codeArchive?.projects || codeDrafts; ret
 function codeWritable() { return !!protocolProject && !codeArchive && !!codeDrafts[codeTarget]; }
 function updateSaveState() {
   $('#code-status').hidden=!codeDirty && !codeArchive;
-  $('#workspace-save-state').textContent=codeDirty?'有未保存修改':'已保存';
+  $('#workspace-save-state').textContent=codeDirty?'Unsaved changes':'Saved';
   $('#workspace-save-state').classList.toggle('unsaved',codeDirty);
-  $('#editor-version').textContent=codeArchive?'历史代码 · 只读':`当前代码 · v${protocolProject?.revision || 1}`;
+  $('#editor-version').textContent=codeArchive?'Historical code · read-only':`Current code · v${protocolProject?.revision || 1}`;
 }
 function stashDraft() {
   if(!protocolProject || !codeDirty || !codeDrafts.shared)return;
   try{localStorage.setItem(`distvis-protocol-draft:${protocolProject.id}`,JSON.stringify({revision:protocolProject.revision,projects:codeDrafts}));}
-  catch{notify('浏览器草稿空间不足，请点击保存代码，将修改保存到协议');}
+  catch{notify('Browser draft storage is full; click Save code to store your edits in the protocol');}
 }
-function markCodeDirty() {codeDirty=true;codeEdits++;stashDraft();updateSaveState();renderLibrary();$('#code-status').textContent='有未保存修改 · 用于此协议下所有实验的后续运行';}
+function markCodeDirty() {codeDirty=true;codeEdits++;stashDraft();updateSaveState();renderLibrary();$('#code-status').textContent='Unsaved changes · used by later runs of every experiment under this protocol';}
 function renderCode() {
   const project=currentCode();if(!project)return;
   const file=project.files.find(f=>f.path===codeFile) || project.files.find(f=>f.path==='main.go') || project.files[0];
@@ -1306,9 +1306,9 @@ function renderCode() {
   $('#code-target').value=codeTarget;$('#code-entry').value=project.entry;$('#code-entry').disabled=!writable;
   $('#file-count').textContent=project.files.length;
   $('#code-files').innerHTML=[...project.files].sort((a,b)=>a.path.localeCompare(b.path)).map(f=>`<button class="code-file ${f.path===codeFile?'selected':''}" data-file="${esc(f.path)}" aria-current="${f.path===codeFile?'page':'false'}" title="${esc(f.path)}"><small>${f.path.endsWith('.go')?'GO':f.path.endsWith('.proto')?'PB':'◇'}</small><span>${esc(f.path)}</span></button>`).join('');
-  $('#code-file-path').textContent=codeFile || '还没有文件';
-  $('#code-file-kind').textContent=file?.encoding==='base64'?'二进制 · 保留原文件':codeArchive?'历史快照':inherited?'继承默认项目':'可编辑';
-  $('#source-editor').value=file?.encoding==='base64'?`二进制文件：${file.path}\n文件将原样保留并归档。`:file?.content || '';
+  $('#code-file-path').textContent=codeFile || 'No files yet';
+  $('#code-file-kind').textContent=file?.encoding==='base64'?'Binary · kept as-is':codeArchive?'Historical snapshot':inherited?'Inherits the default project':'Editable';
+  $('#source-editor').value=file?.encoding==='base64'?`Binary file: ${file.path}\nThe file is kept and archived unchanged.`:file?.content || '';
   $('#source-editor').readOnly=!writable || !file || file.encoding==='base64';
   $('#code-file-name').value=codeFile;$('#code-file-name').disabled=!writable;
   for(const id of ['add-code-file','rename-code-file','delete-code-file'])$('#'+id).disabled=!writable;
@@ -1317,15 +1317,15 @@ function renderCode() {
   for(const id of ['return-code-draft','copy-run-code'])$('#'+id).hidden=!codeArchive;
   $('#save-code').hidden=!!codeArchive;
   $('#workspace-note').textContent=protocolProject.name;
-  $('#code-status').textContent=codeArchive?`${codeArchive.simulation?'Go 参考代码（此次执行的是模型）':'历史代码'} · ${codeArchive.name} · 不会改变当前代码`:
-    inherited?'此节点继承默认代码。创建节点副本后可单独修改。':codeDirty?'有未保存修改 · 用于此协议下所有实验的后续运行':'已保存到当前协议 · 每次运行都会保留独立代码快照';
+  $('#code-status').textContent=codeArchive?`${codeArchive.simulation?'Go reference code (the model ran this time)':'Historical code'} · ${codeArchive.name} · does not change the current code`:
+    inherited?'This node inherits the default code; create a node copy to edit it separately.':codeDirty?'Unsaved changes · used by later runs of every experiment under this protocol':'Saved to the current protocol · every run keeps its own code snapshot';
   updateSaveState();
 }
 function openCode() { return openProtocol(protocolProject.id,'code'); }
 function validFilePath(path) {return path.length<=240 && /^[a-zA-Z0-9_.-]+(?:\/[a-zA-Z0-9_.-]+)*$/.test(path) && !path.split('/').some(p=>['.','..','.git','.codegraph','node_modules','.DS_Store'].includes(p));}
 async function saveCode() {
-  if(!protocolProject)throw new Error('请先打开一个协议');
-  if(codeArchive)throw new Error('请先返回当前代码，或用此版本继续编辑');
+  if(!protocolProject)throw new Error('Open a protocol first');
+  if(codeArchive)throw new Error('Go back to the current code first, or continue editing from this version');
   const id=protocolProject.id, edits=codeEdits;
   $('#save-code').disabled=true;
   try{
@@ -1333,10 +1333,10 @@ async function saveCode() {
     if(protocolProject?.id!==id)return;
     protocolProject=saved;
     if(edits===codeEdits){codeDirty=false;localStorage.removeItem(`distvis-protocol-draft:${id}`);}else stashDraft();
-    updateSaveState();renderLibrary();$('#code-status').textContent=codeDirty?'已保存上一个版本，仍有新的修改':'已保存到当前协议，下一次运行将使用此版本';
+    updateSaveState();renderLibrary();$('#code-status').textContent=codeDirty?'Saved the previous version; newer edits remain':'Saved to the current protocol; the next run will use this version';
   }finally{$('#save-code').disabled=false;}
 }
-$('#code-target').innerHTML += Array.from({length:12},(_,i)=>`<option value="node-${i+1}">node-${i+1} · 节点项目</option>`).join('');
+$('#code-target').innerHTML += Array.from({length:12},(_,i)=>`<option value="node-${i+1}">node-${i+1} · node project</option>`).join('');
 $('#nav-code').onclick=guard(openCode);
 $('#code-target').onchange=e=>{codeTarget=e.target.value;codeFile='main.go';renderCode();};
 $('#code-files').onclick=e=>{const b=e.target.closest('[data-file]');if(b){codeFile=b.dataset.file;renderCode();}};
@@ -1347,34 +1347,34 @@ $('#node-code-copy').onclick=()=>{codeDrafts[codeTarget]=structuredClone(codeDra
 $('#node-code-reset').onclick=()=>{delete codeDrafts[codeTarget];markCodeDirty();renderCode();};
 $('#add-code-file').onclick=guard(()=>{
   const project=currentCode(),path=$('#code-file-name').value.trim();if(!codeWritable())return;
-  if(!validFilePath(path)||project.files.some(f=>f.path===path||f.path.startsWith(path+'/')||path.startsWith(f.path+'/')))throw new Error('文件路径无效、已存在或与目录冲突');
+  if(!validFilePath(path)||project.files.some(f=>f.path===path||f.path.startsWith(path+'/')||path.startsWith(f.path+'/')))throw new Error('The file path is invalid, already exists, or conflicts with a directory');
   project.files.push({path,content:path.endsWith('.go')?'package main\n':'',encoding:'utf8'});codeFile=path;markCodeDirty();renderCode();
 });
 $('#rename-code-file').onclick=guard(()=>{
   const project=currentCode(),path=$('#code-file-name').value.trim();if(!codeWritable()||!codeFile)return;
-  if(!validFilePath(path)||project.files.some(f=>f.path!==codeFile&&(f.path===path||f.path.startsWith(path+'/')||path.startsWith(f.path+'/'))))throw new Error('文件路径无效或已存在');
+  if(!validFilePath(path)||project.files.some(f=>f.path!==codeFile&&(f.path===path||f.path.startsWith(path+'/')||path.startsWith(f.path+'/'))))throw new Error('The file path is invalid or already exists');
   project.files.find(f=>f.path===codeFile).path=path;codeFile=path;markCodeDirty();renderCode();
 });
 $('#delete-code-file').onclick=()=>{if(codeWritable()){const project=currentCode();project.files=project.files.filter(f=>f.path!==codeFile);markCodeDirty();renderCode();}};
-$('#save-code').onclick=guard(async()=>{await saveCode();notify('已保存协议代码');});
+$('#save-code').onclick=guard(async()=>{await saveCode();notify('Protocol code saved');});
 $('#return-code-draft').onclick=guard(()=>openProtocol(protocolProject.id,'code'));
-$('#copy-run-code').onclick=()=>{codeDrafts=structuredClone(codeArchive.projects);codeArchive=null;markCodeDirty();clearRun();experiment=null;showProtocolView('code');notify('已复制为协议草稿，保存后用于所有下属实验的后续运行');};
+$('#copy-run-code').onclick=()=>{codeDrafts=structuredClone(codeArchive.projects);codeArchive=null;markCodeDirty();clearRun();experiment=null;showProtocolView('code');notify('Copied into the protocol draft; once saved, later runs of every experiment below will use it');};
 async function showRunCode(id) {
   const record=scopedRuns().find(r=>r.id===id) || (run?.id===id?run:null);
-  if(!record || record.config.experimentId!==experiment?.id)throw new Error('此运行不属于当前实验');
+  if(!record || record.config.experimentId!==experiment?.id)throw new Error('This run does not belong to the current experiment');
   const owner=experiment.id, result=await api(`/api/runs/${id}/source`);
   if(experiment?.id!==owner)return;
   const projects=result.project?{shared:editableProject(result.project),...Object.fromEntries(Object.entries(result.nodeProjects || {}).map(([node,p])=>[node,editableProject(p)]))}:
-    {shared:legacyProject(result.source || '', '旧版单文件项目'),...Object.fromEntries(Object.entries(result.nodeSources || {}).map(([node,source])=>[node,legacyProject(source)]))};
+    {shared:legacyProject(result.source || '', 'Legacy single-file project'),...Object.fromEntries(Object.entries(result.nodeSources || {}).map(([node,source])=>[node,legacyProject(source)]))};
   codeArchive={projects,name:record.config.name,simulation:record.config.runtime==='simulation'};codeTarget='shared';codeFile='main.go';viewWorkspace('code');
 }
-$('#view-run-source').onclick=guard(()=>{if(!run)throw new Error('此实验还没有运行记录');return showRunCode(run.id);});
+$('#view-run-source').onclick=guard(()=>{if(!run)throw new Error('This experiment has no runs yet');return showRunCode(run.id);});
 async function migrateBrowserDraft() {
   if(localStorage.getItem('distvis-draft-imported'))return;
   let projects;
   try{projects=JSON.parse(localStorage.getItem('distvis-projects-v1'));if(!projects?.shared?.files){const old=JSON.parse(localStorage.getItem('distvis-code'));if(old?.shared)projects=Object.fromEntries(Object.entries(old).filter(([,s])=>typeof s==='string'&&s.trim()).map(([node,s])=>[node,legacyProject(s)]));}}catch{return;}
   if(!projects?.shared)return;
-  const item=await api('/api/protocol-projects',{name:'导入的代码草稿',protocol:'custom',projects});
+  const item=await api('/api/protocol-projects',{name:'Imported code draft',protocol:'custom',projects});
   localStorage.setItem('distvis-draft-imported',item.id);
 }
 async function migrateExperimentDrafts() {
@@ -1385,7 +1385,7 @@ async function migrateExperimentDrafts() {
     let draft;
     try{draft=JSON.parse(localStorage.getItem(`distvis-draft:${child.id}`));}catch{continue;}
     if(!draft?.projects?.shared?.files)continue;
-    const recovered=await api('/api/protocol-projects',{name:`恢复的草稿 · ${child.name}`.slice(0,100),protocol:child.protocol,projects:draft.projects});
+    const recovered=await api('/api/protocol-projects',{name:`Recovered draft · ${child.name}`.slice(0,100),protocol:child.protocol,projects:draft.projects});
     localStorage.setItem(marker,recovered.id);
   }
   for(const parent of protocolProjects)for(const oldId of parent.mergedIds || []){
@@ -1394,20 +1394,20 @@ async function migrateExperimentDrafts() {
     let draft;
     try{draft=JSON.parse(localStorage.getItem(`distvis-protocol-draft:${oldId}`));}catch{continue;}
     if(!draft?.projects?.shared?.files)continue;
-    const recovered=await api('/api/protocol-projects',{name:`恢复的草稿 · ${parent.name}`.slice(0,100),protocol:parent.protocol,projects:draft.projects});
+    const recovered=await api('/api/protocol-projects',{name:`Recovered draft · ${parent.name}`.slice(0,100),protocol:parent.protocol,projects:draft.projects});
     localStorage.setItem(marker,recovered.id);
   }
 }
-function parentCard(p){return `<button class="experiment-card" data-protocol-project="${esc(p.id)}"><span class="item-icon">${icon('code')}</span><span class="item-main"><strong>${esc(p.name)}</strong><small>${p.experimentCount} 个实验 · ${p.runCount} 次运行</small></span><span class="item-arrow" aria-hidden="true">→</span></button>`;}
+function parentCard(p){return `<button class="experiment-card" data-protocol-project="${esc(p.id)}"><span class="item-icon">${icon('code')}</span><span class="item-main"><strong>${esc(p.name)}</strong><small>${p.experimentCount} experiments · ${p.runCount} runs</small></span><span class="item-arrow" aria-hidden="true">→</span></button>`;}
 function renderProtocolShell(){
   const child=!!experiment;
   $('#workspace-more').open=false;
-  $('#archive-workspace').textContent=`${(experiment || protocolProject).archived?'恢复':'归档'}${child?'实验':'协议'}`;
+  $('#archive-workspace').textContent=`${(experiment || protocolProject).archived?'Restore':'Archive'}${child?' experiment':' protocol'}`;
   $('#experiment-library').hidden=true;$('#experiment-workbench').hidden=false;
   $('#protocol-tabs').hidden=child;$('#experiment-tabs').hidden=!child;
   if(child)$('#history-count').textContent=scopedRuns().length;
   $('#workspace-title').textContent=child?experiment.name:protocolProject.name;
-  $('#workspace-description').textContent=child?`${experiment.settings.nodeCount} 节点 · ${experiment.settings.latency}${jitterText(experiment.settings.delayModel, experiment.settings.jitter)} ms · ${experiment.settings.runtime}`:'';
+  $('#workspace-description').textContent=child?`${experiment.settings.nodeCount} nodes · ${experiment.settings.latency}${jitterText(experiment.settings.delayModel, experiment.settings.jitter)} ms · ${experiment.settings.runtime}`:'';
   $('#breadcrumb-protocol').hidden=false;$('#breadcrumb-protocol').textContent=protocolProject.name;
   $('#breadcrumb-separator').hidden=false;$('#breadcrumb-child-separator').hidden=!child;$('#breadcrumb-experiment').textContent=child?experiment.name:'';
   $('#workspace-new-experiment').hidden=child;
@@ -1421,7 +1421,7 @@ function renderChildren(){
   $('#archived-child-count').textContent=archived.length;
   $('#archived-child-cards').innerHTML=archived.map(experimentCard).join('');
   $('#protocol-experiment-count').textContent=children.length;
-  $('#child-experiment-cards').innerHTML=children.map(experimentCard).join('') || '<div class="library-empty"><h3>为这个协议创建第一个实验</h3><p>例如：正常通信、慢网络、不同节点数量。每个实验分别保存执行记录。</p></div>';
+  $('#child-experiment-cards').innerHTML=children.map(experimentCard).join('') || '<div class="library-empty"><h3>Create the first experiment for this protocol</h3><p>For example: healthy network, slow network, different node counts. Each experiment keeps its own execution records.</p></div>';
 }
 function showProtocolView(view){
   if(!protocolProject)return;
@@ -1450,7 +1450,7 @@ $('#archive-workspace').onclick=guard(async()=>{
   const saved=await api(`/api/${kind}/${item.id}`,{revision:item.revision,archived});
   if(kind==='protocol-projects'){protocolProject=saved;stashDraft();}
   if(kind==='experiments')await openExperiment(item.id);else await openProtocol(item.id);
-  notify(archived?'已归档，代码和历史保留，可随时恢复':'已恢复到正常列表');
+  notify(archived?'Archived; code and history are kept and can be restored anytime':'Restored to the normal list');
 });
 // The mean only applies to the exponential model; a fixed model keeps it at 0.
 function syncJitterField(model,jitter,changed=false){
@@ -1463,10 +1463,10 @@ $('#link-model').addEventListener('change',e=>{syncJitterField(e.target,$('#link
 async function newChild(){
   if(!protocolProject)return;
   runFormMode='create';const form=$('#new-form');
-  for(const [k,v] of Object.entries({name:`实验 ${experiments.filter(e=>e.protocolId===protocolProject.id).length+1}`,runtime:'docker',nodeCount:5,latency:80,bandwidth:128,delayModel:'fixed',jitter:0,seed:42}))form.elements[k].value=v;
+  for(const [k,v] of Object.entries({name:`Experiment ${experiments.filter(e=>e.protocolId===protocolProject.id).length+1}`,runtime:'docker',nodeCount:5,latency:80,bandwidth:128,delayModel:'fixed',jitter:0,seed:42}))form.elements[k].value=v;
   fillNetworkForm(form);
-  $('#run-dialog-title').textContent='在此协议下新建实验';$('#run-name-label').textContent='实验名称';$('#run-project-name').textContent=protocolProject.name;
-  $('#run-submit').textContent='创建实验 →';$('#run-dialog-note').textContent='保存配置，随后可以运行并注入故障';$('#save-experiment-settings').hidden=true;
+  $('#run-dialog-title').textContent='New experiment under this protocol';$('#run-name-label').textContent='Experiment name';$('#run-project-name').textContent=protocolProject.name;
+  $('#run-submit').textContent='Create experiment →';$('#run-dialog-note').textContent='Saves the settings; run it and inject faults afterwards';$('#save-experiment-settings').hidden=true;
   form.elements.runtime.querySelector('[value="simulation"]').disabled=!['raft','token','gossip'].includes(protocolProject.protocol);
   syncJitterField(form.elements.delayModel,form.elements.jitter);
   $('#new-dialog').showModal();
@@ -1478,7 +1478,7 @@ $('#breadcrumb-protocol').onclick=guard(()=>openProtocol(protocolProject.id));
 $('#archived-child-cards').onclick=$('#child-experiment-cards').onclick=guard(e=>{const b=e.target.closest('[data-experiment]');if(b)return openExperiment(b.dataset.experiment);});
 $('#save-experiment-settings').onclick=guard(async()=>{
   const form=$('#new-form'),settings={...Object.fromEntries(['runtime','nodeCount','latency','bandwidth','seed','delayModel','jitter'].map(k=>[k,form.elements[k].value])),network:networkFromForm(form)};
-  experiment=await api(`/api/experiments/${experiment.id}`,{revision:experiment.revision,settings});renderProtocolShell();$('#new-dialog').close();await refreshRuns();notify('已保存此实验的参数');
+  experiment=await api(`/api/experiments/${experiment.id}`,{revision:experiment.revision,settings});renderProtocolShell();$('#new-dialog').close();await refreshRuns();notify("Saved this experiment's settings");
 });
 function frame(now) {
   const elapsed = Math.min(now - (lastFrame || now), 200); lastFrame = now;
@@ -1508,7 +1508,7 @@ window.addEventListener('hashchange',guard(restoreRoute));
 function updateSidebarToggle(){
   const visual=document.body.classList.contains('visual-mode');
   const expanded=visual?drawerOpen:!document.body.classList.contains('sidebar-collapsed');
-  const label=visual?(drawerOpen?'隐藏导航':'显示导航'):(expanded?'折叠侧栏':'展开侧栏');
+  const label=visual?(drawerOpen?'Hide navigation':'Show navigation'):(expanded?'Collapse sidebar':'Expand sidebar');
   $('#toggle-sidebar').setAttribute('aria-expanded',String(expanded));
   $('#toggle-sidebar').setAttribute('aria-label',label);$('#toggle-sidebar').title=label;
 }
@@ -1534,7 +1534,7 @@ document.addEventListener('keydown',e=>{
 async function init() {
   await refreshProtocols();await migrateBrowserDraft();await refreshRuns();
   await migrateExperimentDrafts();await refreshRuns();await restoreRoute();
-  setInterval(()=>refreshRuns().catch(()=>{$('#connection-status').textContent='已断开';}),1500);
+  setInterval(()=>refreshRuns().catch(()=>{$('#connection-status').textContent='Disconnected';}),1500);
 }
 guard(init)();
 requestAnimationFrame(frame);

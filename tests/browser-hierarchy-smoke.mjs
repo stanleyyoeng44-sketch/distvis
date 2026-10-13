@@ -37,7 +37,7 @@ async function start(id){
   return r;
 }
 async function submit(id,expected){const path=`/api/runs/${id}`,detail=await api(path),action=detail.events.find(e=>e.type==='input_schema'&&e.node==='node-1').schema[0].action;const cmd=await api(`${path}/commands`,{node:'node-1',action,values:{Payload:'同一协议的不同实验'}});await wait(async()=>(await api(path)).events.some(e=>e.type==='command_result'&&e.commandId===cmd.id&&e.result?.Node===expected),'shared code actually executes');}
-async function stop(){await page.locator('#stop-run').click();await page.locator('#run-status').filter({hasText:'已结束'}).waitFor();await wait(async()=>!(await api('/api/runs')).some(r=>['running','starting'].includes(r.status)),'idle');}
+async function stop(){await page.locator('#stop-run').click();await page.locator('#run-status').filter({hasText:'Completed'}).waitFor();await wait(async()=>!(await api('/api/runs')).some(r=>['running','starting'].includes(r.status)),'idle');}
 try{
   await page.goto(base+'/#library');await page.locator('#create-experiment').click();
   await page.locator('#project-form [name="protocol"]').selectOption('token');await page.locator('#project-form [name="name"]').fill(name);await page.locator('#project-form [type="submit"]').click();
@@ -54,7 +54,7 @@ try{
   const original=await page.locator('#source-editor').inputValue();
   await page.locator('#source-editor').fill(original.replace('*reply = SubmitReply{true, a.ring.id}','*reply = SubmitReply{true, "shared-v1"}'));
   await page.reload();await page.locator('#code-dialog').waitFor();await page.locator('[data-file="protocol.go"]').click();assert.match(await page.locator('#source-editor').inputValue(),/shared-v1/);
-  await page.locator('#save-code').click();await page.waitForFunction(()=>document.querySelector('#workspace-save-state').textContent==='已保存');
+  await page.locator('#save-code').click();await page.waitForFunction(()=>document.querySelector('#workspace-save-state').textContent==='Saved');
   await openChild(a);const first=await start(a);await submit(first.id,'shared-v1');await stop();
   const oldArchive=await api(`/api/runs/${first.id}/source`);
   await page.locator('#nav-history').click();assert.equal(await page.locator('.history-row').count(),1);
@@ -65,7 +65,7 @@ try{
   assert.ok(!(await api(`/api/runs/${first.id}`)).events.some(e=>e.type==='fault'));
   await toParent();await page.locator('#protocol-code-tab').click();await page.locator('[data-file="protocol.go"]').click();
   await page.locator('#source-editor').fill((await page.locator('#source-editor').inputValue()).replace('shared-v1','shared-v2'));
-  await page.locator('#save-code').click();await page.waitForFunction(()=>document.querySelector('#workspace-save-state').textContent==='已保存');
+  await page.locator('#save-code').click();await page.waitForFunction(()=>document.querySelector('#workspace-save-state').textContent==='Saved');
   await page.locator('[data-file="main.go"]').click();await page.screenshot({path:'artifacts/protocol-code.png',fullPage:true});
   await openChild(a);const third=await start(a);await submit(third.id,'shared-v2');await stop();
   assert.equal((await api(`/api/runs/${first.id}/source`)).project.sha256,oldArchive.project.sha256);

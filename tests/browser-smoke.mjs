@@ -22,13 +22,13 @@ try {
   await page.locator('#new-form [name="name"]').fill('浏览器验收 · Raft');
   await page.locator('#new-form [name="runtime"]').selectOption('simulation');
   await page.locator('#new-form [type="submit"]').click();
-  await page.locator('#run-status').filter({ hasText: '运行中' }).waitFor();
+  await page.locator('#run-status').filter({ hasText: 'Running' }).waitFor();
   await page.waitForFunction(() => document.querySelectorAll('.graph-node').length === 5);
   await page.waitForFunction(() => [...document.querySelectorAll('.node-role')].some(n => n.textContent.includes('LEADER')));
   await page.locator('#graph [data-node="node-1"]').click();
   await page.locator('#application-panel input[name="number"]').fill('42');
   await page.locator('#application-panel button[type="submit"]').click();
-  await page.waitForFunction(() => document.querySelector('#node-panel [data-field="lastProposal"]')?.textContent.includes('Leader 已接收'));
+  await page.waitForFunction(() => document.querySelector('#node-panel [data-field="lastProposal"]')?.textContent.includes('Received by Leader'));
   assert.equal(await page.locator('#application-panel input[name="number"]').inputValue(), '42', 'state updates preserve input draft');
   await mkdir('artifacts', { recursive: true });
   await page.screenshot({ path: 'artifacts/desktop.png', fullPage: true });
@@ -45,7 +45,7 @@ try {
   await page.locator('#node-toggle[data-node-action="recover"]').click();
   await page.waitForFunction(() => document.querySelectorAll('.node-offline').length === 0);
   await page.locator('#stop-run').click();
-  await page.locator('#run-status').filter({ hasText: '已结束' }).waitFor();
+  await page.locator('#run-status').filter({ hasText: 'Completed' }).waitFor();
   assert.equal(await page.locator('#application-panel button[type="submit"]').isDisabled(), true);
   await page.locator('[data-view="spacetime"]').click();
   assert.equal(await page.locator('#graph').isVisible(), false, 'time-space view replaces the topology');
@@ -91,7 +91,7 @@ try {
   await page.locator('.time-message').first().focus();
   await page.keyboard.press('Enter');
   await page.locator('#event-dialog[open]').waitFor();
-  assert.equal(await page.locator('#event-title').textContent(), '消息详情');
+  assert.equal(await page.locator('#event-title').textContent(), 'Message details');
   assert.ok((await page.locator('#event-summary .message-route').textContent()).includes('→'));
   assert.ok(await page.locator('#event-summary .payload-field').count());
   await page.locator('#event-dialog .close-dialog').click();

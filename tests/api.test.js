@@ -74,7 +74,7 @@ test('rejects invalid configuration, cross-origin writes and path traversal', as
 test('serves the application and SDK example without external assets', async () => {
   const page = await request('GET', '/');
   assert.equal(page.status, 200);
-  assert.ok(page.body.includes('网络拓扑'));
+  assert.ok(page.body.includes('network topology'));
   assert.ok(page.headers['Content-Security-Policy']);
   assert.equal((await request('GET', '/app.js')).status, 200);
   assert.equal((await request('GET', '/api/example')).status, 200);
@@ -82,7 +82,7 @@ test('serves the application and SDK example without external assets', async () 
 
 test('serves API documentation and exact downloadable example through fixed routes', async () => {
   const home = await request('GET', '/');
-  assert.match(home.body, /API 文档/);
+  assert.match(home.body, /API docs/);
   assert.ok(!home.body.includes('guide-dialog'));
   for (const [key, topic] of [['go', 'Runtime 生命周期'], ['platform', 'POST /api/runs'], ['agent', 'distvis_scaffold_protocol']]) {
     const page = await request('GET', `/docs/${key}`);

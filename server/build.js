@@ -9,7 +9,7 @@ export function buildImages(env = process.env) {
     // The refs are written to FROM instructions. Reject whitespace, shell expansion
     // and instruction injection, but allow ports, tags and digest-pinned references.
     if (!/^[a-zA-Z0-9][a-zA-Z0-9._:/@-]*$/.test(value) || value.length > 512) {
-      throw new Error(`${key === 'go' ? 'DISTVIS_GO_IMAGE' : 'DISTVIS_RUNTIME_IMAGE'} 不是合法的镜像引用`);
+      throw new Error(`${key === 'go' ? 'DISTVIS_GO_IMAGE' : 'DISTVIS_RUNTIME_IMAGE'} is not a valid image reference`);
     }
   }
   return images;
@@ -63,13 +63,13 @@ export function describeBuildFailure(error) {
   const text = error.message;
   let hint;
   if (text.includes('yourcode.mirror.aliyuncs.com')) {
-    hint = 'Docker 镜像加速器使用了占位地址 yourcode.mirror.aliyuncs.com。请在 Docker Desktop → Settings → Docker Engine 的 registry-mirrors 中移除此地址，或填写可用的镜像加速器，然后 Apply & restart。';
+    hint = 'The Docker registry mirror uses the placeholder address yourcode.mirror.aliyuncs.com. Remove it from registry-mirrors in Docker Desktop → Settings → Docker Engine, or set a working mirror, then Apply & restart.';
   } else if (/failed to resolve source metadata|failed to authorize|pull access denied|no such host|dial tcp|403 Forbidden|429 Too Many Requests/i.test(text)) {
-    hint = '基础镜像下载失败，尚未进入 Go 编译。请检查仓库连通性与认证；可用 DISTVIS_GO_IMAGE、DISTVIS_RUNTIME_IMAGE 指定可访问的基础镜像。';
+    hint = 'Failed to download the base image; Go compilation has not started. Check registry connectivity and credentials; use DISTVIS_GO_IMAGE and DISTVIS_RUNTIME_IMAGE to point to reachable base images.';
   } else if (/permission denied.*docker|Cannot connect to the Docker daemon|docker daemon is not running|ENOENT/i.test(text)) {
-    hint = '无法访问 Docker。请确认 Docker Desktop 已启动、docker 命令可用且当前进程有权限访问 Docker daemon。';
+    hint = 'Docker is not reachable. Make sure Docker Desktop is running, the docker command works, and this process may access the Docker daemon.';
   } else {
-    hint = '镜像构建失败。请展开事件详情查看下方完整输出中的 Go 编译错误或 Docker 错误。';
+    hint = 'Image build failed. Open the event details and check the full output below for Go compile errors or Docker errors.';
   }
   return `${hint}\n\n${text}`;
 }

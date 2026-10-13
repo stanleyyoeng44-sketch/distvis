@@ -26,12 +26,12 @@ test('directory discovery, persisted root and faithful multi-file snapshots', ()
   assert.notEqual(snapshotProject(library.select('directory:demo'),join(data,'new')).sha256,snapshot.sha256);
   assert.match(readFileSync(join(data,'snapshot','main.go'),'utf8'),/main\(\)\{\}/);
   mkdirSync(join(root,'broken'));result=library.discover();
-  assert.match(result.errors[0],/缺少 go.mod/);
+  assert.match(result.errors[0],/Missing go.mod/);
   library.setRoot(root);
   assert.equal(new ProtocolLibrary(data,'/missing').root,realpathSync(root));
   assert.throws(()=>library.select('directory:../../outside'));
   symlinkSync('/etc/passwd',join(project,'escape'));
-  assert.throws(()=>snapshotProject(library.select('directory:demo'),join(data,'bad')),/符号链接/);
+  assert.throws(()=>snapshotProject(library.select('directory:demo'),join(data,'bad')),/symbolic link/);
 });
 test('optional entry manifest cannot inject a build command or escape the project', () => {
   const data=mkdtempSync(join(tmpdir(),'distvis-entry-')),root=join(data,'library');
@@ -70,10 +70,10 @@ test('editor workspaces preserve multi-file bytes and reject unsafe paths before
   assert.equal(readFileSync(join(data,'snapshot','api/types.go'),'utf8'),draft.files[2].content);
   assert.equal(snapshotWorkspace({...archive,files:archive.files.map(f=>({...f,encoding:'base64'}))}).sha256,archive.sha256);
   for(const path of ['../escape','/tmp/escape','api/../../escape','api\\escape','.git/config','api//x','go.mod']){
-    assert.throws(()=>snapshotWorkspace({...draft,files:[...draft.files,{path,content:'x'}]}),/路径/);
+    assert.throws(()=>snapshotWorkspace({...draft,files:[...draft.files,{path,content:'x'}]}),/file path/);
   }
-  assert.throws(()=>snapshotWorkspace({...draft,files:[...draft.files,{path:'cmd',content:'x'}]}),/冲突/);
-  assert.throws(()=>snapshotWorkspace({...draft,entry:'./cmd/node;echo bad'}),/入口/);
+  assert.throws(()=>snapshotWorkspace({...draft,files:[...draft.files,{path:'cmd',content:'x'}]}),/share the same path/);
+  assert.throws(()=>snapshotWorkspace({...draft,entry:'./cmd/node;echo bad'}),/entry/);
   assert.throws(()=>snapshotWorkspace({...draft,entry:'./missing'}),/package main/);
   assert.throws(()=>snapshotWorkspace({...draft,files:draft.files.slice(1)}),/go.mod/);
   assert.throws(()=>snapshotWorkspace({...draft,files:[...draft.files,{path:'bad.bin',content:'??',encoding:'base64'}]}),/base64/);
@@ -100,11 +100,11 @@ test('Go header metadata replaces JSON for discovery and editor archives',()=>{
   assert.equal(blocked.entry,'./cmd/peer');
   const ordinary='package main\nfunc main(){println(`\n// distvis:entry ../../escape\n`)}';
   assert.equal(snapshotWorkspace({files:[draft.files[0],{path:'main.go',content:ordinary}]}).entry,'.','strings cannot declare metadata');
-  assert.throws(()=>snapshotWorkspace({...draft,files:[...draft.files,{path:'cmd/peer/doc.go',content:'// distvis:name Duplicate\npackage main'}]}),/重复/);
+  assert.throws(()=>snapshotWorkspace({...draft,files:[...draft.files,{path:'cmd/peer/doc.go',content:'// distvis:name Duplicate\npackage main'}]}),/Duplicate/);
   for(const directive of ['entry ../../escape','entry ./cmd/peer;echo bad','name '+ 'x'.repeat(101),'description '+ 'x'.repeat(1001),'unknown foo']){
     assert.throws(()=>snapshotWorkspace({files:[draft.files[0],{path:'main.go',content:'// distvis:'+directive+'\npackage main\nfunc main(){}'}]}));
   }
   const multiple={files:[draft.files[0],{path:'cmd/a/main.go',content:'package main\nfunc main(){}'},{path:'cmd/b/main.go',content:'package main\nfunc main(){}'}]};
-  assert.throws(()=>snapshotWorkspace(multiple),/唯一 main/);
+  assert.throws(()=>snapshotWorkspace(multiple),/unique main package/);
   assert.equal(snapshotWorkspace({...multiple,entry:'./cmd/b'}).entry,'./cmd/b');
 });

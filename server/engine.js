@@ -5,15 +5,15 @@ import { networkPolicy, networkProfiles } from './network.js';
 import { validateSchema, validateValues } from './inputs.js';
 
 export const protocols = {
-  raft: { name: 'Raft 选主', description: '观察任期、投票与心跳，以及故障后的重新选举。此示例不包含日志复制。' },
-  token: { name: '令牌环互斥', description: '只有持有令牌的节点进入临界区；节点崩溃可能导致令牌丢失，需要协议自行恢复。' },
-  gossip: { name: 'LWW 副本存储', description: '周期反熵传播键值，以 (逻辑版本, 节点 ID) 决胜；分区恢复后最终收敛。' },
-  custom: { name: '编辑器中的 Go 项目', description: '运行协议工作区保存的多文件项目；lab.Main 管理节点，标准 RPC 调用自动记录。' },
+  raft: { name: 'Raft leader election', description: 'Watch terms, votes and heartbeats, plus re-election after faults. This example has no log replication.' },
+  token: { name: 'Token ring mutual exclusion', description: 'Only the node holding the token enters the critical section; a crash can lose the token and the protocol must recover on its own.' },
+  gossip: { name: 'LWW replicated store', description: 'Periodic anti-entropy spreads key-value pairs, breaking ties by (logical version, node ID); converges after partitions heal.' },
+  custom: { name: 'Go project in the editor', description: 'Runs the multi-file project saved in the protocol workspace; lab.Main manages nodes and standard RPC calls are recorded automatically.' },
 };
 
 export function validateConfig(input) {
   const config = {
-    name: String(input.name || '未命名实验').slice(0, 100),
+    name: String(input.name || 'Untitled experiment').slice(0, 100),
     protocol: input.protocol || 'raft',
     runtime: input.runtime || 'docker',
     nodeCount: Number(input.nodeCount ?? 5),
@@ -30,23 +30,23 @@ export function validateConfig(input) {
     networkProfiles: networkProfiles(input.networkProfiles),
     ...(input.project ? { project: structuredClone(input.project) } : {}),
   };
-  if (!protocols[config.protocol] && !/^directory:[^/\\]+$/.test(config.protocol)) throw new Error('未知协议');
-  if (!['simulation', 'docker', 'kubernetes'].includes(config.runtime)) throw new Error('未知运行环境');
+  if (!protocols[config.protocol] && !/^directory:[^/\\]+$/.test(config.protocol)) throw new Error('Unknown protocol');
+  if (!['simulation', 'docker', 'kubernetes'].includes(config.runtime)) throw new Error('Unknown runtime');
   for (const [key, min, max] of [['nodeCount', 2, 64], ['seed', 1, 2147483647], ['latency', 0, 30000], ['bandwidth', 1, 100000], ['jitter', 0, 30000]]) {
-    if (!Number.isInteger(config[key]) || config[key] < min || config[key] > max) throw new Error(`${key} 应为 ${min}–${max} 的整数`);
+    if (!Number.isInteger(config[key]) || config[key] < min || config[key] > max) throw new Error(`${key} must be an integer between ${min} and ${max}`);
   }
-  for(const [key,max] of [['eventCount',2000000],['durationMs',3600000],['messageBytes',4194304],['stdoutBytes',2147483648]])if(!Number.isSafeInteger(config.limits[key])||config.limits[key]<1||config.limits[key]>max)throw new Error('limits 超出范围');
-  if(Buffer.byteLength(JSON.stringify(config.parameters))>8192)throw new Error('parameters 超过 8KiB');
+  for(const [key,max] of [['eventCount',2000000],['durationMs',3600000],['messageBytes',4194304],['stdoutBytes',2147483648]])if(!Number.isSafeInteger(config.limits[key])||config.limits[key]<1||config.limits[key]>max)throw new Error('limits out of range');
+  if(Buffer.byteLength(JSON.stringify(config.parameters))>8192)throw new Error('parameters exceed 8 KiB');
   validateDelayModel(config);
   if (config.delayModel === 'fixed') config.jitter = 0;
-  if (config.runtime === 'simulation' && (config.protocol === 'custom' || config.protocol.startsWith('directory:'))) throw new Error('自定义 Go 程序请选择 Docker 或 Kubernetes');
+  if (config.runtime === 'simulation' && (config.protocol === 'custom' || config.protocol.startsWith('directory:'))) throw new Error('Custom Go programs must use Docker or Kubernetes');
   return config;
 }
 
 export const delayModels = ['fixed', 'exponential'];
 function validateDelayModel(rule) {
-  if (!delayModels.includes(rule.delayModel)) throw new Error('delayModel 应为 fixed 或 exponential');
-  if (rule.delayModel === 'exponential' && rule.jitter < 1) throw new Error('指数分布抖动的均值 jitter 应为 1–30000 毫秒');
+  if (!delayModels.includes(rule.delayModel)) throw new Error('delayModel must be fixed or exponential');
+  if (rule.delayModel === 'exponential' && rule.jitter < 1) throw new Error('The exponential jitter mean must be 1–30000 ms');
 }
 
 // All protocol traffic traverses this transport. No protocol-specific fault rules.
@@ -85,7 +85,7 @@ export class Experiment extends EventEmitter {
   }
   log(type, details = {}) {
     if (this.status === 'running' && this.events.length >= this.eventLimit - 1 && type !== 'lifecycle') {
-      this.stop(`事件上限 ${this.eventLimit}`);
+      this.stop(`Event limit ${this.eventLimit}`);
       return;
     }
     const event = { ...structuredClone(details), seq: (this.archivedEventCount || 0) + this.events.length + 1, time: this.time, timestamp: new Date(Date.parse(this.createdAt) + this.time).toISOString(), type };
@@ -108,10 +108,10 @@ export class Experiment extends EventEmitter {
       const next = this.queue.shift();
       this.time = next.at;
       next.fn();
-      if (this.events.length >= this.eventLimit) this.stop(`事件上限 ${this.eventLimit}`);
+      if (this.events.length >= this.eventLimit) this.stop(`Event limit ${this.eventLimit}`);
     }
     this.time = target;
-    if (this.time >= this.durationLimit) this.stop('运行时长上限 10 分钟');
+    if (this.time >= this.durationLimit) this.stop('Run duration limit of 10 minutes');
   }
   report(node, state) {
     if (!this.online[node] || this.status !== 'running') return;
@@ -120,7 +120,7 @@ export class Experiment extends EventEmitter {
   }
   send(from, to, payload) {
     if (this.status !== 'running' || !this.online[from]) return;
-    if (!this.nodes.includes(to)) throw new Error(`未知目标节点 ${to}`);
+    if (!this.nodes.includes(to)) throw new Error(`Unknown destination node ${to}`);
     const id = `${this.id.slice(0, 8)}-${++this.messageSeq}`;
     const key = `${from}>${to}`;
     const link = this.links[key] || {};
@@ -153,13 +153,13 @@ export class Experiment extends EventEmitter {
     const lost = !control && policy.lossRate>0 && this.random()<policy.lossRate;
     const discard = reason => {this.log('drop',{...message,reason});if(policy.failureMode==='notify')this.emit('delivery-failed',{...message,reason,sourceEpoch,targetEpoch});};
     if (blocked || !this.online[to] || lost) {
-      discard(blocked ? '链路中断' : lost ? '随机丢包' : '目标节点离线');
+      discard(blocked ? 'Link blocked' : lost ? 'Random packet loss' : 'Destination node offline');
       return id;
     }
     this.schedule(delay, () => {
       // In-flight packets are also affected by a newly injected partition/crash.
       if (!this.online[to] || !this.online[from] || (!control && (this.links[key]?.blocked || (payload.channel && this.channels[payload.channel]?.enabled===false))) || this.epochs[from] !== sourceEpoch || this.epochs[to] !== targetEpoch) {
-        discard('传输期间发生故障');
+        discard('A fault occurred during delivery');
         return;
       }
       if(!control && payload.type==='RPCRequest')this.transportStats.perNode[to]=(this.transportStats.perNode[to]||0)+1;
@@ -182,7 +182,7 @@ export class Experiment extends EventEmitter {
       for (const node of this.nodes) this.actors[node].start();
     }
   }
-  stop(reason = '用户结束实验') {
+  stop(reason = 'Stopped by the user') {
     if (['completed', 'failed', 'interrupted'].includes(this.status)) return;
     this.status = 'completed';
     this.queue = [];
@@ -190,20 +190,20 @@ export class Experiment extends EventEmitter {
     this.emit('stop');
   }
   validateFault(fault) {
-    if (this.status !== 'running') throw new Error('实验未在运行');
-    if (!['crash', 'recover', 'link', 'heal','network','channel'].includes(fault.kind)) throw new Error('未知故障类型');
-    if (['crash', 'recover'].includes(fault.kind) && !this.nodes.includes(fault.node)) throw new Error('未知节点');
+    if (this.status !== 'running') throw new Error('The experiment is not running');
+    if (!['crash', 'recover', 'link', 'heal','network','channel'].includes(fault.kind)) throw new Error('Unknown fault kind');
+    if (['crash', 'recover'].includes(fault.kind) && !this.nodes.includes(fault.node)) throw new Error('Unknown node');
     if(fault.kind==='network'){if(fault.network)networkPolicy(fault.network);if(fault.profiles)networkProfiles(fault.profiles);}
-    if(fault.kind==='channel' && (typeof fault.id!=='string'||fault.id.length>128||typeof fault.enabled!=='boolean'))throw new Error('逻辑连接参数错误');
+    if(fault.kind==='channel' && (typeof fault.id!=='string'||fault.id.length>128||typeof fault.enabled!=='boolean'))throw new Error('Invalid channel fault arguments');
     if (fault.kind === 'link') {
       if(fault.network)networkPolicy(fault.network);
-      if (!this.nodes.includes(fault.from) || !this.nodes.includes(fault.to) || fault.from === fault.to) throw new Error('请选择两个不同的节点');
+      if (!this.nodes.includes(fault.from) || !this.nodes.includes(fault.to) || fault.from === fault.to) throw new Error('Choose two different nodes');
       for (const [key, min, max] of [['latency', 0, 30000], ['bandwidth', 1, 100000]]) {
-        if (!Number.isInteger(fault[key]) || fault[key] < min || fault[key] > max) throw new Error(`${key} 超出范围`);
+        if (!Number.isInteger(fault[key]) || fault[key] < min || fault[key] > max) throw new Error(`${key} out of range`);
       }
-      if (typeof fault.blocked !== 'boolean' || typeof fault.bidirectional !== 'boolean') throw new Error('链路选项应为布尔值');
+      if (typeof fault.blocked !== 'boolean' || typeof fault.bidirectional !== 'boolean') throw new Error('Link options must be booleans');
       if (fault.delayModel !== undefined || fault.jitter !== undefined) {
-        if (!Number.isInteger(fault.jitter ?? 0) || (fault.jitter ?? 0) < 0 || fault.jitter > 30000) throw new Error('jitter 超出范围');
+        if (!Number.isInteger(fault.jitter ?? 0) || (fault.jitter ?? 0) < 0 || fault.jitter > 30000) throw new Error('jitter out of range');
         validateDelayModel({ delayModel: fault.delayModel ?? 'fixed', jitter: fault.jitter ?? 0 });
       }
     }
@@ -239,17 +239,17 @@ export class Experiment extends EventEmitter {
     }
   }
   declareInputs(node, schema) {
-    if (!this.nodes.includes(node) || this.status !== 'running') throw new Error('节点未运行');
+    if (!this.nodes.includes(node) || this.status !== 'running') throw new Error('The node is not running');
     validateSchema(schema);
     this.inputSchemas[node] = structuredClone(schema);
     this.log('input_schema', { node, schema });
   }
   // Validation shared by single and batched inputs; nothing is logged until every input is valid.
   prepareCommand(node, key, value, action = 'write', values) {
-    if (this.status !== 'running' || !this.nodes.includes(node) || !this.online[node]) throw new Error(`${node} 未运行`);
-    if (this.mutating) throw new Error('故障操作正在执行，请稍后提交');
+    if (this.status !== 'running' || !this.nodes.includes(node) || !this.online[node]) throw new Error(`${node} is not running`);
+    if (this.mutating) throw new Error('A fault operation is in progress; try again shortly');
     const schema = this.inputSchemas[node]?.find(s => s.action === action);
-    if (!schema) throw new Error(`${node} 未声明此输入动作`);
+    if (!schema) throw new Error(`${node} has not declared this input action`);
     // Retain the original key/value API for existing clients.
     if (values === undefined) values = { ...(key === undefined ? {} : { key }), ...(value === undefined ? {} : { value }) };
     validateValues(schema, values, this.nodes);
@@ -260,11 +260,11 @@ export class Experiment extends EventEmitter {
   }
   dispatch(cmd, extra = {}) {
     const event = this.log('command', { ...cmd, ...extra });
-    if (!event || this.status !== 'running') throw new Error('实验已结束');
+    if (!event || this.status !== 'running') throw new Error('The experiment has ended');
     cmd.id = `input-${event.seq}`;
     try {
       if (this.config.runtime === 'simulation') this.actors[cmd.node].command(cmd);
-      else if (!this.emit('command', cmd)) throw new Error('节点会话不可写');
+      else if (!this.emit('command', cmd)) throw new Error('The node session is not writable');
     } catch (error) {
       this.log('command_error', { node: cmd.node, commandSeq: event.seq, message: error.message });
       throw error;
@@ -277,8 +277,8 @@ export class Experiment extends EventEmitter {
   // Concurrent inputs: all are validated first, then delivered at the same coordinator time,
   // so the nodes start their operations without any causal relation between them.
   commandBatch(batch) {
-    if (!Array.isArray(batch) || batch.length < 1 || batch.length > this.nodes.length) throw new Error(`batch 应包含 1–${this.nodes.length} 个输入`);
-    if (new Set(batch.map(b => b?.node)).size !== batch.length) throw new Error('同一批输入中每个节点只能出现一次');
+    if (!Array.isArray(batch) || batch.length < 1 || batch.length > this.nodes.length) throw new Error(`batch must contain 1–${this.nodes.length} inputs`);
+    if (new Set(batch.map(b => b?.node)).size !== batch.length) throw new Error('Each node may appear at most once in a batch');
     const cmds = batch.map(b => this.prepareCommand(b.node, undefined, undefined, b.action, b.values ?? {}));
     const group = `batch-${this.events.length + 1}`, nodes = cmds.map(c => c.node);
     const results = [];

@@ -64,7 +64,7 @@ test('explicit merges preserve experiments, old links and code variants; archive
   assert.equal(store.listProtocols(new Map([[run.id,run]]))[0].runCount,1);
   assert.equal(JSON.stringify(run),originalRun);
   const variant=store.createProtocol({name:'Token',projects:{shared:project,'node-2':project}});
-  assert.throws(()=>store.mergeProtocol(variant.id,a.id),/不能合并/);
+  assert.throws(()=>store.mergeProtocol(variant.id,a.id),/cannot merge/);
   const independent=store.createProtocol({name:'Token',projects:{shared:project}});
   store.saveProtocol(variant.id,{revision:variant.revision,archived:true});
   store=new ExperimentStore(dir);

@@ -39,7 +39,7 @@ let frameClock=0; const paint=()=>frame?.(frameClock+=200); const delay=()=>new 
 const click=async selector=>{const el=document.querySelector(selector);if(el.onclick)await el.onclick({target:el,preventDefault(){}});else el.dispatchEvent(new window.Event('click',{bubbles:true}));await delay();paint();};
 async function sync(){for(const stream of streams.filter(s=>!s.closed)){const path=stream.url.split('/events')[0];const result=await (await request(path)).json();for(const e of result.events)stream.onmessage?.({data:JSON.stringify(e)});}paint();}
 await delay();
-assert.match(document.querySelector('#connection-status').textContent,/已连接/);
+assert.match(document.querySelector('#connection-status').textContent,/Connected/);
 await click('#create-experiment');
 const projectForm=document.querySelector('#project-form');
 await projectForm.onsubmit({target:projectForm,preventDefault(){}});await delay();
@@ -79,8 +79,8 @@ assert.equal(document.querySelector('#popover-title').textContent,'node-1 ↔ no
 assert.equal(document.querySelector('#dir-ab').getAttribute('aria-pressed'),'true','peer rows default to selected node → peer');
 document.querySelector('#link-latency').value='900';document.querySelector('#link-blocked').checked=true;
 await document.querySelector('#link-form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));await delay();await sync();
-assert.match(document.querySelector('#link-rules [data-direction="ab"]').textContent,/中断/);
-assert.match(document.querySelector('#link-rules [data-direction="ba"]').textContent,/默认/,'reverse direction untouched');
+assert.match(document.querySelector('#link-rules [data-direction="ab"]').textContent,/Blocked/);
+assert.match(document.querySelector('#link-rules [data-direction="ba"]').textContent,/Default/,'reverse direction untouched');
 await click('#dir-ba');
 document.querySelector('#link-latency').value='250';document.querySelector('#link-blocked').checked=false;
 await document.querySelector('#link-form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));await delay();await sync();
@@ -88,12 +88,12 @@ assert.match(document.querySelector('#link-rules [data-direction="ba"]').textCon
 assert.match(document.querySelector('#link-rules [data-direction="ab"]').textContent,/中断/,'forward rule preserved');
 await click('#dir-both');
 assert.equal(document.querySelector('#link-notice').hidden,false);
-assert.match(document.querySelector('#link-notice').textContent,/覆盖/,'differing rules warn before a two-way overwrite');
+assert.match(document.querySelector('#link-notice').textContent,/overwrite/,'differing rules warn before a two-way overwrite');
 document.querySelector('#link-latency').value='';
 await document.querySelector('#link-form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));await delay();
-assert.match(document.querySelector('#popover-error').textContent,/整数/,'blank values are rejected before the request');
+assert.match(document.querySelector('#popover-error').textContent,/milliseconds/,'blank values are rejected before the request');
 await click('#heal-links');await sync();
-assert.match(document.querySelector('#link-rules').textContent,/默认[\s\S]*默认/,'heal resets both directions');
+assert.match(document.querySelector('#link-rules').textContent,/Default[\s\S]*Default/,'heal resets both directions');
 await click('#popover-back');
 assert.equal(document.querySelector('#popover-title').textContent,'node-1','back returns to the node the link was opened from');
 await click('#popover-close');
@@ -104,7 +104,7 @@ await click('#node-toggle');await sync();
 vm.runInContext('seek(1)',context);paint();
 assert.equal(document.querySelectorAll('.node-offline').length,0,'replay shows node-1 online at the start');
 assert.equal(document.querySelector('#node-toggle').dataset.nodeAction,'recover','the toggle still reflects the live crash');
-assert.match(document.querySelector('#node-panel .inspector-section-title').textContent,/回放 @/,'replay state is labelled');
+assert.match(document.querySelector('#node-panel .inspector-section-title').textContent,/Replay @/,'replay state is labelled');
 await click('#go-live');
 await click('#node-toggle');await sync();
 assert.equal(document.querySelectorAll('.node-offline').length,0);
@@ -210,7 +210,7 @@ vm.runInContext("busyRun=run;run={...run,id:'next-run',status:'running'};openNod
 assert.equal(document.querySelector('#heal-links').disabled,false,'another run keeps its fault controls');
 assert.equal(document.querySelector('#node-toggle').disabled,false);
 assert.equal(document.querySelector('#stop-run').disabled,false,'another run keeps its stop button');
-assert.equal(document.querySelector('#stop-run').textContent.trim(),'结束实验');
+assert.equal(document.querySelector('#stop-run').textContent.trim(),'Stop run');
 while(heldPosts.length)await releasePost(false);await slowFault;await slowStop;
 assert.equal(vm.runInContext('faultsInFlight.size + stopsInFlight.size',context),0,'each request cleared only its own run');
 vm.runInContext("run=busyRun;closePopover();renderDirty=true;render();",context);
@@ -234,17 +234,17 @@ await releaseGets((path,data)=>path==='/api/experiments'?data.map(e=>e.id===vm.r
 assert.equal(vm.runInContext('runControlState().mode',context),'goto','a new running ID is discoverable');
 await vm.runInContext('refreshRuns()',context);
 await vm.runInContext(`openRun('${endedRunId}')`,context);await delay();paint();
-await click('#stop-run');await sync();assert.equal(document.querySelector('#run-status').textContent,'已结束');
-assert.equal(document.querySelector('#new-run').textContent.trim(),'重新运行','an ended run offers to run again');
+await click('#stop-run');await sync();assert.equal(document.querySelector('#run-status').textContent,'Completed');
+assert.equal(document.querySelector('#new-run').textContent.trim(),'Run again','an ended run offers to run again');
 // Another active run of the same experiment wins over "run again", and a replay never stops it.
 vm.runInContext("experiments.find(e=>e.id===experiment.id).latestRun={id:'another-run',status:'running'};renderDirty=true;render();",context);
-assert.equal(document.querySelector('#new-run').textContent.trim(),'前往运行中的实验');
+assert.equal(document.querySelector('#new-run').textContent.trim(),'Go to the running experiment');
 assert.equal(document.querySelector('#stop-run').hidden,true);
 vm.runInContext("experiments.find(e=>e.id===experiment.id).latestRun={id:run.id,status:'completed'};renderDirty=true;render();",context);
 // A startup failure arrives as a lifecycle event; a late start event cannot revive the run.
 vm.runInContext("endedRun=run;run={...run,id:'failing-run',status:'starting'};receiveEvent({seq:events.at(-1).seq+1,time:latestTime,type:'lifecycle',action:'failed'});receiveEvent({seq:events.at(-1).seq+1,time:latestTime,type:'lifecycle',action:'start'});render();",context);
 assert.equal(vm.runInContext('run.status',context),'failed');
-assert.equal(document.querySelector('#run-status').textContent,'启动失败');
+assert.equal(document.querySelector('#run-status').textContent,'Failed to start');
 assert.equal(document.querySelector('#view-error').hidden,false);
 vm.runInContext("receiveEvent({seq:events.at(-1).seq+1,time:latestTime,type:'lifecycle',action:'stop'});",context);
 assert.equal(vm.runInContext('run.status',context),'failed','the first terminal status wins');
@@ -286,9 +286,9 @@ assert.ok(document.querySelector('.packet-arrow'), 'messages use an arrow shape'
 assert.match(document.querySelector('.message-label').textContent, /term=3/);
 assert.match(document.querySelector('.packet').getAttribute('aria-label'), /node-1 → node-2/);
 await click('.packet');
-assert.equal(document.querySelector('#event-title').textContent, '消息详情');
+assert.equal(document.querySelector('#event-title').textContent, 'Message details');
 assert.equal(document.querySelector('#event-count').textContent, '4', 'inspecting a packet preserves the playhead');
-assert.match(document.querySelector('#event-summary').textContent, /尚未接收/);
+assert.match(document.querySelector('#event-summary').textContent, /Not yet received/);
 assert.equal(document.querySelector('#event-summary [data-field="granted"] strong').textContent, 'false');
 assert.match(document.querySelector('#event-summary [data-field="nested"]').textContent, /proposal/);
 assert.equal(document.querySelector('#event-summary img'), null, 'payload HTML must be escaped');
@@ -308,7 +308,7 @@ await click('#step'); // receive at t=180, before state transition at the same t
 assert.equal(document.querySelector('[data-message-id="m1"]').dataset.status, 'received');
 assert.equal(document.querySelector('#node-panel [data-field="term"] strong').textContent, '3', 'equal timestamp future state hidden');
 await click('.time-message');
-assert.match(document.querySelector('#event-summary').textContent, /已接收/);
+assert.match(document.querySelector('#event-summary').textContent, /Received/);
 assert.equal(document.querySelector('#event-count').textContent, '5', 'inspection does not jump back to send');
 document.querySelector('#event-dialog').close();
 await click('#step');
@@ -380,14 +380,14 @@ assert.ok(store.get(`distvis-draft:${experimentId}`),'original draft is retained
 await vm.runInContext(`openProtocol('${protocolId}', 'code')`,context);
 editor.value+='\n// preserved across archive\n';editor.oninput({target:editor});
 await click('#archive-workspace');
-assert.equal(document.querySelector('#archive-workspace').textContent,'恢复协议');
+assert.equal(document.querySelector('#archive-workspace').textContent,'Restore protocol');
 assert.match(document.querySelector('#source-editor').value,/preserved across archive/);
 await click('#nav-library');
 assert.equal(document.querySelector(`#experiment-cards [data-protocol-project="${protocolId}"]`),null);
 assert.ok(document.querySelector(`#imported-cards [data-protocol-project="${protocolId}"]`));
 await vm.runInContext(`openProtocol('${protocolId}', 'code')`,context);
 await click('#archive-workspace');
-assert.equal(document.querySelector('#archive-workspace').textContent,'归档协议');
+assert.equal(document.querySelector('#archive-workspace').textContent,'Archive protocol');
 assert.match(document.querySelector('#source-editor').value,/preserved across archive/);
 console.log('PASS: DOM interactions, slow clock, message/node details, causal replay isolation, viewport-crossing messages, state deduplication, heartbeat filtering and zoom. No actual browser rendering was tested.');
 process.exit(0);

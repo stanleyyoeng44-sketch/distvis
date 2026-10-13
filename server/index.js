@@ -44,7 +44,7 @@ for (const entry of readdirSync(dataDir, { withFileTypes: true })) {
     if (meta.eventCount>60000) run.archivedEventCount = meta.eventCount;
     run.testResult = meta.testResult;
     runs.set(run.id, run);
-  } catch (e) { console.error(`无法读取历史 ${entry.name}: ${e.message}`); }
+  } catch (e) { console.error(`Could not read history ${entry.name}: ${e.message}`); }
 }
 for(const run of [...runs.values()].sort((a,b)=>b.createdAt.localeCompare(a.createdAt))){
   try{
@@ -53,7 +53,7 @@ for(const run of [...runs.values()].sort((a,b)=>b.createdAt.localeCompare(a.crea
     if(workspaces.adopt(run,source,template?snapshotProject(template):null))persist(run);
     const parent=workspaces.get(run.config.experimentId).protocolId;
     if(!run.config.protocolId){run.config.protocolId=parent;persist(run);}
-  }catch(error){console.error(`无法迁移实验工作区 ${run.id}: ${error.message}`);}
+  }catch(error){console.error(`Could not migrate experiment workspace ${run.id}: ${error.message}`);}
 }
 const runtimes = new Map();
 const launches = new Map();
@@ -80,7 +80,7 @@ async function body(req) {
   let text = '';
   for await (const chunk of req) {
     text += chunk;
-    if (Buffer.byteLength(text) > 48 * 1024 * 1024) throw new Error('请求超过 48 MiB');
+    if (Buffer.byteLength(text) > 48 * 1024 * 1024) throw new Error('Request exceeds 48 MiB');
   }
   return text ? JSON.parse(text) : {};
 }
@@ -100,10 +100,10 @@ async function launch(run, source, nodeSources, project) {
     run.status = 'failed';
     run.log('runtime', { level: 'error', phase: 'startup', message: error.message });
     // Clients watching the stream learn about the failure immediately instead of on the next poll.
-    run.log('lifecycle', { action: 'failed', reason: '实验启动失败' });
+    run.log('lifecycle', { action: 'failed', reason: 'Failed to start the experiment' });
     for (const node of run.nodes) {
       run.online[node] = false;
-      run.log('node', { node, online: false, reason: '实验启动失败' });
+      run.log('node', { node, online: false, reason: 'Failed to start the experiment' });
     }
     await runtimes.get(run.id)?.cleanup();
   } finally { persist(run); }
@@ -111,11 +111,11 @@ async function launch(run, source, nodeSources, project) {
 
 export const server = http.createServer(async (req, res) => {
   try {
-    if (shuttingDown) return json(res, 503, { error: 'coordinator 正在关闭' });
+    if (shuttingDown) return json(res, 503, { error: 'The coordinator is shutting down' });
     const url = new URL(req.url, 'http://localhost');
     const acceptance=req.headers['x-distvis-purpose']==='acceptance';
     // Browser writes must originate from this local coordinator.
-    if (req.method !== 'GET' && req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) return json(res, 403, { error: '跨站写入已拒绝' });
+    if (req.method !== 'GET' && req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) return json(res, 403, { error: 'Cross-origin writes are rejected' });
     if (url.pathname === '/api/protocols') return json(res, 200, { ...protocols, ...Object.fromEntries(library.discover().entries.map(p=>[p.id,p])) });
     if (url.pathname === '/api/library' && req.method === 'GET') return json(res, 200, library.discover());
     if (url.pathname === '/api/library' && req.method === 'POST') {
@@ -169,16 +169,16 @@ export const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/workspace/validate' && req.method === 'POST') {
       const input = await body(req);
       const project = snapshotWorkspace(input.workspace);
-      if (input.nodeWorkspaces && (typeof input.nodeWorkspaces !== 'object' || Array.isArray(input.nodeWorkspaces))) throw new Error('节点项目应为对象');
+      if (input.nodeWorkspaces && (typeof input.nodeWorkspaces !== 'object' || Array.isArray(input.nodeWorkspaces))) throw new Error('nodeWorkspaces must be an object');
       for (const [node,draft] of Object.entries(input.nodeWorkspaces || {})) {
-        if (!/^node-([1-9]|1[0-2])$/.test(node)) throw new Error('节点项目名称不合法');
+        if (!/^node-([1-9]|1[0-2])$/.test(node)) throw new Error('Invalid node project name');
         snapshotWorkspace(draft);
       }
       return json(res,200,{ok:true,sha256:project.sha256,fileCount:project.files.length});
     }
     if (url.pathname === '/api/runs' && req.method === 'GET') return json(res, 200, [...runs.values()].map(r => r.info()).reverse());
     if (url.pathname === '/api/runs' && req.method === 'POST') {
-      if (busy || [...runs.values()].some(r => ['running', 'starting'].includes(r.status))) return json(res, 409, { error: '请先结束当前实验' });
+      if (busy || [...runs.values()].some(r => ['running', 'starting'].includes(r.status))) return json(res, 409, { error: 'Finish the current run first' });
       busy = true;
       try {
         let input = await body(req);
@@ -192,7 +192,7 @@ export const server = http.createServer(async (req, res) => {
           input.protocolId=savedProtocol.id;
           input.protocolRevision=savedProtocol.revision;
           input.protocol=['raft','token','gossip'].includes(savedWorkspace.protocol)?savedWorkspace.protocol:'custom';
-          if(input.runtime==='simulation' && !['raft','token','gossip'].includes(input.protocol))throw new Error('此实验没有内置参考模型，请选择 Go 运行环境');
+          if(input.runtime==='simulation' && !['raft','token','gossip'].includes(input.protocol))throw new Error('This protocol has no built-in reference model; choose a Go runtime');
           input.workspace=archiveDraft(savedProtocol.projects.shared);
           input.nodeWorkspaces=Object.fromEntries(Object.entries(savedProtocol.projects).filter(([node])=>node!=='shared' && Number(node.slice(5))<=Number(input.nodeCount)).map(([node,p])=>[node,archiveDraft(p)]));
           input.source=undefined;input.nodeSources={};
@@ -202,20 +202,20 @@ export const server = http.createServer(async (req, res) => {
           : exampleProject(input.protocol || 'raft');
         const workspace = (savedWorkspace || input.protocol === 'custom') && input.workspace ? snapshotWorkspace(input.workspace) : null;
         const nodeWorkspaces = {};
-        if (input.nodeWorkspaces && (!workspace || typeof input.nodeWorkspaces !== 'object' || Array.isArray(input.nodeWorkspaces))) throw new Error('节点项目需要默认项目');
+        if (input.nodeWorkspaces && (!workspace || typeof input.nodeWorkspaces !== 'object' || Array.isArray(input.nodeWorkspaces))) throw new Error('Node projects require a default project');
         for (const [node, draft] of Object.entries(input.nodeWorkspaces || {})) {
-          if (!/^node-([1-9]|1[0-2])$/.test(node) || Number(node.slice(5)) > Number(input.nodeCount ?? 5)) throw new Error('节点项目名称不合法');
+          if (!/^node-([1-9]|1[0-2])$/.test(node) || Number(node.slice(5)) > Number(input.nodeCount ?? 5)) throw new Error('Invalid node project name');
           nodeWorkspaces[node] = snapshotWorkspace(draft);
         }
         if (project || workspace) input.project = project || {name:workspace.name,entry:workspace.entry,source:'workspace',...(workspace.start?{start:workspace.start}:{})};
         const config = validateConfig(input);
-        if (config.protocol === 'custom' && !workspace && !input.source?.trim()) throw new Error('请在协议编辑器中保存 Go 项目');
+        if (config.protocol === 'custom' && !workspace && !input.source?.trim()) throw new Error('Save the Go project in the protocol editor first');
         const source = project || workspace ? '' : config.protocol === 'custom' ? input.source : sourceDefault();
-        if (typeof source !== 'string' || source.length > 200000) throw new Error('源码长度不合法');
+        if (typeof source !== 'string' || source.length > 200000) throw new Error('Invalid source length');
         const nodeSources = input.nodeSources || {};
-        if (typeof nodeSources !== 'object' || Array.isArray(nodeSources)) throw new Error('节点源码应为对象');
+        if (typeof nodeSources !== 'object' || Array.isArray(nodeSources)) throw new Error('nodeSources must be an object');
         for (const [node, text] of Object.entries(nodeSources)) {
-          if (!/^node-([1-9]|1[0-2])$/.test(node) || Number(node.slice(5)) > config.nodeCount || typeof text !== 'string' || text.length > 200000) throw new Error('节点源码不合法');
+          if (!/^node-([1-9]|1[0-2])$/.test(node) || Number(node.slice(5)) > config.nodeCount || typeof text !== 'string' || text.length > 200000) throw new Error('Invalid node source');
         }
         const run = new Experiment(config);
         const path = join(dataDir, run.id);
@@ -264,7 +264,7 @@ export const server = http.createServer(async (req, res) => {
     const match = url.pathname.match(/^\/api\/runs\/([a-f0-9-]+)(?:\/(events|faults|stop|commands|export|source|checks))?$/);
     if (match) {
       const run = runs.get(match[1]);
-      if (!run) return json(res, 404, { error: '实验不存在' });
+      if (!run) return json(res, 404, { error: 'Experiment not found' });
       const action = match[2];
       if (!action && req.method === 'GET') return json(res, 200, { ...run.info(), ...(url.searchParams.has('summary') ? {} : { events: runEvents(run).slice(Number(url.searchParams.get('after')||0),Number(url.searchParams.get('after')||0)+Number(url.searchParams.get('limit')||2000000)) }) });
       if (action === 'source' && req.method === 'GET') return json(res, 200, JSON.parse(readFileSync(join(dataDir, run.id, 'source.json'), 'utf8')));
@@ -284,16 +284,16 @@ export const server = http.createServer(async (req, res) => {
       }
       if(action==='checks' && req.method==='POST'){
         const result=await body(req);
-        if(!['pass','fail','info'].includes(result.status)||typeof result.label!=='string')throw new Error('无效检查结果');
+        if(!['pass','fail','info'].includes(result.status)||typeof result.label!=='string')throw new Error('Invalid check result');
         run.log('check',result);persist(run);return json(res,200,{ok:true});
       }
       if (req.method === 'POST') {
         if (action === 'stop') {
-          if (run.status === 'starting') throw new Error('节点正在构建，请等待启动完成');
+          if (run.status === 'starting') throw new Error('Nodes are still building; wait for the run to start');
           run.stop(); return json(res, 200, run.info());
         }
         if (action === 'faults') {
-          if (run.mutating) return json(res, 409, { error: '上一项故障操作正在执行' });
+          if (run.mutating) return json(res, 409, { error: 'A fault operation is already in progress' });
           run.mutating = true;
           try {
             const fault = await body(req);
@@ -311,7 +311,7 @@ export const server = http.createServer(async (req, res) => {
         }
       }
     }
-    if (url.pathname.startsWith('/api/')) return json(res, 404, { error: '接口不存在' });
+    if (url.pathname.startsWith('/api/')) return json(res, 404, { error: 'API endpoint not found' });
     const doc = req.method === 'GET' && documentation(url.pathname);
     if (doc) {
       res.writeHead(200, {
@@ -322,7 +322,7 @@ export const server = http.createServer(async (req, res) => {
       return res.end(doc.body);
     }
     const file = { '/': 'index.html', '/app.js': 'app.js', '/style.css': 'style.css', '/docs.css': 'docs.css', '/docs.js': 'docs.js' }[url.pathname];
-    if (!file || req.method !== 'GET') return json(res, 404, { error: '页面不存在' });
+    if (!file || req.method !== 'GET') return json(res, 404, { error: 'Page not found' });
     res.writeHead(200, {
       'Content-Type': { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' }[extname(file)],
       'Content-Security-Policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
@@ -336,7 +336,7 @@ export const server = http.createServer(async (req, res) => {
 
 const port = Number(process.env.PORT || 3000);
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  server.on('error', error => { console.error(`无法启动本地服务: ${error.message}`); process.exitCode = 1; });
+  server.on('error', error => { console.error(`Could not start the local server: ${error.message}`); process.exitCode = 1; });
   server.listen(port, '127.0.0.1', () => console.log(`DistVis → http://localhost:${port}`));
 }
 async function shutdown() {
@@ -347,7 +347,7 @@ async function shutdown() {
   await Promise.allSettled([...launches.values()]);
   for (const run of runs.values()) {
     if (run.status === 'running') {
-      run.stop('coordinator 关闭');
+      run.stop('coordinator shutdown');
       persist(run);
     }
   }

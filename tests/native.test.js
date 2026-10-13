@@ -74,7 +74,7 @@ test('native Go Raft nodes elect, crash, persist votes/term and rejoin', { skip:
     await waitFor(() => leaders().length === 1);
     const inputNode = run.nodes.find(n => n !== leaders()[0]);
     run.command(inputNode, undefined, undefined, 'propose', { number: 42 });
-    await waitFor(() => run.states[inputNode]?.lastProposal?.status === 'Leader 已接收（未提交）');
+    await waitFor(() => run.states[inputNode]?.lastProposal?.status === 'Received by Leader (not committed)');
     assert.equal(run.states[leaders()[0]].lastReceivedProposal.number, 42);
     assert.ok(run.events.some(e => e.type === 'receive' && e.payload.type === 'Proposal' && e.payload.proposal.number === 42));
     const old = leaders()[0], term = run.states[old].term;

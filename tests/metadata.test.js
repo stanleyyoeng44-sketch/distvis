@@ -18,7 +18,7 @@ test('distvis:start names the node, input and arguments that begin message traff
   for (const bad of ['', 'node-1', 'node-0 A.B', 'node-13 A.B', 'node-1 Sync', 'node-1 A.B {"x":', `node-1 A.B {} ${'x'.repeat(301)}`]) {
     assert.throws(() => start(`// distvis:start ${bad}`), /distvis:start/, bad);
   }
-  assert.throws(() => start('// distvis:start node-1 A.B\n// distvis:start node-2 A.B'), /重复/);
+  assert.throws(() => start('// distvis:start node-1 A.B\n// distvis:start node-2 A.B'), /Duplicate/);
   assert.throws(() => protocolMetadata([main('')], { start: { node: 'node-1', method: 'A.B', values: [1] } }), /distvis:start/);
 });
 
@@ -35,7 +35,7 @@ test('library discovery and editor snapshots carry distvis:start to the run conf
 
 // Protocols whose nodes stay silent until they get an application input. Each must say in code where
 // traffic begins; tests/idle-traffic-smoke.mjs runs that input against real Go nodes.
-const requestDriven = ['grpc-broadcast'];
+const requestDriven = ['berkeley', 'cristian', 'grpc-broadcast', 'logical-clocks', 'ntp'];
 // Protocols that send messages on their own after start (elections, heartbeats, periodic sync, anti-entropy, token).
 const selfStarting = ['lww-store', 'netrpc-token', 'raft-election'];
 

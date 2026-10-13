@@ -68,7 +68,7 @@ try{
   await page.setViewportSize({width:390,height:844});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.locator('#stop-run').click();
-  await page.waitForFunction(()=>document.querySelector('#run-status').textContent==='已结束');
+  await page.waitForFunction(()=>document.querySelector('#run-status').textContent==='Completed');
   assert.deepEqual(errors,[]);
   console.log('PASS: user directory with Unicode/spaces/comma, automatic discovery, protobuf form, exact int64, actual Go response and decoded RPC replay.');
 }finally{

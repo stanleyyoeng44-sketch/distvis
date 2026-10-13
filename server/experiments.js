@@ -14,9 +14,9 @@ export function codeFingerprint(projects) {
   }))).digest('hex');
 }
 function validateProjects(projects) {
-  if (!projects || typeof projects !== 'object' || Array.isArray(projects) || !projects.shared) throw new Error('实验需要默认代码项目');
+  if (!projects || typeof projects !== 'object' || Array.isArray(projects) || !projects.shared) throw new Error('An experiment requires a default code project');
   return Object.fromEntries(Object.entries(projects).map(([node,project])=>{
-    if (node !== 'shared' && !/^node-([1-9]|1[0-2])$/.test(node)) throw new Error('节点项目名称不合法');
+    if (node !== 'shared' && !/^node-([1-9]|1[0-2])$/.test(node)) throw new Error('Invalid node project name');
     return [node,snapshotWorkspace(archiveDraft(project))];
   }));
 }
@@ -56,7 +56,7 @@ export class ExperimentStore {
   }
   get(id) {
     const item=this.items.get(id);
-    if(!item)throw new Error('实验工作区不存在');
+    if(!item)throw new Error('Experiment workspace not found');
     return item;
   }
   write(item) {
@@ -67,9 +67,9 @@ export class ExperimentStore {
     return item;
   }
   create({name,protocol,protocolId,projects,settings:config,imported=false,origin,archived=false}, id=randomUUID()) {
-    if(typeof name!=='string'||!name.trim()||name.length>100)throw new Error('实验名称应为 1–100 个字符');
-    if(protocol!==undefined && (typeof protocol!=='string' || !/^(?:raft|token|gossip|grpc|custom|directory:[^/\\]+)$/.test(protocol)))throw new Error('未知实验协议来源');
-    if(protocolId && projects)throw new Error('实验共用协议代码，不能携带独立代码');
+    if(typeof name!=='string'||!name.trim()||name.length>100)throw new Error('Experiment name must be 1–100 characters');
+    if(protocol!==undefined && (typeof protocol!=='string' || !/^(?:raft|token|gossip|grpc|custom|directory:[^/\\]+)$/.test(protocol)))throw new Error('Unknown experiment protocol source');
+    if(protocolId && projects)throw new Error('Experiments share the protocol code and cannot carry their own code');
     if(protocolId)this.getProtocol(protocolId);
     const configProtocol=protocolId?this.getProtocol(protocolId).protocol:protocol;
     const checkedSettings=settings(config,configProtocol);
@@ -81,12 +81,12 @@ export class ExperimentStore {
   }
   save(id,input) {
     const before=this.items.get(id);
-    if(!before)throw new Error('实验不存在');
-    if(input.projects)throw new Error('代码属于协议，请在协议代码页保存');
-    if(input.archived!==undefined && typeof input.archived!=='boolean')throw new Error('归档状态必须是布尔值');
-    if(input.revision!==before.revision)throw new Error('实验已在其他页面更新，请重新打开后再保存；本地草稿仍保留');
+    if(!before)throw new Error('Experiment not found');
+    if(input.projects)throw new Error('Code belongs to the protocol; save it on the protocol code page');
+    if(input.archived!==undefined && typeof input.archived!=='boolean')throw new Error('archived must be a boolean');
+    if(input.revision!==before.revision)throw new Error('The experiment was updated in another tab; reopen it before saving. Your local draft is preserved');
     const name=input.name ?? before.name;
-    if(typeof name!=='string'||!name.trim()||name.length>100)throw new Error('实验名称应为 1–100 个字符');
+    if(typeof name!=='string'||!name.trim()||name.length>100)throw new Error('Experiment name must be 1–100 characters');
     return this.write({...before,name:name.trim(),archived:input.archived ?? before.archived,
 
       settings:input.settings?settings(input.settings,before.protocol):before.settings,
@@ -96,10 +96,10 @@ export class ExperimentStore {
     const seen=new Set();
     let p=this.protocolItems.get(id);
     while(p?.mergedInto){
-      if(seen.has(p.id))throw new Error('协议合并引用异常');
+      if(seen.has(p.id))throw new Error('Protocol merge references the same protocol twice');
       seen.add(p.id);p=this.protocolItems.get(p.mergedInto);
     }
-    if(!p)throw new Error('协议不存在');return p;
+    if(!p)throw new Error('Protocol not found');return p;
   }
   writeProtocol(p) {
     const path=join(this.protocolDirectory,`${p.id}.json`);
@@ -107,24 +107,24 @@ export class ExperimentStore {
     this.protocolItems.set(p.id,p);return p;
   }
   createProtocol({name,protocol='custom',projects,origin,imported=false,migrationKey,archived=false}) {
-    if(typeof name!=='string'||!name.trim()||name.length>100)throw new Error('协议名称应为 1–100 个字符');
-    if(typeof protocol!=='string'||!/^(?:raft|token|gossip|grpc|custom|directory:[^/\\]+)$/.test(protocol))throw new Error('未知协议来源');
+    if(typeof name!=='string'||!name.trim()||name.length>100)throw new Error('Protocol name must be 1–100 characters');
+    if(typeof protocol!=='string'||!/^(?:raft|token|gossip|grpc|custom|directory:[^/\\]+)$/.test(protocol))throw new Error('Unknown protocol source');
     const now=new Date().toISOString();
     return this.writeProtocol({id:randomUUID(),name:name.trim(),protocol,projects:validateProjects(projects),revision:1,createdAt:now,updatedAt:now,origin,imported,migrationKey,archived:!!archived});
   }
   saveProtocol(id,input) {
     const p=this.getProtocol(id);
-    if(input.archived!==undefined && typeof input.archived!=='boolean')throw new Error('归档状态必须是布尔值');
-    if(input.revision!==p.revision)throw new Error('协议已在其他页面更新，请重新打开；本地草稿仍保留');
+    if(input.archived!==undefined && typeof input.archived!=='boolean')throw new Error('archived must be a boolean');
+    if(input.revision!==p.revision)throw new Error('The protocol was updated in another tab; reopen it before saving. Your local draft is preserved');
     const name=input.name ?? p.name;
-    if(typeof name!=='string'||!name.trim()||name.length>100)throw new Error('协议名称应为 1–100 个字符');
+    if(typeof name!=='string'||!name.trim()||name.length>100)throw new Error('Protocol name must be 1–100 characters');
     return this.writeProtocol({...p,name:name.trim(),archived:input.archived ?? p.archived,projects:input.projects?validateProjects(input.projects):p.projects,revision:p.revision+1,updatedAt:new Date().toISOString()});
   }
   // Explicit maintenance only. Names alone never trigger merging.
   mergeProtocol(sourceId,targetId) {
     const source=this.getProtocol(sourceId),target=this.getProtocol(targetId);
     if(source.id===target.id)return target;
-    if(codeFingerprint(source.projects)!==codeFingerprint(target.projects))throw new Error('协议代码或构建入口不同，不能合并');
+    if(codeFingerprint(source.projects)!==codeFingerprint(target.projects))throw new Error('Protocol code or build entry differs; cannot merge');
     for(const child of this.items.values())if(child.protocolId===source.id)this.write({...child,protocolId:target.id,origin:child.origin || source.origin,revision:child.revision+1});
     // Keep the old record and ID for archived links and rollback.
     this.writeProtocol({...source,mergedInto:target.id});

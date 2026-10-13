@@ -20,8 +20,8 @@ search.addEventListener('input',filter);
 const toc=document.querySelector('#docs-toc');
 if(matchMedia('(max-width: 760px)').matches)toc.open=false;
 for(const button of document.querySelectorAll('.copy-code'))button.addEventListener('click',async()=>{
-  try{await navigator.clipboard.writeText(button.closest('.code-block').querySelector('code').textContent);button.textContent='已复制';setTimeout(()=>button.textContent='复制',1500);}
-  catch{document.querySelector('#docs-status').textContent='无法自动复制，请选中代码手动复制。';}
+  try{await navigator.clipboard.writeText(button.closest('.code-block').querySelector('code').textContent);button.textContent='Copied';setTimeout(()=>button.textContent='Copy',1500);}
+  catch{document.querySelector('#docs-status').textContent='Automatic copy failed; select the code and copy it manually.';}
 });
 function revealHash(){
   let id;try{id=decodeURIComponent(location.hash.slice(1));}catch{return;}

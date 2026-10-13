@@ -70,7 +70,7 @@ test('Raft input submitted before election is forwarded to leader, without claim
   run.advance(5000);
   const leader = run.nodes.find(n => run.states[n].role === 'leader');
   assert.equal(run.states[leader].lastReceivedProposal.number, 0);
-  assert.equal(run.states['node-3'].lastProposal.status, 'Leader 已接收（未提交）');
+  assert.equal(run.states['node-3'].lastProposal.status, 'Received by Leader (not committed)');
   assert.equal(run.states[leader].commitIndex, undefined);
 });
 test('Raft proposal crosses the configured link and remains pending during partition', () => {
@@ -80,10 +80,10 @@ test('Raft proposal crosses the configured link and remains pending during parti
   for (const to of run.nodes.filter(n => n !== sender)) run.fault({ kind: 'link', from: sender, to, blocked: true, bidirectional: true, latency: 80, bandwidth: 128 });
   run.command(sender, undefined, undefined, 'propose', { number: 123 });
   run.advance(500);
-  assert.equal(run.states[sender].lastProposal.status, '等待 Leader 接收');
+  assert.equal(run.states[sender].lastProposal.status, 'Waiting for the Leader');
   assert.ok(run.events.some(e => e.type === 'drop' && e.payload.type === 'Proposal'));
   run.fault({ kind: 'heal' }); run.advance(2500);
-  assert.equal(run.states[sender].lastProposal.status, 'Leader 已接收（未提交）');
+  assert.equal(run.states[sender].lastProposal.status, 'Received by Leader (not committed)');
 });
 test('batched inputs reach every node at the same coordinator time, validated before any is sent', () => {
   const run = create('custom'), received = [];

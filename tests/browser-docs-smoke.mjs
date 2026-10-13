@@ -22,7 +22,7 @@ try{
  await page.screenshot({path:'artifacts/api-docs-desktop.png'});
  await page.locator('#docs-toc a').filter({hasText:'Runtime 生命周期'}).click();
  assert.ok((await page.locator('h2').filter({hasText:'Runtime 生命周期'}).boundingBox()).y>=54);
- await page.getByRole('link',{name:'平台 HTTP API 自动化实验与读取事件',exact:true}).click();
+ await page.getByRole('link',{name:'Platform HTTP API Automate experiments and read events',exact:true}).click();
  await page.waitForURL('**/docs/platform');
  assert.equal(await page.locator('h1').textContent(),'平台 HTTP API');
  await page.screenshot({path:'artifacts/platform-api-desktop.png'});
@@ -49,7 +49,7 @@ try{
   await page.locator('#source-editor').fill(original+'\n// local documentation navigation check\n');
   await page.locator('#nav-guide').click();
   await page.waitForURL('**/docs/go');
-  await page.getByRole('link',{name:'返回工作台 →'}).click();
+  await page.getByRole('link',{name:'Back to workbench →'}).click();
   await page.locator('#source-editor').waitFor();
   assert.equal(new URL(page.url()).hash,route);
   assert.equal(await page.locator('#source-editor').inputValue(),original+'\n// local documentation navigation check\n');

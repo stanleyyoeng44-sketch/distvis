@@ -17,23 +17,23 @@ test('custom registries, ports and digest-pinned images are supported without al
   });
   assert.ok(dockerfile(images).includes(`FROM ${images.runtime}\n`));
   for (const value of ['golang:1.24\nRUN echo unexpected', 'golang:1.24 AS other', '${IMAGE}', '-bad']) {
-    assert.throws(() => buildImages({ DISTVIS_GO_IMAGE: value }), /不是合法的镜像引用/);
+    assert.throws(() => buildImages({ DISTVIS_GO_IMAGE: value }), /is not a valid image reference/);
   }
 });
 
 test('403 placeholder-mirror failures explain the actual fix and preserve the build log', () => {
   const output = 'docker build 失败 (1): failed to resolve source metadata: unexpected status from HEAD request to https://yourcode.mirror.aliyuncs.com/v2/library/alpine/manifests/3.21: 403 Forbidden';
   const result = describeBuildFailure(new Error(output));
-  assert.match(result, /占位地址/);
+  assert.match(result, /placeholder address/);
   assert.match(result, /registry-mirrors/);
   assert.ok(result.endsWith(output));
 });
 
 test('registry download and Go compilation failures get different diagnostics', () => {
-  assert.match(describeBuildFailure(new Error('failed to resolve source metadata: dial tcp: no such host')), /基础镜像下载失败/);
+  assert.match(describeBuildFailure(new Error('failed to resolve source metadata: dial tcp: no such host')), /Failed to download the base image/);
   const compiler = '#2 [internal] load metadata for registry-1.docker.io/library/golang:1.24-alpine\n#2 DONE 0.0s\n#7 cmd/node-1/main.go:4:2: undefined: missing';
   const result = describeBuildFailure(new Error(compiler));
-  assert.doesNotMatch(result, /基础镜像下载失败/);
+  assert.doesNotMatch(result, /Failed to download the base image/);
   assert.ok(result.endsWith(compiler));
-  assert.match(describeBuildFailure(new Error('permission denied while trying to connect to the docker API')), /无法访问 Docker/);
+  assert.match(describeBuildFailure(new Error('permission denied while trying to connect to the docker API')), /Docker is not reachable/);
 });

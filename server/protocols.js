@@ -14,19 +14,19 @@ export function createActor(run, id) {
   };
   if (run.config.protocol === 'raft') {
     Object.assign(actor, {
-      inputs: [{ action: 'propose', label: '提交提案', description: '任意节点可提交数字，等待 Leader 后转发。Leader 接收不代表多数派提交；此示例不含日志复制。',
+      inputs: [{ action: 'propose', label: 'Propose', description: 'Any node can submit a number and wait for the Leader to forward it. Receiving by the Leader does not mean a majority commit; this example has no log replication.',
         fields: [{ name: 'number', label: 'Proposed number', type: 'number', required: true, integer: true }] }],
       pending: [], seen: new Set(),
       command(cmd) {
         const proposal = { id: cmd.id, origin: id, number: cmd.values.number };
         this.pending.push(proposal);
-        this.state.lastProposal = { ...proposal, status: '等待 Leader 接收' };
+        this.state.lastProposal = { ...proposal, status: 'Waiting for the Leader' };
         this.report(); this.flush();
       },
       accept(proposal) {
         if (!this.seen.has(proposal.id)) {
           this.seen.add(proposal.id);
-          this.state.lastReceivedProposal = { ...proposal, status: 'Leader 已接收（未提交）' };
+          this.state.lastReceivedProposal = { ...proposal, status: 'Received by Leader (not committed)' };
           this.report();
         }
         if (proposal.origin === id) this.ack(proposal);
@@ -35,7 +35,7 @@ export function createActor(run, id) {
       ack(proposal) {
         this.pending = this.pending.filter(p => p.id !== proposal.id);
         if (this.state.lastProposal?.id === proposal.id) {
-          this.state.lastProposal.status = 'Leader 已接收（未提交）'; this.report();
+          this.state.lastProposal.status = 'Received by Leader (not committed)'; this.report();
         }
       },
       flush() {
@@ -88,7 +88,7 @@ export function createActor(run, id) {
     });
   } else if (run.config.protocol === 'token') {
     Object.assign(actor, {
-      inputs: [{ action: 'enqueue', label: '提交 payload', description: '等待获得令牌后处理。再次提交会替换尚未处理的 payload。',
+      inputs: [{ action: 'enqueue', label: 'Submit payload', description: 'Waits until the token arrives to process it; submitting again replaces the not-yet-processed payload.',
         fields: [{ name: 'payload', label: 'Payload', type: 'text', required: true, maxLength: 4096 }] }],
       state: { role: 'waiting', entries: 0, hasToken: false },
       wirePayload: null,
@@ -119,9 +119,9 @@ export function createActor(run, id) {
     });
   } else {
     Object.assign(actor, {
-      inputs: [{ action: 'write', label: '写入副本', fields: [
-        { name: 'key', label: '键', type: 'text', required: true, maxLength: 100 },
-        { name: 'value', label: '值', type: 'text', required: true, maxLength: 4096 }] }],
+      inputs: [{ action: 'write', label: 'Write to replica', fields: [
+        { name: 'key', label: 'Key', type: 'text', required: true, maxLength: 100 },
+        { name: 'value', label: 'Value', type: 'text', required: true, maxLength: 4096 }] }],
       command(cmd) { this.put(cmd.values.key, cmd.values.value); },
       state: { role: 'replica', version: 0, store: {} },
       start(recovered) {

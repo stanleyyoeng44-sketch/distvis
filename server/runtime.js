@@ -34,7 +34,7 @@ export function command(bin, args, options = {}) {
     child.on('close', code => {
       clearTimeout(timer);
       if (code === 0) resolvePromise(output);
-      else reject(new Error(`${bin} ${args[0]} 失败 (${code}): ${output}`));
+      else reject(new Error(`${bin} ${args[0]} failed (${code}): ${output}`));
     });
     child.stdin.end(options.input || '');
   });
@@ -66,7 +66,7 @@ export class ContainerRuntime {
     this.onDeliveryFailure = message => this.deliveryFailure(message);
     this.onCommand = ({ node, ...cmd }) => {
       this.commands.set(cmd.id,{node,...cmd});
-      if (!this.write(node, { type: 'command', ...cmd })) throw new Error('节点会话不可写');
+      if (!this.write(node, { type: 'command', ...cmd })) throw new Error('The node session is not writable');
     };
     run.on('deliver', this.onDeliver);
     run.on('delivery-failed', this.onDeliveryFailure);
@@ -112,16 +112,16 @@ export class ContainerRuntime {
     this.run.log('runtime', {
       execution: 'go',
       sourceSha256: this.run.config.project?.sha256 || createHash('sha256').update(this.source).digest('hex'),
-      message: this.project ? `Go 项目：${this.project.name || this.project.directory}\n入口：${this.project.entry}\n源码快照只读挂载到 /protocol` : '节点程序：Go 源码（通过 distvis/sdk 接入 coordinator）',
+      message: this.project ? `Go project: ${this.project.name || this.project.directory}\nEntry: ${this.project.entry}\nThe source snapshot is mounted read-only at /protocol` : 'Node program: Go sources (connected to the coordinator via distvis/sdk)',
     });
-    this.run.log('runtime', { message: `正在构建 Go 节点镜像…\n编译镜像：${images.go}\n运行镜像：${images.runtime}`, images });
+    this.run.log('runtime', { message: `Building Go node images…\nBuild image: ${images.go}\nRuntime image: ${images.runtime}`, images });
     try {
       const proxyArgs = process.env.DISTVIS_BUILD_NETWORK ? ['--network',process.env.DISTVIS_BUILD_NETWORK] : [];
       for(const key of ['HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY']){
         const value=process.env[key] || (key==='NO_PROXY'?undefined:this.buildProxy);
         if(value)proxyArgs.push('--build-arg',`${key}=${value}`);
       }
-      if (this.sharedImage) this.run.log('runtime', { message: `复用已构建的 SDK 镜像 ${this.image}` });
+      if (this.sharedImage) this.run.log('runtime', { message: `Reusing the built SDK image ${this.image}` });
       else await command('docker', ['build', '--build-arg', `GOPROXY=${this.goProxy}`, ...proxyArgs, '-t', this.image, context], { timeout: 300000 });
     } catch (error) {
       throw new Error(describeBuildFailure(error), { cause: error });
@@ -183,7 +183,7 @@ export class ContainerRuntime {
           await mkdir(output,{recursive:true});
           const compiler = `${this.prefix}-compile`;
           this.resources.push(compiler);
-          this.run.log('runtime',{message:`正在编译多文件 Go 项目 · ${target}…`});
+          this.run.log('runtime',{message:`Compiling the multi-file Go project · ${target}…`});
           await command('docker',['run','--rm','--name',compiler,'--user','0',
             '--mount',bindMount(project.snapshot,'/protocol'),
             '--mount',bindMount(output,'/app',false),
@@ -207,7 +207,7 @@ export class ContainerRuntime {
     }
     this.run.start();
     for (const node of this.run.nodes) this.attach(node);
-    this.run.log('runtime', { message: `${this.run.nodes.length} 个 Go 节点已启动` });
+    this.run.log('runtime', { message: `${this.run.nodes.length} Go nodes started` });
   }
   attach(node) {
     this.expected.delete(node);
@@ -223,14 +223,14 @@ export class ContainerRuntime {
     child.stdout.on('data', b => {
       buffered += b.length;
       if (buffered > this.run.config.limits.stdoutBytes) {
-        this.run.log('runtime', { node, message: '节点输出超过 stdoutBytes 上限，已关闭该会话' });
+        this.run.log('runtime', { node, message: 'Node output exceeded the stdoutBytes limit; the session was closed' });
         child.kill();
       }
     });
     createInterface({ input: child.stdout }).on('line', line => {
       if (this.closed || this.sessions.get(node) !== child || !this.run.online[node] || this.run.status !== 'running') return;
       try {
-        if (Buffer.byteLength(line) > this.run.config.limits.messageBytes) throw new Error('单条消息超过 messageBytes 上限');
+        if (Buffer.byteLength(line) > this.run.config.limits.messageBytes) throw new Error('A single message exceeded the messageBytes limit');
         const msg = JSON.parse(line);
         if (msg.type === 'send') this.run.send(node, msg.to, msg.payload);
         else if (msg.type === 'state') this.run.report(node, msg.state);
@@ -242,7 +242,7 @@ export class ContainerRuntime {
         } else if(msg.type==='observation'){
           this.run.log('observation',{node,kind:msg.kind,value:msg.value});
         } else this.run.log('stdout', { node, message: line.slice(0, 2000) });
-      } catch (error) { this.run.log('stderr', { node, message: `协议输出错误: ${error.message}` }); }
+      } catch (error) { this.run.log('stderr', { node, message: `Protocol error output: ${error.message}` }); }
     });
     child.stderr.on('data', data => {
       if (this.closed || this.sessions.get(node) !== child) return;
@@ -258,7 +258,7 @@ export class ContainerRuntime {
         this.run.online[node] = false;
         this.run.epochs[node]++;
         this.dropPending(node);
-        this.run.log('node', { node, online: false, reason: `进程退出 (${code})` });
+        this.run.log('node', { node, online: false, reason: `Process exited (${code})` });
       }
     });
     this.write(node, { type: 'init', node, nodes: this.run.nodes, protocol: this.run.config.protocol, parameters: this.run.config.parameters || {} });
@@ -273,7 +273,7 @@ export class ContainerRuntime {
     if (this.write(message.to, { type: 'message', ...message })) {
       this.pending.set(message.id, message);
       this.run.log('deliver', message);
-    } else this.run.log('drop', { ...message, reason: '节点会话不可写' });
+    } else this.run.log('drop', { ...message, reason: 'The node session is not writable' });
   }
   deliveryFailure(message) {
     const p=message.payload;
@@ -306,11 +306,11 @@ export class ContainerRuntime {
     this.run.fault(fault);
   }
   dropPending(node) {
-    for(const [id,cmd] of this.commands)if(cmd.node===node){this.run.log('command_result',{node,commandId:id,error:'节点进程已退出，操作结果未知'});this.commands.delete(id);}
+    for(const [id,cmd] of this.commands)if(cmd.node===node){this.run.log('command_result',{node,commandId:id,error:'The node process exited; the operation result is unknown'});this.commands.delete(id);}
 
     for (const [id, message] of this.pending) {
       if (message.to === node) {
-        this.run.log('drop', { ...message, reason: '节点退出，尚未接收的消息已丢弃' });
+        this.run.log('drop', { ...message, reason: 'The node exited; undelivered messages were dropped' });
         this.pending.delete(id);
       }
     }
@@ -339,6 +339,6 @@ export class ContainerRuntime {
     }
     // The content-addressed SDK image of directory projects is kept for the next run.
     if (!this.project) try { await command('docker', ['image', 'rm', this.image]); } catch (e) { if (this.resources.length) errors.push(e.message); }
-    if (errors.length) this.run.log('runtime', { message: '资源清理未全部完成', errors });
+    if (errors.length) this.run.log('runtime', { message: 'Resource cleanup did not fully complete', errors });
   }
 }
