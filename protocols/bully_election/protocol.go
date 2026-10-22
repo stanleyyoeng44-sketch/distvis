@@ -7,9 +7,8 @@ import (
 	"time"
 )
 
-// bounded rpc call. a call into a dead or blocked node must not hang the
-// whole action - the platform gives us ~10s and then the command dies. NOTE:
-// on timeout the reply must NOT be read, the decoder may still be writing it.
+// bounded rpc call so a dead/blocked node can't hang the action past the
+// platform's ~10s command deadline. on timeout the reply must NOT be read.
 func call(client *rpc.Client, method string, args, reply any) error {
 	done := make(chan error, 1)
 	go func() { done <- client.Call(method, args, reply) }()
@@ -23,18 +22,16 @@ func call(client *rpc.Client, method string, args, reply any) error {
 
 // the bully algorithm (garcia-molina). "highest priority alive wins":
 //
-//  1. StartElection: I become candidate and send ELECTION to every HIGHER node.
-//  2. each higher node answers OK and immediately starts its OWN election
-//     (that's the bullying takeover).
+//  1. StartElection: become candidate, send ELECTION to every HIGHER node.
+//  2. each higher node answers OK and starts its OWN election (the bullying).
 //  3. any OK means I back down and wait for its victory.
-//  4. nobody answered (all higher nodes are down) -> I am the highest alive,
-//     broadcast VICTORY and become coordinator.
-//  5. receiving VICTORY records the new coordinator and ends my election.
+//  4. nobody answered -> I am the highest alive: broadcast VICTORY.
+//  5. receiving VICTORY records the coordinator and ends my election.
 type Empty struct{}
 
 type ElectionMsg struct {
 	From string `json:"from"`
-	ID   int    `json:"id"` // sender priority, for logs and sanity checks
+	ID   int    `json:"id"`
 }
 type ElectionReply struct {
 	OK bool `json:"ok"` // "I am alive and I outrank you"
@@ -55,8 +52,6 @@ type State struct {
 	ElectionsWon  int      `json:"electionsWon"`
 	BackedDown    int      `json:"electionsBackedDown"`
 	HigherPeers   []string `json:"higherPeers"`
-	Recent        []string `json:"recentEvents"`
-	LastEvent     string   `json:"lastEvent"`
 	LastError     string   `json:"lastError"`
 }
 
@@ -80,26 +75,7 @@ func (s *ElectionService) higherPeersLocked() []string {
 	return higher
 }
 
-func (s *ElectionService) logLocked(format string, args ...any) {
-	s.events = append(s.events, fmt.Sprintf("round %d: %s", s.electionRound, fmt.Sprintf(format, args...)))
-	if len(s.events) > 12 {
-		s.events = s.events[len(s.events)-12:]
-	}
-}
-
-func (s *ElectionService) logEvent(format string, args ...any) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.logLocked(format, args...)
-}
-
 func (s *ElectionService) stateLocked() State {
-	recent := make([]string, len(s.events))
-	copy(recent, s.events)
-	last := ""
-	if len(recent) > 0 {
-		last = recent[len(recent)-1]
-	}
 	higher := make([]string, 0, len(s.members))
 	for _, member := range s.members {
 		if priority(member) > s.priority {
@@ -109,7 +85,7 @@ func (s *ElectionService) stateLocked() State {
 	return State{
 		Node: s.id, ID: s.priority, Role: s.status, Coordinator: s.coordinator,
 		ElectionRound: s.electionRound, ElectionsWon: s.won, BackedDown: s.backedDown,
-		HigherPeers: higher, Recent: recent, LastEvent: last, LastError: s.lastErr,
+		HigherPeers: higher, LastError: s.lastErr,
 	}
 }
 
@@ -133,21 +109,16 @@ func (s *ElectionService) campaign(round uint64) {
 			defer workers.Done()
 			client := s.peers[to]
 			if client == nil {
-				s.logEvent("no RPC connection to %s", to)
 				return
 			}
 			var reply ElectionReply
 			if err := call(client, "ElectionService.Election", message, &reply); err != nil {
-				s.logEvent("ELECTION to %s failed: %v", to, err)
-				return
+				return // treated as "down"
 			}
 			if reply.OK {
 				countMu.Lock()
 				okCount++
 				countMu.Unlock()
-				s.logEvent("recv OK from %s: it outranks me", to)
-			} else {
-				s.logEvent("recv refusal from %s (it does not outrank me)", to)
 			}
 		}(peer)
 	}
@@ -156,14 +127,12 @@ func (s *ElectionService) campaign(round uint64) {
 	s.mu.Lock()
 	if s.electionRound != round || s.status != statusCandidate {
 		// a VICTORY arrived while I was campaigning, I already stood down
-		s.logLocked("drop campaign result: superseded by a victory")
 		s.mu.Unlock()
 		return
 	}
 	if okCount > 0 {
 		s.status = statusFollower
 		s.backedDown++
-		s.logLocked("BACKED DOWN: %d higher node(s) answered OK; wait for its victory", okCount)
 		st := s.stateLocked()
 		s.mu.Unlock()
 		_ = s.report(st)
@@ -174,7 +143,6 @@ func (s *ElectionService) campaign(round uint64) {
 	s.status = statusCoordinator
 	s.coordinator = s.id
 	s.won++
-	s.logLocked("WON the election; broadcast VICTORY to %d node(s)", len(s.members)-1)
 	victory := VictoryMsg{From: s.id, ID: s.priority}
 	peers := append([]string(nil), s.members...)
 	st := s.stateLocked()
@@ -191,12 +159,9 @@ func (s *ElectionService) campaign(round uint64) {
 			defer deliver.Done()
 			client := s.peers[to]
 			if client == nil {
-				s.logEvent("no RPC connection to %s", to)
 				return
 			}
-			if err := call(client, "ElectionService.Victory", victory, &VictoryReply{}); err != nil {
-				s.logEvent("VICTORY to %s failed: %v", to, err)
-			}
+			_ = call(client, "ElectionService.Victory", victory, &VictoryReply{})
 		}(peer)
 	}
 	deliver.Wait()
@@ -212,21 +177,16 @@ func (s *ElectionService) Election(args ElectionMsg, reply *ElectionReply) error
 		s.mu.Unlock()
 		return fmt.Errorf("election from unknown node %q", args.From)
 	}
-	s.logLocked("recv ELECTION from %s (priority %d)", args.From, args.ID)
-
 	if s.priority <= args.ID {
-		// defensive: senders only contact HIGHER priorities so this means a
+		// defensive: senders only contact HIGHER priorities, so this means a
 		// sender mis-ranked me. a node I don't outrank can't win while I live.
 		reply.OK = false
-		s.logLocked("refuse OK to %s: I do not outrank it", args.From)
 	} else {
 		reply.OK = true
-		s.logLocked("send OK to %s", args.From)
 		if s.status != statusCandidate {
 			s.electionRound++
 			round := s.electionRound
 			s.status = statusCandidate
-			s.logLocked("BULLY %s: start my own election", args.From)
 			go s.campaign(round) // if I'm already campaigning that one continues
 		}
 	}
@@ -246,18 +206,13 @@ func (s *ElectionService) Victory(args VictoryMsg, reply *VictoryReply) error {
 		return fmt.Errorf("victory from unknown node %q", args.From)
 	}
 	s.coordinator = args.From
-	stoodDown := ""
 	if s.status == statusCandidate {
 		s.electionRound++ // kills the campaign still in flight
 		s.backedDown++
-		stoodDown = ", stood down from my own election"
-	} else if s.status == statusCoordinator {
-		// somebody else just won: my leadership is over even though I never
-		// lost a campaign. without this a healed partition keeps two leaders.
-		stoodDown = ", stepped aside as coordinator"
 	}
+	// note: a sitting coordinator also steps aside here, otherwise a healed
+	// partition keeps two nodes with the leader role.
 	s.status = statusFollower
-	s.logLocked("recv VICTORY from %s%s; coordinator is now %s", args.From, stoodDown, args.From)
 	st := s.stateLocked()
 	s.mu.Unlock()
 	_ = s.report(st)
@@ -279,7 +234,6 @@ func (a *Application) StartElection(_ Empty, reply *State) error {
 	s.electionRound++
 	round := s.electionRound
 	s.status = statusCandidate
-	s.logLocked("START election; send ELECTION to all higher-priority nodes")
 	st := s.stateLocked()
 	s.mu.Unlock()
 	_ = s.report(st)
@@ -287,19 +241,16 @@ func (a *Application) StartElection(_ Empty, reply *State) error {
 	s.campaign(round) // the whole round: OKs, back-down or victory
 
 	s.mu.Lock()
-	st = s.stateLocked()
-	s.mu.Unlock()
-	_ = s.report(st)
-	*reply = st
+	defer s.mu.Unlock()
+	*reply = s.stateLocked()
+	_ = s.report(*reply)
 	return nil
 }
 
-// Read just reports the state.
 func (a *Application) Read(_ Empty, reply *State) error {
 	s := a.service
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	*reply = s.stateLocked()
-	st := *reply
-	s.mu.Unlock()
-	return s.report(st)
+	return s.report(*reply)
 }

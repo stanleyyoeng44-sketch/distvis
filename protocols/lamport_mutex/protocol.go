@@ -8,9 +8,8 @@ import (
 	"time"
 )
 
-// bounded rpc call. a call into a dead or blocked node must not hang the
-// whole action - the platform gives us ~10s and then the command dies. NOTE:
-// on timeout the reply must NOT be read, the decoder may still be writing it.
+// bounded rpc call so a dead/blocked node can't hang the action past the
+// platform's ~10s command deadline. on timeout the reply must NOT be read.
 func call(client *rpc.Client, method string, args, reply any) error {
 	done := make(chan error, 1)
 	go func() { done <- client.Call(method, args, reply) }()
@@ -24,8 +23,8 @@ func call(client *rpc.Client, method string, args, reply any) error {
 
 type Empty struct{}
 
-// req(ts, from): "I want the critical section". TS is the timestamp of the
-// request event - one broadcast, one timestamp, every copy identical.
+// req(ts,from): TS is the timestamp of the request event - one broadcast,
+// one timestamp, every copy identical.
 type ReqMsg struct {
 	From string `json:"from"`
 	TS   uint64 `json:"ts"`
@@ -58,18 +57,16 @@ type State struct {
 	Status     string       `json:"status"` // idle | requesting | in-cs
 	MyTS       uint64       `json:"myTS"`
 	AcksHave   int          `json:"acksHave"`
-	AcksNeed   int          `json:"acksNeed"` // always members-1
+	AcksNeed   int          `json:"acksNeed"`
 	Queue      []QueueEntry `json:"queue"`
 	Deferred   []string     `json:"deferred"` // who is waiting for an ack from me
 	EntryOrder []QueueEntry `json:"entryOrder"`
-	Recent     []string     `json:"recentEvents"`
-	LastEvent  string       `json:"lastEvent"`
 	LastError  string       `json:"lastError"`
 }
 
 func key(e QueueEntry) requestKey { return requestKey{ts: e.TS, node: e.Node} }
 
-// the queue is a SET of requests kept sorted by (ts,node). duplicates (a
+// the queue is a SET of requests sorted by (ts,node). duplicates (a
 // retransmitted message) are ignored.
 func insertRequest(queue []QueueEntry, entry QueueEntry) []QueueEntry {
 	for _, existing := range queue {
@@ -111,27 +108,7 @@ func (s *MutexService) isMember(id string) bool {
 	return false
 }
 
-func (s *MutexService) logLocked(format string, args ...any) {
-	entry := fmt.Sprintf("L=%d %s", s.clock.now, fmt.Sprintf(format, args...))
-	s.events = append(s.events, entry)
-	if len(s.events) > 12 {
-		s.events = s.events[len(s.events)-12:]
-	}
-}
-
-func (s *MutexService) logEvent(format string, args ...any) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.logLocked(format, args...)
-}
-
 func (s *MutexService) stateLocked() State {
-	recent := make([]string, len(s.events))
-	copy(recent, s.events)
-	last := ""
-	if len(recent) > 0 {
-		last = recent[len(recent)-1]
-	}
 	deferred := make([]string, len(s.deferred))
 	for i, d := range s.deferred {
 		deferred[i] = d.Node
@@ -144,7 +121,7 @@ func (s *MutexService) stateLocked() State {
 		Node: s.id, Clock: s.clock.now, Status: s.status, MyTS: s.myTS,
 		AcksHave: len(s.acks), AcksNeed: len(s.members) - 1,
 		Queue: queue, Deferred: deferred, EntryOrder: entered,
-		Recent: recent, LastEvent: last, LastError: s.lastErr,
+		LastError: s.lastErr,
 	}
 }
 
@@ -161,16 +138,9 @@ func (s *MutexService) blockedByMeLocked(their requestKey) bool {
 	return false // idle nodes block nobody
 }
 
-func (s *MutexService) blockedByMeReasonLocked(their requestKey) string {
-	if s.status == statusInCS {
-		return "I am in the critical section"
-	}
-	return fmt.Sprintf("my request (%d,%s) is earlier", s.myTS, s.id)
-}
-
-// enter when everyone replied to me AND my request is at the queue head.
-// the head check is technically redundant (the reply rule guarantees it) but
-// the queue is what students can inspect, so check it anyway.
+// enter when everyone replied to me AND my request is at the queue head. the
+// head check is technically redundant (the reply rule guarantees it) but the
+// queue is what you can inspect, so check it anyway.
 func (s *MutexService) tryEnterLocked() {
 	if s.status != statusRequesting || len(s.acks) != len(s.members)-1 {
 		return
@@ -181,48 +151,38 @@ func (s *MutexService) tryEnterLocked() {
 	}
 	s.status = statusInCS
 	s.entered = append(s.entered, head)
-	s.logLocked("ENTER the critical section as req(%d,%s)", s.myTS, s.id)
 }
 
 // outgoing messages run in their own goroutine: never hold the state lock
-// while waiting for the network or you deadlock yourself.
+// while waiting for the network.
 func (s *MutexService) sendAck(to string, theirTS, ackTS uint64) {
 	client := s.peers[to]
 	if client == nil {
-		s.logEvent("no RPC connection to %s", to)
 		return
 	}
-	if err := call(client, "MutexService.Ack", AckMsg{From: s.id, TS: ackTS, ForTS: theirTS}, &AckReply{}); err != nil {
-		s.logEvent("ack to %s failed: %v", to, err)
-	}
+	_ = call(client, "MutexService.Ack", AckMsg{From: s.id, TS: ackTS, ForTS: theirTS}, &AckReply{})
 }
 
 func (s *MutexService) sendRelease(to string, releaseTS uint64) {
 	client := s.peers[to]
 	if client == nil {
-		s.logEvent("no RPC connection to %s", to)
 		return
 	}
-	if err := call(client, "MutexService.Release", ReleaseMsg{From: s.id, TS: releaseTS}, &ReleaseReply{}); err != nil {
-		s.logEvent("release to %s failed: %v", to, err)
-	}
+	_ = call(client, "MutexService.Release", ReleaseMsg{From: s.id, TS: releaseTS}, &ReleaseReply{})
 }
 
 func (s *MutexService) sendRequest(to string, reqTS uint64) {
 	client := s.peers[to]
 	if client == nil {
-		s.logEvent("no RPC connection to %s", to)
 		return
 	}
-	if err := call(client, "MutexService.Request", ReqMsg{From: s.id, TS: reqTS}, &ReqReply{}); err != nil {
-		s.logEvent("req to %s failed: %v", to, err)
-	}
+	_ = call(client, "MutexService.Request", ReqMsg{From: s.id, TS: reqTS}, &ReqReply{})
 }
 
 // incoming messages.
 
-// Request handles req(ts,from): merge clocks, queue it, then either reply
-// now or defer the reply while I'm blocking it.
+// Request: merge clocks, queue it, then either reply now or defer the reply
+// while I'm blocking it.
 func (s *MutexService) Request(args ReqMsg, reply *ReqReply) error {
 	s.mu.Lock()
 	if args.From == "" || args.From == s.id || args.TS == 0 || !s.isMember(args.From) {
@@ -230,16 +190,13 @@ func (s *MutexService) Request(args ReqMsg, reply *ReqReply) error {
 		return fmt.Errorf("request from unknown node %q", args.From)
 	}
 	s.clock.onReceive(args.TS) // rule 2: the request's ts is now in my past
-	s.logLocked("recv req(%d) from %s", args.TS, args.From)
 	their := requestKey{ts: args.TS, node: args.From}
 	s.queue = insertRequest(s.queue, QueueEntry{TS: args.TS, Node: args.From})
 
 	if s.blockedByMeLocked(their) {
 		s.deferred = append(s.deferred, QueueEntry{TS: args.TS, Node: args.From})
-		s.logLocked("DEFER ack for req(%d,%s): %s", args.TS, args.From, s.blockedByMeReasonLocked(their))
 	} else {
 		ackTS := s.clock.tick() // sending the ack is an event too
-		s.logLocked("send ack(%d) to %s for req(%d)", ackTS, args.From, args.TS)
 		go s.sendAck(args.From, args.TS, ackTS)
 	}
 	st := s.stateLocked()
@@ -248,7 +205,7 @@ func (s *MutexService) Request(args ReqMsg, reply *ReqReply) error {
 	return nil
 }
 
-// Ack handles "you may enter" for one of my requests.
+// Ack: "you may enter" for one of my requests.
 func (s *MutexService) Ack(args AckMsg, reply *AckReply) error {
 	s.mu.Lock()
 	if args.From == "" || args.From == s.id || args.TS == 0 || args.ForTS == 0 || !s.isMember(args.From) {
@@ -257,14 +214,11 @@ func (s *MutexService) Ack(args AckMsg, reply *AckReply) error {
 	}
 	s.clock.onReceive(args.TS)
 	// only an ack for the CURRENT request counts
-	if s.status != statusRequesting || args.ForTS != s.myTS {
-		s.logLocked("ignore stale ack(%d) from %s for req(%d), my req is (%d)", args.TS, args.From, args.ForTS, s.myTS)
-	} else {
+	if s.status == statusRequesting && args.ForTS == s.myTS {
 		if s.acks == nil {
 			s.acks = map[string]bool{}
 		}
 		s.acks[args.From] = true // it's a set, duplicates change nothing
-		s.logLocked("recv ack(%d) from %s (%d/%d)", args.TS, args.From, len(s.acks), len(s.members)-1)
 		s.tryEnterLocked()
 	}
 	st := s.stateLocked()
@@ -273,8 +227,8 @@ func (s *MutexService) Ack(args AckMsg, reply *AckReply) error {
 	return nil
 }
 
-// Release handles release(from): the request leaves the queue and every
-// deferred reply I no longer owe gets sent.
+// Release: the request leaves the queue and every deferred reply I no longer
+// owe gets sent.
 func (s *MutexService) Release(args ReleaseMsg, reply *ReleaseReply) error {
 	s.mu.Lock()
 	if args.From == "" || args.From == s.id || args.TS == 0 || !s.isMember(args.From) {
@@ -283,7 +237,6 @@ func (s *MutexService) Release(args ReleaseMsg, reply *ReleaseReply) error {
 	}
 	s.clock.onReceive(args.TS)
 	s.queue = removeRequest(s.queue, args.From)
-	s.logLocked("recv release(%d) from %s; req(%d) left the queue", args.TS, args.From, args.TS)
 
 	still := s.deferred[:0]
 	for _, entry := range s.deferred {
@@ -291,9 +244,7 @@ func (s *MutexService) Release(args ReleaseMsg, reply *ReleaseReply) error {
 			still = append(still, entry)
 			continue
 		}
-		ackTS := s.clock.tick()
-		s.logLocked("send ack(%d) to %s for req(%d) after release", ackTS, entry.Node, entry.TS)
-		go s.sendAck(entry.Node, entry.TS, ackTS)
+		go s.sendAck(entry.Node, entry.TS, s.clock.tick())
 	}
 	s.deferred = append([]QueueEntry(nil), still...)
 	s.tryEnterLocked()
@@ -320,13 +271,10 @@ func (a *Application) RequestCS(_ Empty, reply *State) error {
 	s.status = statusRequesting
 	s.acks = map[string]bool{}
 	s.queue = insertRequest(s.queue, QueueEntry{TS: s.myTS, Node: s.id})
-	s.logLocked("REQUEST CS as req(%d,%s); broadcast", s.myTS, s.id)
 	self := s.id
 	reqTS := s.myTS
 	peers := append([]string(nil), s.members...)
-	st := s.stateLocked()
 	s.mu.Unlock()
-	_ = s.report(st)
 
 	var workers sync.WaitGroup
 	for _, peer := range peers {
@@ -342,17 +290,16 @@ func (a *Application) RequestCS(_ Empty, reply *State) error {
 	workers.Wait() // by now every peer has been asked
 
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.tryEnterLocked()
-	st = s.stateLocked()
-	s.mu.Unlock()
-	_ = s.report(st)
-	*reply = st
+	*reply = s.stateLocked()
+	_ = s.report(*reply)
 	return nil
 }
 
 // Release leaves the critical section: my request leaves the queue, deferred
-// acks go out and everyone hears the release. only the node IN the critical
-// section may call it - that's the whole point of the algorithm.
+// acks go out, everyone hears the release. only the node IN the critical
+// section may call it.
 func (a *Application) Release(_ Empty, reply *State) error {
 	s := a.service
 	s.mu.Lock()
@@ -365,19 +312,16 @@ func (a *Application) Release(_ Empty, reply *State) error {
 	s.status = statusIdle
 	s.myTS = 0
 	s.acks = nil
-	s.logLocked("RELEASE the critical section; queue opened")
 
 	// everything I deferred while requesting/in cs is now allowed - idle
-	// nodes block nobody. the rule is re-checked per entry just in case.
+	// nodes block nobody.
 	still := s.deferred[:0]
 	for _, entry := range s.deferred {
 		if s.blockedByMeLocked(key(entry)) {
 			still = append(still, entry)
 			continue
 		}
-		ackTS := s.clock.tick()
-		s.logLocked("send ack(%d) to %s for req(%d) after my release", ackTS, entry.Node, entry.TS)
-		go s.sendAck(entry.Node, entry.TS, ackTS)
+		go s.sendAck(entry.Node, entry.TS, s.clock.tick())
 	}
 	s.deferred = append([]QueueEntry(nil), still...)
 
@@ -402,19 +346,16 @@ func (a *Application) Release(_ Empty, reply *State) error {
 	workers.Wait()
 
 	s.mu.Lock()
-	st = s.stateLocked()
-	s.mu.Unlock()
-	_ = s.report(st)
-	*reply = st
+	defer s.mu.Unlock()
+	*reply = s.stateLocked()
+	_ = s.report(*reply)
 	return nil
 }
 
-// Read just reports the state: queue, ack count, deferred list, events.
 func (a *Application) Read(_ Empty, reply *State) error {
 	s := a.service
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	*reply = s.stateLocked()
-	st := *reply
-	s.mu.Unlock()
-	return s.report(st)
+	return s.report(*reply)
 }
