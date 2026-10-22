@@ -2,9 +2,25 @@ package main
 
 import (
 	"fmt"
+	"net/rpc"
 	"sort"
 	"sync"
+	"time"
 )
+
+// bounded rpc call. a call into a dead or blocked node must not hang the
+// whole action - the platform gives us ~10s and then the command dies. NOTE:
+// on timeout the reply must NOT be read, the decoder may still be writing it.
+func call(client *rpc.Client, method string, args, reply any) error {
+	done := make(chan error, 1)
+	go func() { done <- client.Call(method, args, reply) }()
+	select {
+	case err := <-done:
+		return err
+	case <-time.After(3 * time.Second):
+		return fmt.Errorf("%s: no reply within 3s; remote outcome unknown", method)
+	}
+}
 
 type Empty struct{}
 
@@ -176,7 +192,7 @@ func (s *MutexService) sendAck(to string, theirTS, ackTS uint64) {
 		s.logEvent("no RPC connection to %s", to)
 		return
 	}
-	if err := client.Call("MutexService.Ack", AckMsg{From: s.id, TS: ackTS, ForTS: theirTS}, &AckReply{}); err != nil {
+	if err := call(client, "MutexService.Ack", AckMsg{From: s.id, TS: ackTS, ForTS: theirTS}, &AckReply{}); err != nil {
 		s.logEvent("ack to %s failed: %v", to, err)
 	}
 }
@@ -187,7 +203,7 @@ func (s *MutexService) sendRelease(to string, releaseTS uint64) {
 		s.logEvent("no RPC connection to %s", to)
 		return
 	}
-	if err := client.Call("MutexService.Release", ReleaseMsg{From: s.id, TS: releaseTS}, &ReleaseReply{}); err != nil {
+	if err := call(client, "MutexService.Release", ReleaseMsg{From: s.id, TS: releaseTS}, &ReleaseReply{}); err != nil {
 		s.logEvent("release to %s failed: %v", to, err)
 	}
 }
@@ -198,7 +214,7 @@ func (s *MutexService) sendRequest(to string, reqTS uint64) {
 		s.logEvent("no RPC connection to %s", to)
 		return
 	}
-	if err := client.Call("MutexService.Request", ReqMsg{From: s.id, TS: reqTS}, &ReqReply{}); err != nil {
+	if err := call(client, "MutexService.Request", ReqMsg{From: s.id, TS: reqTS}, &ReqReply{}); err != nil {
 		s.logEvent("req to %s failed: %v", to, err)
 	}
 }

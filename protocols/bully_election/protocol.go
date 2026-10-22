@@ -2,8 +2,24 @@ package main
 
 import (
 	"fmt"
+	"net/rpc"
 	"sync"
+	"time"
 )
+
+// bounded rpc call. a call into a dead or blocked node must not hang the
+// whole action - the platform gives us ~10s and then the command dies. NOTE:
+// on timeout the reply must NOT be read, the decoder may still be writing it.
+func call(client *rpc.Client, method string, args, reply any) error {
+	done := make(chan error, 1)
+	go func() { done <- client.Call(method, args, reply) }()
+	select {
+	case err := <-done:
+		return err
+	case <-time.After(3 * time.Second):
+		return fmt.Errorf("%s: no reply within 3s; remote outcome unknown", method)
+	}
+}
 
 // the bully algorithm (garcia-molina). "highest priority alive wins":
 //
@@ -121,7 +137,7 @@ func (s *ElectionService) campaign(round uint64) {
 				return
 			}
 			var reply ElectionReply
-			if err := client.Call("ElectionService.Election", message, &reply); err != nil {
+			if err := call(client, "ElectionService.Election", message, &reply); err != nil {
 				s.logEvent("ELECTION to %s failed: %v", to, err)
 				return
 			}
@@ -178,7 +194,7 @@ func (s *ElectionService) campaign(round uint64) {
 				s.logEvent("no RPC connection to %s", to)
 				return
 			}
-			if err := client.Call("ElectionService.Victory", victory, &VictoryReply{}); err != nil {
+			if err := call(client, "ElectionService.Victory", victory, &VictoryReply{}); err != nil {
 				s.logEvent("VICTORY to %s failed: %v", to, err)
 			}
 		}(peer)

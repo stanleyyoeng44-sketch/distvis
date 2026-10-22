@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"net/rpc"
 	"sort"
 	"sync"
 	"time"
@@ -96,6 +97,18 @@ func nextActionFor(round *Round) string {
 	}
 }
 
+// copy the worksheet before reporting it - a step may still be filling the
+// original in while the report serializes it.
+func cloneRound(round *Round) *Round {
+	if round == nil {
+		return nil
+	}
+	clone := *round
+	clone.Samples = make([]Sample, len(round.Samples))
+	copy(clone.Samples, round.Samples)
+	return &clone
+}
+
 func (s *TimeService) stateLocked() State {
 	role, next := "participant", ""
 	if s.id == s.coordinator {
@@ -104,7 +117,7 @@ func (s *TimeService) stateLocked() State {
 	return State{
 		Node: s.id, Role: role, Coordinator: s.coordinator,
 		Clock: s.clock.view(time.Now()), Busy: s.busy,
-		Phase: phaseOf(s.round), NextAction: next, Round: s.round,
+		Phase: phaseOf(s.round), NextAction: next, Round: cloneRound(s.round),
 		LastApplied: s.lastApplied, LastDeltaMS: s.lastDeltaMS, LastError: s.lastError,
 	}
 }
@@ -272,6 +285,20 @@ func (s *TimeService) phase1PollPeers() (*Round, error) {
 	return round, nil
 }
 
+// bounded rpc call. a call into a dead or blocked node must not hang the
+// whole action - the platform gives us ~10s and then the command dies. NOTE:
+// on timeout the reply must NOT be read, the decoder may still be writing it.
+func call(client *rpc.Client, method string, args, reply any) error {
+	done := make(chan error, 1)
+	go func() { done <- client.Call(method, args, reply) }()
+	select {
+	case err := <-done:
+		return err
+	case <-time.After(3 * time.Second):
+		return fmt.Errorf("%s: no reply within 3s; remote outcome unknown", method)
+	}
+}
+
 func (s *TimeService) pollOne(peer string) Sample {
 	sample := Sample{Node: peer}
 	client := s.peers[peer]
@@ -281,7 +308,7 @@ func (s *TimeService) pollOne(peer string) Sample {
 	}
 	start := time.Now()
 	var reply PollReply
-	err := client.Call("TimeService.Poll", Empty{}, &reply)
+	err := call(client, "TimeService.Poll", Empty{}, &reply)
 	end := time.Now()
 	sample.RTTMS = end.Sub(start).Seconds() * 1000
 	if err != nil {
@@ -396,7 +423,7 @@ func (s *TimeService) phase3SendAdjustments() (*Round, error) {
 			if sample.Node == self {
 				err = s.Adjust(adjustment, &reply) // our own clock needs no rpc
 			} else {
-				err = s.peers[sample.Node].Call("TimeService.Adjust", adjustment, &reply)
+				err = call(s.peers[sample.Node], "TimeService.Adjust", adjustment, &reply)
 			}
 			s.mu.Lock()
 			defer s.mu.Unlock()
