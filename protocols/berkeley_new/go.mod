@@ -1,5 +1,5 @@
 // The module name identifies this lesson; package main inside it is an executable.
-module lesson/berkeley_new
+module berkeley_new
 
 // This is the minimum Go version used by the DistVis SDK.
 go 1.24

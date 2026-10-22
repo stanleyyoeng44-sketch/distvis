@@ -1,43 +1,63 @@
-// distvis:name Bully Election
-// distvis:description The classic bully election: you trigger StartElection on any node; ELECTION/OK/VICTORY messages run automatically and the highest-priority node alive takes over. Crash nodes to watch the next-highest bully its way up.
-// distvis:start node-1 Application.StartElection {} Start an election on the LOWEST-priority node and watch the highest one win.
-
-// package main tells Go to build an executable rather than an importable library.
-// main.go is deliberately small: start here, then read protocol.go and bully.go.
+// distvis:name Bully Election HANDMADE
 package main
 
 import (
+	"net/rpc"
+	"strconv"
+	"strings"
+	"sync"
+
 	lab "distvis/sdk/rpc"
 )
 
 func main() {
-	// Main invokes configure with this node's Runtime. It also owns stdin/stdout,
-	// RPC dispatch, signal handling and shared connection cleanup. Never print
-	// ordinary text to stdout: DistVis uses it as a machine-readable channel.
 	lab.Main(configure)
 }
 
-// configure builds this node's state and registers exactly two services:
-//
-//   - ElectionService holds the two node-to-node RPCs (Election, Victory).
-//     It creates no input forms.
-//   - Application holds the actions YOU trigger: StartElection and Read.
-//
-// Priority comes from the node id: node-3 outranks node-2. node-N is the
-// strongest "bully" — when it is alive, it wins every election.
+// priority is the number in the node id: node-3 outranks node-2. DON'T
+// compare the id strings - "node-10" would lose against "node-2".
+func priority(id string) int {
+	parts := strings.Split(id, "-")
+	n, err := strconv.Atoi(parts[len(parts)-1])
+	if err != nil {
+		return 0
+	}
+	return n
+}
+
+type ElectionService struct {
+	mu            sync.Mutex
+	id            string
+	priority      int
+	members       []string
+	peers         map[string]*rpc.Client
+	report        func(any) error
+	status        string // follower | candidate | coordinator
+	coordinator   string
+	electionRound uint64
+	won           int
+	backedDown    int
+	events        []string
+	lastErr       string
+}
+
+type Application struct{ service *ElectionService }
+
+const (
+	statusFollower    = "follower"
+	statusCandidate   = "candidate"
+	statusCoordinator = "coordinator"
+)
+
 func configure(node *lab.Runtime) error {
 	peers, err := node.RPCPeers()
 	if err != nil {
 		return err
 	}
 	s := &ElectionService{
-		id:       node.ID,
-		priority: priority(node.ID),
-		members:  node.Nodes,
-		peers:    peers, // Owned by the runtime: never Close these here.
-		report:   node.Report,
-		// Nobody is the coordinator until the first election decides it.
-		status: statusFollower,
+		id: node.ID, priority: priority(node.ID), members: node.Nodes,
+		peers: peers, report: node.Report,
+		status: statusFollower, // nobody is coordinator until the first election
 	}
 	if err := node.RegisterName("ElectionService", s); err != nil {
 		return err
@@ -46,7 +66,8 @@ func configure(node *lab.Runtime) error {
 		return err
 	}
 	s.mu.Lock()
-	state := s.stateLocked()
+	st := s.stateLocked()
 	s.mu.Unlock()
-	return node.Report(state)
+	_ = s.report(st)
+	return node.Report("hey dude, I'm ready")
 }

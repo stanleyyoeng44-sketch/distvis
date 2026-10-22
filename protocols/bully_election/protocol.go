@@ -2,101 +2,48 @@ package main
 
 import (
 	"fmt"
-	"net/rpc"
-	"strconv"
-	"strings"
 	"sync"
 )
 
-// ─── Messages ────────────────────────────────────────────────────────────────
-// The classic bully exchange has exactly three messages:
+// the bully algorithm (garcia-molina). "highest priority alive wins":
 //
-//	ELECTION  "I am holding an election"      -> to every HIGHER-priority node
-//	OK        "I am alive and I outrank you"  -> the RPC reply to ELECTION
-//	VICTORY   "I am the coordinator now"      -> broadcast by the winner
-//
-// ELECTION is only ever sent to higher-priority nodes, so the receiver always
-// outranks the sender. The OK is the RPC REPLY rather than a separate message:
-// DistVis draws request and reply arrows anyway, and one round trip is all the
-// sender needs to learn "somebody outranks me and is alive".
+//  1. StartElection: I become candidate and send ELECTION to every HIGHER node.
+//  2. each higher node answers OK and immediately starts its OWN election
+//     (that's the bullying takeover).
+//  3. any OK means I back down and wait for its victory.
+//  4. nobody answered (all higher nodes are down) -> I am the highest alive,
+//     broadcast VICTORY and become coordinator.
+//  5. receiving VICTORY records the new coordinator and ends my election.
+type Empty struct{}
 
-// ElectionMsg is the classic ELECTION message.
 type ElectionMsg struct {
 	From string `json:"from"`
-	ID   int    `json:"id"` // Sender's priority, for logs and defensive checks.
+	ID   int    `json:"id"` // sender priority, for logs and sanity checks
 }
-
-// ElectionReply is the classic OK.
 type ElectionReply struct {
-	OK bool `json:"ok"`
+	OK bool `json:"ok"` // "I am alive and I outrank you"
 }
 
-// VictoryMsg is the classic COORDINATOR/VICTORY announcement.
 type VictoryMsg struct {
 	From string `json:"from"`
 	ID   int    `json:"id"`
 }
 type VictoryReply struct{}
 
-// State is what a node reports after every event: its role, who it believes
-// the coordinator is, and a short log of the latest algorithm events.
 type State struct {
 	Node          string   `json:"node"`
-	ID            int      `json:"id"`          // Bully priority (numeric suffix of the node id).
-	Role          string   `json:"role"`        // follower | candidate | coordinator
-	Coordinator   string   `json:"coordinator"` // Believed leader; "" until the first election.
+	ID            int      `json:"id"`
+	Role          string   `json:"role"` // follower | candidate | coordinator
+	Coordinator   string   `json:"coordinator"`
 	ElectionRound uint64   `json:"electionRound"`
 	ElectionsWon  int      `json:"electionsWon"`
-	BackedDown    int      `json:"electionsBackedDown"` // Elections abandoned: an OK showed I am outranked, or a victory arrived.
-	HigherPeers   []string `json:"higherPeers"`         // Who this node would contact in an election.
+	BackedDown    int      `json:"electionsBackedDown"`
+	HigherPeers   []string `json:"higherPeers"`
 	Recent        []string `json:"recentEvents"`
 	LastEvent     string   `json:"lastEvent"`
 	LastError     string   `json:"lastError"`
 }
 
-// ─── Node state ──────────────────────────────────────────────────────────────
-
-// ElectionService is the complete state of one process. mu guards every field.
-// There is no special "coordinator code": every node runs the same code, and
-// the coordinator is just the node that won the last election.
-type ElectionService struct {
-	mu            sync.Mutex
-	id            string
-	priority      int
-	members       []string
-	peers         map[string]*rpc.Client // Owned by the runtime; never Close them here.
-	report        func(any) error
-	status        string // follower | candidate | coordinator
-	coordinator   string
-	electionRound uint64
-	won           int
-	backedDown    int
-	events        []string // Ring buffer of recent events for teaching.
-	lastErr       string
-}
-
-// Application holds the actions you trigger from the platform UI.
-type Application struct{ service *ElectionService }
-
-const (
-	statusFollower    = "follower"
-	statusCandidate   = "candidate"
-	statusCoordinator = "coordinator"
-)
-
-// priority turns "node-12" into 12. Comparing the ID STRINGS would be wrong:
-// "node-10" sorts before "node-2", so a 10-node cluster would bully in the
-// wrong direction. The numeric suffix is the priority.
-func priority(id string) int {
-	parts := strings.Split(id, "-")
-	number, err := strconv.Atoi(parts[len(parts)-1])
-	if err != nil {
-		return 0
-	}
-	return number
-}
-
-// isMember reports whether id belongs to this experiment's membership.
 func (s *ElectionService) isMember(id string) bool {
 	for _, member := range s.members {
 		if member == id {
@@ -106,8 +53,7 @@ func (s *ElectionService) isMember(id string) bool {
 	return false
 }
 
-// higherPeersLocked lists the nodes this one would send ELECTION to: every
-// member with a strictly higher priority. Callers hold s.mu.
+// every node with a strictly higher priority - the ones I'd send ELECTION to.
 func (s *ElectionService) higherPeersLocked() []string {
 	var higher []string
 	for _, member := range s.members {
@@ -118,26 +64,19 @@ func (s *ElectionService) higherPeersLocked() []string {
 	return higher
 }
 
-// logLocked records one algorithm event (callers hold s.mu). The last 12 are
-// kept so the UI shows how this node reached its current state.
 func (s *ElectionService) logLocked(format string, args ...any) {
-	entry := fmt.Sprintf("round %d: %s", s.electionRound, fmt.Sprintf(format, args...))
-	s.events = append(s.events, entry)
+	s.events = append(s.events, fmt.Sprintf("round %d: %s", s.electionRound, fmt.Sprintf(format, args...)))
 	if len(s.events) > 12 {
 		s.events = s.events[len(s.events)-12:]
 	}
 }
 
-// logEvent is the lock-taking twin of logLocked, for goroutines that are NOT
-// holding the state lock.
 func (s *ElectionService) logEvent(format string, args ...any) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.logLocked(format, args...)
 }
 
-// stateLocked builds the reported snapshot. Callers must hold s.mu. Slices are
-// copied with make+copy so an empty list is reported as [] and never as null.
 func (s *ElectionService) stateLocked() State {
 	recent := make([]string, len(s.events))
 	copy(recent, s.events)
@@ -158,14 +97,193 @@ func (s *ElectionService) stateLocked() State {
 	}
 }
 
-// Read reports this node's state without changing anything.
+// campaign runs one full round: ask every higher node, then back down or win.
+// round identifies this campaign so a victory arriving meanwhile can kill it.
+func (s *ElectionService) campaign(round uint64) {
+	s.mu.Lock()
+	self := s.id
+	message := ElectionMsg{From: s.id, ID: s.priority}
+	higher := s.higherPeersLocked()
+	s.mu.Unlock()
+
+	// ask everyone at once so one dead node costs one timeout. the RPC REPLY
+	// is the classic OK.
+	var workers sync.WaitGroup
+	var countMu sync.Mutex
+	okCount := 0
+	for _, peer := range higher {
+		workers.Add(1)
+		go func(to string) {
+			defer workers.Done()
+			client := s.peers[to]
+			if client == nil {
+				s.logEvent("no RPC connection to %s", to)
+				return
+			}
+			var reply ElectionReply
+			if err := client.Call("ElectionService.Election", message, &reply); err != nil {
+				s.logEvent("ELECTION to %s failed: %v", to, err)
+				return
+			}
+			if reply.OK {
+				countMu.Lock()
+				okCount++
+				countMu.Unlock()
+				s.logEvent("recv OK from %s: it outranks me", to)
+			} else {
+				s.logEvent("recv refusal from %s (it does not outrank me)", to)
+			}
+		}(peer)
+	}
+	workers.Wait()
+
+	s.mu.Lock()
+	if s.electionRound != round || s.status != statusCandidate {
+		// a VICTORY arrived while I was campaigning, I already stood down
+		s.logLocked("drop campaign result: superseded by a victory")
+		s.mu.Unlock()
+		return
+	}
+	if okCount > 0 {
+		s.status = statusFollower
+		s.backedDown++
+		s.logLocked("BACKED DOWN: %d higher node(s) answered OK; wait for its victory", okCount)
+		st := s.stateLocked()
+		s.mu.Unlock()
+		_ = s.report(st)
+		return
+	}
+
+	// nobody higher answered -> I am the highest node ALIVE.
+	s.status = statusCoordinator
+	s.coordinator = s.id
+	s.won++
+	s.logLocked("WON the election; broadcast VICTORY to %d node(s)", len(s.members)-1)
+	victory := VictoryMsg{From: s.id, ID: s.priority}
+	peers := append([]string(nil), s.members...)
+	st := s.stateLocked()
+	s.mu.Unlock()
+	_ = s.report(st)
+
+	var deliver sync.WaitGroup
+	for _, peer := range peers {
+		if peer == self {
+			continue
+		}
+		deliver.Add(1)
+		go func(to string) {
+			defer deliver.Done()
+			client := s.peers[to]
+			if client == nil {
+				s.logEvent("no RPC connection to %s", to)
+				return
+			}
+			if err := client.Call("ElectionService.Victory", victory, &VictoryReply{}); err != nil {
+				s.logEvent("VICTORY to %s failed: %v", to, err)
+			}
+		}(peer)
+	}
+	deliver.Wait()
+}
+
+// incoming messages.
+
+// Election: answer OK (I outrank you) and start my own election - the
+// bullying takeover. the reply IS the OK the sender is waiting for.
+func (s *ElectionService) Election(args ElectionMsg, reply *ElectionReply) error {
+	s.mu.Lock()
+	if args.From == "" || args.From == s.id || !s.isMember(args.From) {
+		s.mu.Unlock()
+		return fmt.Errorf("election from unknown node %q", args.From)
+	}
+	s.logLocked("recv ELECTION from %s (priority %d)", args.From, args.ID)
+
+	if s.priority <= args.ID {
+		// defensive: senders only contact HIGHER priorities so this means a
+		// sender mis-ranked me. a node I don't outrank can't win while I live.
+		reply.OK = false
+		s.logLocked("refuse OK to %s: I do not outrank it", args.From)
+	} else {
+		reply.OK = true
+		s.logLocked("send OK to %s", args.From)
+		if s.status != statusCandidate {
+			s.electionRound++
+			round := s.electionRound
+			s.status = statusCandidate
+			s.logLocked("BULLY %s: start my own election", args.From)
+			go s.campaign(round) // if I'm already campaigning that one continues
+		}
+	}
+	st := s.stateLocked()
+	s.mu.Unlock()
+	_ = s.report(st)
+	return nil
+}
+
+// Victory: record the new coordinator and abandon my own election. this is
+// unconditional in the textbook - with reliable delivery the announcements
+// converge on the highest node alive.
+func (s *ElectionService) Victory(args VictoryMsg, reply *VictoryReply) error {
+	s.mu.Lock()
+	if args.From == "" || args.From == s.id || !s.isMember(args.From) {
+		s.mu.Unlock()
+		return fmt.Errorf("victory from unknown node %q", args.From)
+	}
+	s.coordinator = args.From
+	stoodDown := ""
+	if s.status == statusCandidate {
+		s.electionRound++ // kills the campaign still in flight
+		s.backedDown++
+		stoodDown = ", stood down from my own election"
+	} else if s.status == statusCoordinator {
+		// somebody else just won: my leadership is over even though I never
+		// lost a campaign. without this a healed partition keeps two leaders.
+		stoodDown = ", stepped aside as coordinator"
+	}
+	s.status = statusFollower
+	s.logLocked("recv VICTORY from %s%s; coordinator is now %s", args.From, stoodDown, args.From)
+	st := s.stateLocked()
+	s.mu.Unlock()
+	_ = s.report(st)
+	return nil
+}
+
+// the action you trigger.
+
+// StartElection runs one round from THIS node. you are the failure detector:
+// click it when you believe the coordinator is down, or when you want to
+// bully the current one. the exchange then runs by itself.
+func (a *Application) StartElection(_ Empty, reply *State) error {
+	s := a.service
+	s.mu.Lock()
+	if s.status == statusCandidate {
+		s.mu.Unlock()
+		return fmt.Errorf("an election is already running here; let it finish or wait for the victory")
+	}
+	s.electionRound++
+	round := s.electionRound
+	s.status = statusCandidate
+	s.logLocked("START election; send ELECTION to all higher-priority nodes")
+	st := s.stateLocked()
+	s.mu.Unlock()
+	_ = s.report(st)
+
+	s.campaign(round) // the whole round: OKs, back-down or victory
+
+	s.mu.Lock()
+	st = s.stateLocked()
+	s.mu.Unlock()
+	_ = s.report(st)
+	*reply = st
+	return nil
+}
+
+// Read just reports the state.
 func (a *Application) Read(_ Empty, reply *State) error {
 	s := a.service
 	s.mu.Lock()
 	*reply = s.stateLocked()
+	st := *reply
 	s.mu.Unlock()
-	return s.report(*reply)
+	return s.report(st)
 }
-
-// Empty is a request with no fields at all (StartElection, Read).
-type Empty struct{}

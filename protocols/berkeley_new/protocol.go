@@ -3,143 +3,116 @@ package main
 import (
 	"fmt"
 	"math"
-	"net/rpc"
+	"sort"
 	"sync"
 	"time"
 )
 
-// ─── Messages ────────────────────────────────────────────────────────────────
-// These plain structs are what nodes send each other (gob over net/rpc). The
-// request structs of Application methods also become the input forms in the
-// DistVis UI: the json tags are the field names you type there.
-
-// Empty is a request with no fields at all.
+// messages between nodes. the json tags are also the field names in the UI
+// input forms, don't rename them casually.
 type Empty struct{}
 
-// PollReply is a node's answer to "what time do you think it is?" (step 1).
 type PollReply struct {
-	TimeMS     float64 `json:"timeMS"`     // This node's own software clock reading.
-	Instance   string  `json:"instance"`   // Boot identity: which restart of this node answered.
-	Generation uint64  `json:"generation"` // Changes whenever this clock is reset or adjusted.
+	TimeMS     float64 `json:"timeMS"`
+	Instance   string  `json:"instance"`   // boot id of the answering node
+	Generation uint64  `json:"generation"` // bumps whenever the clock is reset/adjusted
 }
-
-// AdjustArgs is the coordinator's instruction to one node (step 3): "the group
-// decided your clock is off by DeltaMS; pay that correction off gradually".
 type AdjustArgs struct {
-	Coordinator     string  `json:"coordinator"`     // Only the real coordinator may adjust us.
-	CoordinatorBoot string  `json:"coordinatorBoot"` // Which restart of the coordinator sent it.
-	Round           uint64  `json:"round"`           // Must be newer than the last accepted round.
-	Instance        string  `json:"instance"`        // Must match the identity captured in step 1.
-	Generation      uint64  `json:"generation"`      // Must match the generation captured in step 1.
-	DeltaMS         float64 `json:"deltaMS"`         // RELATIVE correction in ms, never an absolute time.
+	Coordinator     string  `json:"coordinator"`
+	CoordinatorBoot string  `json:"coordinatorBoot"`
+	Round           uint64  `json:"round"`
+	Instance        string  `json:"instance"`
+	Generation      uint64  `json:"generation"`
+	DeltaMS         float64 `json:"deltaMS"` // RELATIVE correction, never an absolute time
 }
-
 type AdjustReply struct {
-	Scheduled bool      `json:"scheduled"` // Accepted and started; NOT the same as finished slewing.
-	Clock     ClockView `json:"clock"`     // This node's clock right after scheduling.
+	Scheduled bool      `json:"scheduled"` // accepted and started, NOT finished
+	Clock     ClockView `json:"clock"`
 }
-
-// ComputeArgs configures step 2.
 type ComputeArgs struct {
-	OutlierThresholdMS float64 `json:"outlierThresholdMS"` // Max distance from the median; 0 means the 2000 ms default.
+	OutlierThresholdMS float64 `json:"outlierThresholdMS"` // 0 means the 2000 default
 }
 
-// Sample is one node's row in the round worksheet. Each step fills in its own
-// columns, so the whole table is a complete picture of one round:
-//
-//	step 1  Node, TimeMS, RTTMS, OffsetMS, Instance, Generation
-//	step 2  Included, DeltaMS
-//	step 3  Scheduled   (or Error, when something went wrong for this node)
+// one row per node in the round worksheet. step 1 fills the measurements,
+// step 2 included+delta, step 3 scheduled (or Error).
 type Sample struct {
 	Node       string  `json:"node"`
-	TimeMS     float64 `json:"timeMS"`     // What this node reported in step 1.
-	RTTMS      float64 `json:"rttMS"`      // Poll round-trip time; 0 for the coordinator itself.
-	OffsetMS   float64 `json:"offsetMS"`   // This clock minus the coordinator clock, estimated at receipt.
-	Instance   string  `json:"instance"`   // Boot identity captured in step 1.
-	Generation uint64  `json:"generation"` // Clock generation captured in step 1.
-	Included   bool    `json:"included"`   // Step 2: this sample voted on the mean.
-	DeltaMS    float64 `json:"deltaMS"`    // Step 2: the correction this node should apply.
-	Scheduled  bool    `json:"scheduled"`  // Step 3: this node confirmed the correction.
+	TimeMS     float64 `json:"timeMS"`
+	RTTMS      float64 `json:"rttMS"`
+	OffsetMS   float64 `json:"offsetMS"` // peer clock minus our clock at receipt
+	Instance   string  `json:"instance"`
+	Generation uint64  `json:"generation"`
+	Included   bool    `json:"included"`
+	DeltaMS    float64 `json:"deltaMS"`
+	Scheduled  bool    `json:"scheduled"`
 	Error      string  `json:"error,omitempty"`
 }
 
-// Round is the coordinator's worksheet for one synchronization round. Steps 1
-// and 2 only fill it in; step 3 is the first one that changes any clock.
 type Round struct {
 	Number      uint64   `json:"number"`
-	Phase       string   `json:"phase"`       // idle | polled | computed | sent
-	ThresholdMS float64  `json:"thresholdMS"` // Step 2 input.
-	MedianMS    float64  `json:"medianMS"`    // Step 2 output, before filtering.
-	MeanMS      float64  `json:"meanMS"`      // Step 2 output: the group's agreed offset.
+	Phase       string   `json:"phase"` // idle | polled | computed | sent
+	ThresholdMS float64  `json:"thresholdMS"`
+	MedianMS    float64  `json:"medianMS"`
+	MeanMS      float64  `json:"meanMS"`
 	Samples     []Sample `json:"samples"`
 }
 
-// State is what a node reports to the platform after every action. The
-// coordinator additionally reports the worksheet and which step to run next.
 type State struct {
 	Node        string    `json:"node"`
-	Role        string    `json:"role"` // "coordinator" or "participant".
+	Role        string    `json:"role"`
 	Coordinator string    `json:"coordinator"`
 	Clock       ClockView `json:"clock"`
-	Busy        bool      `json:"busy"`             // A step is executing right now.
-	Phase       string    `json:"phase"`            // Where the coordinator's round stands.
-	NextAction  string    `json:"nextAction"`       // Which Application.* step to run next.
-	Round       *Round    `json:"round"`            // The worksheet (coordinator only).
-	LastApplied uint64    `json:"lastAppliedRound"` // Newest round number accepted here.
-	LastDeltaMS float64   `json:"lastDeltaMS"`      // The correction this node accepted last.
+	Busy        bool      `json:"busy"`
+	Phase       string    `json:"phase"`
+	NextAction  string    `json:"nextAction"`
+	Round       *Round    `json:"round"`
+	LastApplied uint64    `json:"lastAppliedRound"`
+	LastDeltaMS float64   `json:"lastDeltaMS"`
 	LastError   string    `json:"lastError"`
 }
 
-// ─── Node state ──────────────────────────────────────────────────────────────
+const (
+	phaseIdle     = "idle"
+	phasePolled   = "polled"
+	phaseComputed = "computed"
+	phaseSent     = "sent"
+)
 
-// TimeService is the complete state of one node. mu guards every field.
-type TimeService struct {
-	mu          sync.Mutex
-	id          string
-	coordinator string
-	members     []string
-	instance    string                 // Boot identity from crypto/rand; not a timestamp, not authentication.
-	peers       map[string]*rpc.Client // Owned by the runtime; never Close them here.
-	report      func(any) error
-
-	clock      clock
-	generation uint64 // Bumped by ConfigureClock and by every accepted adjustment.
-
-	// Bookkeeping that stops the same correction being applied twice.
-	coordinatorBoot string  // Coordinator identity of our first accepted adjustment.
-	lastApplied     uint64  // Newest round number we accepted.
-	lastDeltaMS     float64 // The correction we accepted in that round.
-
-	busy      bool   // One of the three steps is executing right now.
-	lastError string // Why the most recent step failed ("" when it succeeded).
-
-	round *Round // The coordinator's worksheet; nil on participants and before step 1.
+func phaseOf(round *Round) string {
+	if round == nil {
+		return phaseIdle
+	}
+	return round.Phase
 }
 
-// Application holds the actions you trigger from the platform UI.
-type Application struct{ service *TimeService }
+func nextActionFor(round *Round) string {
+	switch phaseOf(round) {
+	case phasePolled:
+		return "Application.ComputeDeltas"
+	case phaseComputed:
+		return "Application.SendAdjustments"
+	default:
+		return "Application.PollPeers"
+	}
+}
 
-// stateLocked builds the reported snapshot. Callers must hold s.mu. A
-// published worksheet is never mutated afterwards (see cloneRound), so the
-// shared pointer stays a consistent snapshot even after the lock is released.
 func (s *TimeService) stateLocked() State {
-	role, nextAction := "participant", ""
+	role, next := "participant", ""
 	if s.id == s.coordinator {
-		role, nextAction = "coordinator", nextActionFor(s.round)
+		role, next = "coordinator", nextActionFor(s.round)
 	}
 	return State{
 		Node: s.id, Role: role, Coordinator: s.coordinator,
 		Clock: s.clock.view(time.Now()), Busy: s.busy,
-		Phase: phaseOf(s.round), NextAction: nextAction, Round: s.round,
+		Phase: phaseOf(s.round), NextAction: next, Round: s.round,
 		LastApplied: s.lastApplied, LastDeltaMS: s.lastDeltaMS, LastError: s.lastError,
 	}
 }
 
-// ─── Node-to-node RPCs (called by the coordinator during a round) ────────────
+// node-to-node rpcs, called by the coordinator during a round.
 
-// Poll is the node's half of step 1: report our clock reading. Reading is
-// harmless, but a clock that is still paying off a correction is a moving
-// target, so we refuse and let the coordinator try again in a later round.
+// Poll just reads the clock. but a clock still slewing is a moving target so
+// we refuse and let the coordinator try again later.
 func (s *TimeService) Poll(_ Empty, reply *PollReply) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -151,86 +124,316 @@ func (s *TimeService) Poll(_ Empty, reply *PollReply) error {
 	return nil
 }
 
-// Adjust is the node's half of step 3: schedule our gradual correction.
-//
-// Every guard below exists because a caller that timed out does NOT cancel a
-// net/rpc method, and a relative correction is not idempotent: applying the
-// same delta twice would drift the clock instead of fixing it. So each
-// instruction is checked before anything changes, and a failed adjustment is
-// never retried automatically.
+// Adjust schedules the gradual correction. the guards all exist because a
+// caller timeout does NOT cancel a net/rpc call and applying the same delta
+// twice would drift the clock instead of fixing it.
 func (s *TimeService) Adjust(args AdjustArgs, reply *AdjustReply) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	// Guard 1: only our known coordinator may adjust us, and only with a sane
-	// round number and correction size (120 s is already absurd for one round).
+	// only our known coordinator, sane round and sane correction size
 	if args.Coordinator != s.coordinator || args.CoordinatorBoot == "" || args.Round == 0 ||
 		!finite(args.DeltaMS) || math.Abs(args.DeltaMS) > 120000 {
+		s.mu.Unlock()
 		return fmt.Errorf("invalid coordinator, round or correction")
 	}
-	// Guard 2: a restarted coordinator would restart round numbering from 1.
-	// Refuse instead of silently replaying old rounds. (This lesson has no
-	// failover protocol — see README "Limits".)
+	// a restarted coordinator would restart round numbering, refuse it
 	if s.coordinatorBoot != "" && s.coordinatorBoot != args.CoordinatorBoot {
+		s.mu.Unlock()
 		return fmt.Errorf("coordinator restarted; start a fresh experiment (no failover protocol)")
 	}
-	// Guard 3: rounds only move forward. A duplicated or replayed round must
-	// never add the same correction twice.
+	// rounds only move forward, never apply the same one twice
 	if args.Round <= s.lastApplied {
-		return fmt.Errorf("duplicate or stale adjustment for round %d (already applied round %d)", args.Round, s.lastApplied)
+		s.mu.Unlock()
+		return fmt.Errorf("duplicate or stale adjustment for round %d", args.Round)
 	}
-	// Guard 4: the correction must be based on what THIS clock reported in
-	// step 1. Any reset or accepted adjustment since then bumps the generation
-	// and makes the measurement stale.
+	// the correction must match what THIS clock reported in step 1
 	if args.Instance != s.instance || args.Generation != s.generation {
+		s.mu.Unlock()
 		return fmt.Errorf("clock changed since poll; the measured offset is stale")
 	}
-	// Guard 5: never overlap corrections. Replacing a pending correction would
-	// quietly drop the part that has not been paid off yet.
+	// never overlap corrections, replacing one would drop the unpaid part
 	now := time.Now()
 	if s.clock.pending(now) != 0 {
+		s.mu.Unlock()
 		return fmt.Errorf("previous correction is still slewing")
 	}
 	s.clock.slew(args.DeltaMS, now)
 	s.generation++
 	s.coordinatorBoot, s.lastApplied, s.lastDeltaMS = args.CoordinatorBoot, args.Round, args.DeltaMS
 	*reply = AdjustReply{Scheduled: true, Clock: s.clock.view(now)}
-	return s.report(s.stateLocked())
+	st := s.stateLocked()
+	s.mu.Unlock()
+	return s.report(st)
 }
 
-// ─── Actions available on any node ───────────────────────────────────────────
+// application actions, available on any node.
 
-// Read reports this node's state without changing anything. Watch
-// clock.pendingMS fall toward zero while clock.timeMS keeps rising: that is a
-// correction being paid off gradually.
+// Read reports the state. watch pendingMS drain while timeMS keeps rising.
 func (a *Application) Read(_ Empty, reply *State) error {
 	s := a.service
 	s.mu.Lock()
 	*reply = s.stateLocked()
+	st := *reply
 	s.mu.Unlock()
-	return s.report(*reply)
+	return s.report(st)
 }
 
-// ConfigureClock is an EXTERNAL disturbance for experiments: it rebuilds this
-// node's software clock, which may jump time and cancel a pending correction.
-// That is NOT what the synchronization algorithm does — the algorithm only
-// ever changes a clock gradually through clock.slew (see clock.go).
-//
-// Calling it between the steps of a round is deliberate. Change a node's clock
-// after step 1 and watch step 3 reject that node's now-stale correction while
-// the other nodes go through.
+// ConfigureClock is an EXTERNAL disturbance for experiments: it rebuilds the
+// clock, may jump time and cancel a pending slew. the algorithm itself never
+// does this, it only calls clock.slew.
 func (a *Application) ConfigureClock(args ClockArgs, reply *State) error {
 	if err := validateClock(args); err != nil {
 		return err
 	}
 	s := a.service
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if s.busy {
+		s.mu.Unlock()
 		return fmt.Errorf("a step is running right now; retry in a moment")
 	}
 	s.clock = newClock(time.Now(), args)
-	s.generation++ // Makes every earlier measurement of this clock stale.
+	s.generation++ // makes every older measurement stale
 	s.lastDeltaMS = 0
 	*reply = s.stateLocked()
-	return s.report(*reply)
+	st := *reply
+	s.mu.Unlock()
+	return s.report(st)
+}
+
+// runPhase wraps one step: only the coordinator runs steps, only one at a
+// time, and the outcome always gets reported.
+func (s *TimeService) runPhase(name string, phase func() (*Round, error), reply *Round) error {
+	s.mu.Lock()
+	if s.id != s.coordinator {
+		coordinator := s.coordinator
+		s.mu.Unlock()
+		return fmt.Errorf("%s runs on the coordinator %s; this is %s", name, coordinator, s.id)
+	}
+	if s.busy {
+		s.mu.Unlock()
+		return fmt.Errorf("another step is still running; wait for its result")
+	}
+	s.busy = true
+	s.mu.Unlock()
+
+	round, err := phase() // runs without the lock, rpc calls take seconds
+
+	s.mu.Lock()
+	s.busy = false
+	if err != nil {
+		s.lastError = err.Error()
+	} else {
+		s.lastError = ""
+		*reply = *round
+	}
+	st := s.stateLocked()
+	s.mu.Unlock()
+	if reportErr := s.report(st); err == nil {
+		err = reportErr
+	}
+	return err
+}
+
+// ---- step 1: poll every clock -------------------------------------------
+
+func (s *TimeService) phase1PollPeers() (*Round, error) {
+	s.mu.Lock()
+	// the last round's correction may still be paying off here
+	if pending := s.clock.pending(time.Now()); pending != 0 {
+		s.mu.Unlock()
+		return nil, fmt.Errorf("the correction from the last round is still slewing (%.0f ms left)", pending)
+	}
+	number := uint64(1)
+	if s.round != nil {
+		number = s.round.Number + 1
+	}
+	round := &Round{Number: number, Phase: phasePolled, Samples: make([]Sample, len(s.members))}
+	// slot 0 is the coordinator itself: offset 0, no invented RTT. it's a
+	// normal participant here, NOT a time authority.
+	round.Samples[0] = Sample{Node: s.id, TimeMS: s.clock.read(time.Now()), Instance: s.instance, Generation: s.generation}
+	members := s.members
+	s.mu.Unlock()
+
+	// poll everyone at once so one dead node costs one timeout, not N.
+	// each goroutine owns its own slot so no locking needed here.
+	var workers sync.WaitGroup
+	for i := 1; i < len(members); i++ {
+		workers.Add(1)
+		go func(index int) {
+			defer workers.Done()
+			round.Samples[index] = s.pollOne(members[index])
+		}(i)
+	}
+	workers.Wait()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.round = round
+	s.lastError = ""
+	return round, nil
+}
+
+func (s *TimeService) pollOne(peer string) Sample {
+	sample := Sample{Node: peer}
+	client := s.peers[peer]
+	if client == nil {
+		sample.Error = "no RPC connection to " + peer
+		return sample
+	}
+	start := time.Now()
+	var reply PollReply
+	err := client.Call("TimeService.Poll", Empty{}, &reply)
+	end := time.Now()
+	sample.RTTMS = end.Sub(start).Seconds() * 1000
+	if err != nil {
+		sample.Error = err.Error()
+		return sample
+	}
+	s.mu.Lock()
+	localAtReceipt := s.clock.read(end)
+	s.mu.Unlock()
+	// the peer read its clock while the request was in flight. assuming
+	// symmetric paths that was at the midpoint, so
+	// offset = peerTime + RTT/2 - ourTimeAtReceipt. same trick as Cristian.
+	sample.TimeMS = reply.TimeMS
+	sample.OffsetMS = reply.TimeMS + sample.RTTMS/2 - localAtReceipt
+	sample.Instance, sample.Generation = reply.Instance, reply.Generation
+	if !finite(sample.OffsetMS) {
+		sample.Error = "non-finite clock offset"
+	}
+	return sample
+}
+
+// ---- step 2: median -> outliers -> mean -> deltas ------------------------
+
+func (s *TimeService) phase2ComputeDeltas(thresholdMS float64) (*Round, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if phaseOf(s.round) != phasePolled {
+		return nil, fmt.Errorf("step 2 needs the step-1 samples; run Application.PollPeers first (round is %s)", phaseOf(s.round))
+	}
+	median, mean, err := averageOffsets(s.round.Samples, thresholdMS)
+	if err != nil {
+		return nil, err // not enough trustworthy readings, leave every clock alone
+	}
+	s.round.Phase = phaseComputed
+	s.round.ThresholdMS, s.round.MedianMS, s.round.MeanMS = thresholdMS, median, mean
+	s.lastError = ""
+	return s.round, nil
+}
+
+// worked example, offsets 0/100/200/10000 with threshold 300:
+// median 150 -> keep 0/100/200 -> mean 100 -> deltas +100/0/-100/-9900.
+// the outlier loses its VOTE but still gets the biggest correction.
+func averageOffsets(samples []Sample, threshold float64) (median, mean float64, err error) {
+	if !finite(threshold) || threshold <= 0 {
+		return 0, 0, fmt.Errorf("outlier threshold must be positive and finite")
+	}
+	var offsets []float64
+	for _, sample := range samples {
+		if sample.Error == "" && finite(sample.OffsetMS) {
+			offsets = append(offsets, sample.OffsetMS)
+		}
+	}
+	if len(offsets) < 2 {
+		return 0, 0, fmt.Errorf("need at least two responsive, stable clocks")
+	}
+	sort.Float64s(offsets)
+	middle := len(offsets) / 2
+	median = offsets[middle]
+	if len(offsets)%2 == 0 {
+		median = (offsets[middle-1] + offsets[middle]) / 2
+	}
+	count := 0
+	for i := range samples {
+		sample := &samples[i]
+		sample.Included = sample.Error == "" && finite(sample.OffsetMS) && math.Abs(sample.OffsetMS-median) <= threshold
+		if sample.Included {
+			mean += sample.OffsetMS
+			count++
+		}
+	}
+	if count < 2 {
+		return median, 0, fmt.Errorf("outlier filter retained fewer than two clocks; no correction")
+	}
+	mean /= float64(count)
+	for i := range samples {
+		if samples[i].Error == "" {
+			samples[i].DeltaMS = mean - samples[i].OffsetMS // relative, not an absolute time
+		}
+	}
+	return median, mean, nil
+}
+
+// ---- step 3: send the corrections ---------------------------------------
+
+func (s *TimeService) phase3SendAdjustments() (*Round, error) {
+	s.mu.Lock()
+	if phaseOf(s.round) != phaseComputed {
+		s.mu.Unlock()
+		return nil, fmt.Errorf("step 3 needs the step-2 deltas; run Application.ComputeDeltas first (round is %s)", phaseOf(s.round))
+	}
+	round := s.round
+	round.Phase = phaseSent
+	request := AdjustArgs{Coordinator: s.id, CoordinatorBoot: s.instance, Round: round.Number}
+	self := s.id
+	s.mu.Unlock()
+
+	// sends at once again, and results land per node - this is not atomic
+	// broadcast, some nodes can succeed while others fail.
+	var workers sync.WaitGroup
+	for i := range round.Samples {
+		if round.Samples[i].Error != "" {
+			continue // failed in step 1, nothing measured to correct
+		}
+		workers.Add(1)
+		go func(index int) {
+			defer workers.Done()
+			sample := &round.Samples[index]
+			adjustment := request
+			adjustment.Instance, adjustment.Generation, adjustment.DeltaMS = sample.Instance, sample.Generation, sample.DeltaMS
+			var reply AdjustReply
+			var err error
+			if sample.Node == self {
+				err = s.Adjust(adjustment, &reply) // our own clock needs no rpc
+			} else {
+				err = s.peers[sample.Node].Call("TimeService.Adjust", adjustment, &reply)
+			}
+			s.mu.Lock()
+			defer s.mu.Unlock()
+			if err != nil {
+				sample.Error = err.Error() // "unknown outcome" after a timeout = no confirmation
+				return
+			}
+			sample.Scheduled = reply.Scheduled
+		}(i)
+	}
+	workers.Wait()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.lastError = ""
+	return round, nil
+}
+
+// the three steps you trigger.
+
+func (a *Application) PollPeers(_ Empty, reply *Round) error {
+	return a.service.runPhase("Application.PollPeers", a.service.phase1PollPeers, reply)
+}
+
+func (a *Application) ComputeDeltas(args ComputeArgs, reply *Round) error {
+	threshold := args.OutlierThresholdMS
+	if threshold == 0 {
+		threshold = 2000
+	}
+	if !finite(threshold) || threshold <= 0 || threshold > 120000 {
+		return fmt.Errorf("outlierThresholdMS must be in (0, 120000], or zero for the 2000 ms default")
+	}
+	return a.service.runPhase("Application.ComputeDeltas", func() (*Round, error) {
+		return a.service.phase2ComputeDeltas(threshold)
+	}, reply)
+}
+
+func (a *Application) SendAdjustments(_ Empty, reply *Round) error {
+	return a.service.runPhase("Application.SendAdjustments", a.service.phase3SendAdjustments, reply)
 }

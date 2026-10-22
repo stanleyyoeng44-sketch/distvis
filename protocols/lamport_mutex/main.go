@@ -1,54 +1,89 @@
-// distvis:name Lamport Mutual Exclusion
-// distvis:description Ricart-Agrawala mutual exclusion with Lamport timestamps: you trigger each process's request and release; the req/ack/release exchange, deferred acks and queue ordering run the algorithm.
-// distvis:start node-1 Application.RequestCS {} Ask for the critical section on node-1 and watch req/ack messages flow.
-
-// package main tells Go to build an executable rather than an importable library.
-// main.go is deliberately small: start here, then read clock.go, protocol.go
-// and mutex.go in that order.
+// distvis:name Lamport Mutual Exclusion HANDMADE
 package main
 
 import (
+	"net/rpc"
+	"sync"
+
 	lab "distvis/sdk/rpc"
 )
 
 func main() {
-	// Main invokes configure with this node's Runtime. It also owns stdin/stdout,
-	// RPC dispatch, signal handling and shared connection cleanup. Never print
-	// ordinary text to stdout: DistVis uses it as a machine-readable channel.
 	lab.Main(configure)
 }
 
-// configure builds this node's state and registers exactly two services:
-//
-//   - MutexService holds the three node-to-node RPCs the algorithm needs
-//     (Request, Ack, Release). It creates no input forms.
-//   - Application holds the actions YOU trigger from the platform UI:
-//     RequestCS, Release and Read.
-//
-// Every node is equal: there is no coordinator. "Who goes first" is decided
-// purely by the total order of request timestamps (LamportClock, nodeID).
+// lamport clock - just a counter, not a real clock. every event ticks it and
+// every receive does max(local, msg)+1 so the values are comparable.
+type lamportClock struct {
+	now uint64
+}
+
+func (c *lamportClock) tick() uint64 {
+	c.now++
+	return c.now
+}
+
+func (c *lamportClock) onReceive(remote uint64) uint64 {
+	if remote > c.now {
+		c.now = remote
+	}
+	return c.tick()
+}
+
+// requests are totally ordered by (ts, node). timestamps can tie, the id
+// breaks them - comparing id strings would be wrong ("node-10" < "node-2").
+type requestKey struct {
+	ts   uint64
+	node string
+}
+
+func before(a, b requestKey) bool {
+	if a.ts != b.ts {
+		return a.ts < b.ts
+	}
+	return a.node < b.node
+}
+
+type MutexService struct {
+	mu       sync.Mutex
+	id       string
+	members  []string
+	peers    map[string]*rpc.Client
+	report   func(any) error
+	clock    lamportClock
+	status   string // idle | requesting | in-cs
+	myTS     uint64 // 0 when idle
+	acks     map[string]bool
+	queue    []QueueEntry
+	deferred []QueueEntry // requests I'm withholding an ack for
+	entered  []QueueEntry
+	events   []string
+	lastErr  string
+}
+
+type Application struct{ service *MutexService }
+
+const (
+	statusIdle       = "idle"
+	statusRequesting = "requesting"
+	statusInCS       = "in-cs"
+)
+
 func configure(node *lab.Runtime) error {
 	peers, err := node.RPCPeers()
 	if err != nil {
 		return err
 	}
 	index := 0
-	for i, id := range node.Nodes {
+	for i, id := range node.Nodes { // range yields both the index and its value.
 		if id == node.ID {
 			index = i
 		}
 	}
 	s := &MutexService{
-		id:      node.ID,
-		members: node.Nodes,
-		peers:   peers, // Owned by the runtime: never Close these here.
-		report:  node.Report,
-		status:  statusIdle,
-		// Every process starts its Lamport clock at its membership index, like
-		// the lecture picture (p0: L=0, p1: L=1, p2: L=2). Any starting value
-		// is legal; the algorithm only compares timestamps, never reads them.
-		clock: lamportClock{now: uint64(index)},
-		queue: []QueueEntry{},
+		id: node.ID, members: node.Nodes, peers: peers, report: node.Report,
+		clock:  lamportClock{now: uint64(index)}, // start at the index like the lecture figure
+		status: statusIdle,
 	}
 	if err := node.RegisterName("MutexService", s); err != nil {
 		return err
@@ -57,7 +92,8 @@ func configure(node *lab.Runtime) error {
 		return err
 	}
 	s.mu.Lock()
-	state := s.stateLocked()
+	st := s.stateLocked()
 	s.mu.Unlock()
-	return node.Report(state)
+	_ = s.report(st)
+	return node.Report("hey dude, I'm ready")
 }
