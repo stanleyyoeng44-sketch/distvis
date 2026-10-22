@@ -1,0 +1,155 @@
+{
+  "scenarios": [
+    {
+      "id": "convergence",
+      "name": "Berkeley · 3.3A convergence over repeated rounds",
+      "settings": { "nodeCount": 3, "latency": 80 },
+      "steps": [
+        { "note": "Healthy clocks at 0/+100/+200 ms. The round is user-driven in this protocol: poll -> mean -> adjust. Three rounds." },
+        { "input": { "node": "node-1", "method": "Application.ConfigureClock", "values": { "offsetMS": 0, "driftPPM": 0 } } },
+        { "input": { "node": "node-2", "method": "Application.ConfigureClock", "values": { "offsetMS": 100, "driftPPM": 0 } } },
+        { "input": { "node": "node-3", "method": "Application.ConfigureClock", "values": { "offsetMS": 200, "driftPPM": 0 } } },
+        { "note": "round 1" },
+        { "input": { "node": "node-1", "method": "Application.PollPeers", "values": {} } },
+        { "input": { "node": "node-1", "method": "Application.ComputeDeltas", "values": { "outlierThresholdMS": 1000 } } },
+        { "input": { "node": "node-1", "method": "Application.SendAdjustments", "values": {} } },
+        { "wait": 2500 },
+        { "note": "round 2" },
+        { "input": { "node": "node-1", "method": "Application.PollPeers", "values": {} } },
+        { "input": { "node": "node-1", "method": "Application.ComputeDeltas", "values": { "outlierThresholdMS": 1000 } } },
+        { "input": { "node": "node-1", "method": "Application.SendAdjustments", "values": {} } },
+        { "wait": 1500 },
+        { "note": "round 3" },
+        { "input": { "node": "node-1", "method": "Application.PollPeers", "values": {} } },
+        { "input": { "node": "node-1", "method": "Application.ComputeDeltas", "values": { "outlierThresholdMS": 1000 } } },
+        { "input": { "node": "node-1", "method": "Application.SendAdjustments", "values": {} } },
+        { "wait": 1500 },
+        { "note": "read every node so the checks see fresh state (state is reported on actions)" },
+        { "input": { "node": "node-1", "method": "Application.Read", "values": {} } },
+        { "input": { "node": "node-2", "method": "Application.Read", "values": {} } },
+        { "input": { "node": "node-3", "method": "Application.Read", "values": {} } },
+        { "check": { "all": [
+          { "node": ["node-1", "node-2", "node-3"], "path": "clock.hostOffsetMS", "op": ">", "value": 88 },
+          { "node": ["node-1", "node-2", "node-3"], "path": "clock.hostOffsetMS", "op": "<", "value": 112 },
+          { "node": ["node-1", "node-2", "node-3"], "path": "clock.pendingMS", "op": "abs<=", "value": 1 }
+        ] }, "label": "after three rounds all nodes agree with each other near the +100 ms group average" },
+        { "check": { "node": ["node-1", "node-2", "node-3"], "path": "clock.hostOffsetMS", "op": ">", "value": 50 },
+          "label": "'small' does NOT mean close to zero: they keep the GROUP's time (~+100 ms), not real time" }
+      ]
+    },
+    {
+      "id": "outlier",
+      "name": "Berkeley · 3.3B the outlier loses its vote but keeps its correction",
+      "settings": { "nodeCount": 3, "latency": 80 },
+      "steps": [
+        { "note": "converge the group first" },
+        { "input": { "node": "node-1", "method": "Application.ConfigureClock", "values": { "offsetMS": 0, "driftPPM": 0 } } },
+        { "input": { "node": "node-2", "method": "Application.ConfigureClock", "values": { "offsetMS": 100, "driftPPM": 0 } } },
+        { "input": { "node": "node-3", "method": "Application.ConfigureClock", "values": { "offsetMS": 200, "driftPPM": 0 } } },
+        { "input": { "node": "node-1", "method": "Application.PollPeers", "values": {} } },
+        { "input": { "node": "node-1", "method": "Application.ComputeDeltas", "values": { "outlierThresholdMS": 1000 } } },
+        { "input": { "node": "node-1", "method": "Application.SendAdjustments", "values": {} } },
+        { "wait": 2500 },
+        { "note": "now break node-3's clock: +10000 ms" },
+        { "input": { "node": "node-3", "method": "Application.ConfigureClock", "values": { "offsetMS": 10000, "driftPPM": 0 } } },
+        { "input": { "node": "node-1", "method": "Application.PollPeers", "values": {} } },
+        { "input": { "node": "node-1", "method": "Application.ComputeDeltas", "values": { "outlierThresholdMS": 500 } } },
+        { "check": { "all": [
+          { "node": "node-1", "path": "round.samples.2.included", "op": "==", "value": false },
+          { "node": "node-1", "path": "round.meanMS", "op": "abs<=", "value": 10 },
+          { "node": "node-1", "path": "round.samples.2.deltaMS", "op": "<", "value": -9000 }
+        ] }, "label": "the +10000 ms outlier is excluded from the vote; the mean stays ~0 (it would be ~+3300 if its vote counted); it still receives the biggest correction" },
+        { "input": { "node": "node-1", "method": "Application.SendAdjustments", "values": {} } },
+        { "check": { "node": "node-1", "path": "round.samples.2.scheduled", "op": "==", "value": true },
+          "label": "excluded from voting, but still repaired: node-3 accepted the huge correction" },
+        { "wait": 500 },
+        { "input": { "node": "node-3", "method": "Application.Read", "values": {} } },
+        { "check": { "all": [
+          { "node": "node-3", "path": "clock.pendingMS", "op": "<", "value": -9000 },
+          { "node": "node-3", "path": "clock.hostOffsetMS", "op": ">", "value": 9500 }
+        ] }, "label": "node-3 pays the correction off GRADUALLY (it would take ~99 s at the 10%/ms slew rate)" }
+      ]
+    },
+    {
+      "id": "slew-vs-jump",
+      "name": "Berkeley · 3.3C gradual slew vs one-time jump",
+      "settings": { "nodeCount": 3, "latency": 80 },
+      "steps": [
+        { "note": "node-1 will slew +300 ms (speed up) and node-3 -300 ms (slow down): both take ~3 s at 10%/ms" },
+        { "input": { "node": "node-1", "method": "Application.ConfigureClock", "values": { "offsetMS": 0, "driftPPM": 0 } } },
+        { "input": { "node": "node-2", "method": "Application.ConfigureClock", "values": { "offsetMS": 300, "driftPPM": 0 } } },
+        { "input": { "node": "node-3", "method": "Application.ConfigureClock", "values": { "offsetMS": 600, "driftPPM": 0 } } },
+        { "input": { "node": "node-1", "method": "Application.PollPeers", "values": {} } },
+        { "input": { "node": "node-1", "method": "Application.ComputeDeltas", "values": { "outlierThresholdMS": 1000 } } },
+        { "input": { "node": "node-1", "method": "Application.SendAdjustments", "values": {} } },
+        { "note": "smooth adjustment: track node-3's pending correction while it drains" },
+        { "wait": 300 },
+        { "input": { "node": "node-3", "method": "Application.Read", "values": {} } },
+        { "check": { "all": [
+          { "node": "node-3", "path": "clock.pendingMS", "op": "<", "value": -150 },
+          { "node": "node-3", "path": "clock.pendingMS", "op": ">", "value": -320 }
+        ] }, "label": "0.3 s in: most of the -300 ms is still pending — the correction is paid off gradually, not in one step" },
+        { "wait": 1200 },
+        { "input": { "node": "node-3", "method": "Application.Read", "values": {} } },
+        { "check": { "all": [
+          { "node": "node-3", "path": "clock.pendingMS", "op": "<", "value": -50 },
+          { "node": "node-3", "path": "clock.pendingMS", "op": ">", "value": -200 }
+        ] }, "label": "~1.8 s in: roughly half paid off; note timeMS in the printed reads keeps RISING (a slowing clock still moves forward)" },
+        { "wait": 1600 },
+        { "input": { "node": "node-3", "method": "Application.Read", "values": {} } },
+        { "check": { "node": "node-3", "path": "clock.pendingMS", "op": "abs<=", "value": 2 },
+          "label": "~3.4 s in: fully paid off — no instant step anywhere (see monotonic.mjs for the strict never-backwards assertion)" },
+        { "check": { "node": "node-3", "path": "clock.hostOffsetMS", "op": ">", "value": 250 },
+          "label": "node-3 slowed from +600 down to the group's ~+300 without its clock ever moving backwards" },
+        { "note": "contrast: ConfigureClock is the EXTERNAL disturbance. It jumps instantly — this is NOT what the algorithm does" },
+        { "input": { "node": "node-3", "method": "Application.ConfigureClock", "values": { "offsetMS": 50, "driftPPM": 0 } } },
+        { "input": { "node": "node-3", "method": "Application.Read", "values": {} } },
+        { "check": { "all": [
+          { "node": "node-3", "path": "clock.hostOffsetMS", "op": "<", "value": 100 },
+          { "node": "node-3", "path": "clock.hostOffsetMS", "op": ">", "value": 20 },
+          { "node": "node-3", "path": "clock.pendingMS", "op": "==", "value": 0 }
+        ] }, "label": "jump: the clock moved DOWN ~250 ms in a single step (time went backwards instantly) and left nothing to pay off" }
+      ]
+    },
+    {
+      "id": "master-crash",
+      "name": "Berkeley · 3.3 design variant: a crashed master stops the rounds",
+      "settings": { "nodeCount": 3, "latency": 80 },
+      "steps": [
+        { "note": "converge the group first" },
+        { "input": { "node": "node-1", "method": "Application.ConfigureClock", "values": { "offsetMS": 0, "driftPPM": 0 } } },
+        { "input": { "node": "node-2", "method": "Application.ConfigureClock", "values": { "offsetMS": 300, "driftPPM": 0 } } },
+        { "input": { "node": "node-3", "method": "Application.ConfigureClock", "values": { "offsetMS": 600, "driftPPM": 0 } } },
+        { "input": { "node": "node-1", "method": "Application.PollPeers", "values": {} } },
+        { "input": { "node": "node-1", "method": "Application.ComputeDeltas", "values": { "outlierThresholdMS": 1000 } } },
+        { "input": { "node": "node-1", "method": "Application.SendAdjustments", "values": {} } },
+        { "wait": 3500 },
+        { "note": "crash the master. The remaining nodes cannot synchronize: rounds may only run on the coordinator" },
+        { "fault": { "kind": "crash", "node": "node-1" } },
+        { "wait": 1500 },
+        { "input": { "node": "node-2", "method": "Application.PollPeers", "values": {} }, "expect": "error" },
+        { "input": { "node": "node-2", "method": "Application.Read", "values": {} } },
+        { "check": { "node": "node-2", "path": "clock.hostOffsetMS", "op": ">", "value": 280 },
+          "label": "participants keep their converged time, but no round can run (there is no election)" },
+        { "note": "recovery is NOT election: node-1 is the master by membership order, but its boot identity changed" },
+        { "fault": { "kind": "recover", "node": "node-1" } },
+        { "wait": 2000 },
+        { "input": { "node": "node-1", "method": "Application.PollPeers", "values": {} } },
+        { "input": { "node": "node-1", "method": "Application.ComputeDeltas", "values": { "outlierThresholdMS": 1000 } } },
+        { "input": { "node": "node-1", "method": "Application.SendAdjustments", "values": {} } },
+        { "check": { "all": [
+          { "node": "node-1", "path": "round.samples.1.error", "op": "includes", "value": "coordinator restarted" },
+          { "node": "node-1", "path": "round.samples.0.scheduled", "op": "==", "value": true }
+        ] }, "label": "the restarted master adjusts ITSELF, but the participants refuse it (guard: coordinator restarted)" },
+        { "wait": 2500 },
+        { "input": { "node": "node-2", "method": "Application.Read", "values": {} } },
+        { "input": { "node": "node-1", "method": "Application.Read", "values": {} } },
+        { "check": { "all": [
+          { "node": "node-2", "path": "clock.hostOffsetMS", "op": ">", "value": 280 },
+          { "node": "node-1", "path": "clock.hostOffsetMS", "op": ">", "value": 120 },
+          { "node": "node-1", "path": "clock.hostOffsetMS", "op": "<", "value": 280 }
+        ] }, "label": "the group stays SPLIT (participants ~+300, restarted master ~+200): only a fresh experiment repairs it" }
+      ]
+    }
+  ]
+}
