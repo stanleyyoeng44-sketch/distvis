@@ -9,6 +9,25 @@ import (
 	"time"
 )
 
+const (
+	phaseIdle     = "idle"
+	phasePolled   = "polled"
+	phaseComputed = "computed"
+	phaseSending  = "sending"
+	phaseSent     = "sent"
+	phasePartial  = "partial_failure"
+)
+
+func cloneRound(r *Round) *Round {
+	if r == nil {
+		return nil
+	}
+
+	cp := *r
+	cp.Samples = append([]Sample(nil), r.Samples...)
+	return &cp
+}
+
 // bounded rpc call so a dead/blocked node can't hang the action past the
 // platform's ~10s command deadline. on timeout the reply must NOT be read.
 func call(client *rpc.Client, method string, args, reply any) error {
@@ -44,6 +63,9 @@ type AdjustReply struct {
 type ComputeArgs struct {
 	OutlierThresholdMS float64 `json:"outlierThresholdMS"`
 }
+type ModeArgs struct {
+	Step bool `json:"step"` // true = jump immediately, false = smooth slew
+}
 
 // one row per node: step 1 fills the measurements, step 2 included+delta,
 // step 3 scheduled (or Error).
@@ -75,20 +97,13 @@ type State struct {
 	Coordinator string    `json:"coordinator"`
 	Clock       ClockView `json:"clock"`
 	Busy        bool      `json:"busy"`
+	StepMode    bool      `json:"stepMode"` // true = one-time jump, false = smooth slew
 	Phase       string    `json:"phase"`
-	NextAction  string    `json:"nextAction"`
 	Round       *Round    `json:"round"`
 	LastApplied uint64    `json:"lastAppliedRound"`
-	LastDeltaMS float64   `json:"lastDeltaMS"`
+	LastAdjMs   float64   `json:"lastAdjMs"` // size of the most recent correction
 	LastError   string    `json:"lastError"`
 }
-
-const (
-	phaseIdle     = "idle"
-	phasePolled   = "polled"
-	phaseComputed = "computed"
-	phaseSent     = "sent"
-)
 
 func phaseOf(round *Round) string {
 	if round == nil {
@@ -97,29 +112,24 @@ func phaseOf(round *Round) string {
 	return round.Phase
 }
 
-func nextActionFor(round *Round) string {
-	switch phaseOf(round) {
-	case phasePolled:
-		return "Application.ComputeDeltas"
-	case phaseComputed:
-		return "Application.SendAdjustments"
-	default:
-		return "Application.PollPeers"
-	}
-}
-
-// reports happen while holding the lock (like the christianhandmade code), so
-// the worksheet never gets serialized half-written and needs no copying.
 func (s *TimeService) stateLocked() State {
-	role, next := "participant", ""
+	role := "participant"
 	if s.id == s.coordinator {
-		role, next = "coordinator", nextActionFor(s.round)
+		role = "coordinator"
 	}
+
 	return State{
-		Node: s.id, Role: role, Coordinator: s.coordinator,
-		Clock: s.clock.view(time.Now()), Busy: s.busy,
-		Phase: phaseOf(s.round), NextAction: next, Round: s.round,
-		LastApplied: s.lastApplied, LastDeltaMS: s.lastDeltaMS, LastError: s.lastError,
+		Node:        s.id,
+		Role:        role,
+		Coordinator: s.coordinator,
+		Clock:       s.clock.view(time.Now()),
+		Busy:        s.busy,
+		StepMode:    s.stepMode,
+		Phase:       phaseOf(s.round),
+		Round:       cloneRound(s.round),
+		LastApplied: s.lastApplied,
+		LastAdjMs:   s.lastDeltaMS,
+		LastError:   s.lastError,
 	}
 }
 
@@ -164,7 +174,11 @@ func (s *TimeService) Adjust(args AdjustArgs, reply *AdjustReply) error {
 	if s.clock.pending(now) != 0 {
 		return fmt.Errorf("previous correction is still slewing")
 	}
-	s.clock.slew(args.DeltaMS, now)
+	if s.stepMode {
+		s.clock.step(args.DeltaMS, now) // jump (scenario C)
+	} else {
+		s.clock.slew(args.DeltaMS, now) // smooth (the algorithm's real behaviour)
+	}
 	s.generation++
 	s.coordinatorBoot, s.lastApplied, s.lastDeltaMS = args.CoordinatorBoot, args.Round, args.DeltaMS
 	*reply = AdjustReply{Scheduled: true, Clock: s.clock.view(now)}
@@ -179,6 +193,38 @@ func (a *Application) Read(_ Empty, reply *State) error {
 	defer s.mu.Unlock()
 	*reply = s.stateLocked()
 	return s.report(*reply)
+}
+
+func (a *Application) Sync(args ComputeArgs, reply *Round) error {
+	threshold := args.OutlierThresholdMS
+	if threshold == 0 {
+		threshold = 2000
+	}
+
+	if !finite(threshold) || threshold <= 0 || threshold > 120000 {
+		return fmt.Errorf(
+			"outlierThresholdMS must be in (0, 120000], or zero for the 2000 ms default",
+		)
+	}
+
+	s := a.service
+
+	return s.runPhase("Application.Sync", func() (*Round, error) {
+		// Step 1: poll all clocks.
+		round, err := s.phase1PollPeers()
+		if err != nil {
+			return round, err
+		}
+
+		// Step 2: calculate median, filter outliers, compute mean and deltas.
+		round, err = s.phase2ComputeDeltas(threshold)
+		if err != nil {
+			return nil, err
+		}
+
+		// Step 3: schedule gradual clock adjustments.
+		return s.phase3SendAdjustments()
+	}, reply)
 }
 
 // ConfigureClock is an external disturbance for experiments: it rebuilds the
@@ -200,40 +246,77 @@ func (a *Application) ConfigureClock(args ClockArgs, reply *State) error {
 	return s.report(*reply)
 }
 
-// runPhase wraps one step: only the coordinator runs steps, only one at a
-// time, outcome always reported.
-func (s *TimeService) runPhase(name string, phase func() (*Round, error), reply *Round) error {
+// SetMode chooses how the NEXT corrections are applied: step=true jumps the
+// clock immediately (bad: time can go backward), step=false slews gradually
+// (the algorithm's real behaviour). Scenario C compares the two trajectories.
+func (a *Application) SetMode(args ModeArgs, reply *State) error {
+	s := a.service
 	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.busy {
+		return fmt.Errorf("a step is running right now; retry in a moment")
+	}
+	s.stepMode = args.Step
+	s.lastError = ""
+	*reply = s.stateLocked()
+	return s.report(*reply)
+}
+
+func (s *TimeService) runPhase(
+	name string,
+	phase func() (*Round, error),
+	reply *Round,
+) error {
+	s.mu.Lock()
+
 	if s.id != s.coordinator {
 		coordinator := s.coordinator
 		s.mu.Unlock()
-		return fmt.Errorf("%s runs on the coordinator %s; this is %s", name, coordinator, s.id)
+		return fmt.Errorf(
+			"%s runs on coordinator %s; this is %s",
+			name, coordinator, s.id,
+		)
 	}
+
 	if s.busy {
 		s.mu.Unlock()
-		return fmt.Errorf("another step is still running; wait for its result")
+		return fmt.Errorf("another operation is running; retry later")
 	}
+
 	s.busy = true
 	s.mu.Unlock()
 
-	round, err := phase() // no lock held here, the rpc calls take seconds
+	round, operationErr := phase()
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.busy = false
-	if err != nil {
-		s.lastError = err.Error()
+
+	if round != nil {
+		*reply = *cloneRound(round)
+	}
+
+	if operationErr != nil {
+		s.lastError = operationErr.Error()
 	} else {
 		s.lastError = ""
-		*reply = *round
 	}
-	if reportErr := s.report(s.stateLocked()); err == nil {
-		err = reportErr
-	}
-	return err
-}
 
-// ---- step 1: poll every clock -------------------------------------------
+	state := s.stateLocked()
+	reportErr := s.report(state)
+	s.mu.Unlock()
+
+	if operationErr != nil {
+		return operationErr
+	}
+	if reportErr != nil {
+		return fmt.Errorf(
+			"operation completed but reporting state failed: %w",
+			reportErr,
+		)
+	}
+
+	return nil
+}
 
 func (s *TimeService) phase1PollPeers() (*Round, error) {
 	s.mu.Lock()
@@ -302,13 +385,11 @@ func (s *TimeService) pollOne(peer string) Sample {
 	return sample
 }
 
-// ---- step 2: median -> outliers -> mean -> deltas ------------------------
-
 func (s *TimeService) phase2ComputeDeltas(thresholdMS float64) (*Round, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if phaseOf(s.round) != phasePolled {
-		return nil, fmt.Errorf("step 2 needs the step-1 samples; run Application.PollPeers first (round is %s)", phaseOf(s.round))
+		return nil, fmt.Errorf("step 2 needs the step-1 samples; the round is currently in phase %s", phaseOf(s.round))
 	}
 	median, mean, err := averageOffsets(s.round.Samples, thresholdMS)
 	if err != nil {
@@ -363,76 +444,116 @@ func averageOffsets(samples []Sample, threshold float64) (median, mean float64, 
 	return median, mean, nil
 }
 
-// ---- step 3: send the corrections ---------------------------------------
-
 func (s *TimeService) phase3SendAdjustments() (*Round, error) {
 	s.mu.Lock()
+
 	if phaseOf(s.round) != phaseComputed {
+		current := phaseOf(s.round)
 		s.mu.Unlock()
-		return nil, fmt.Errorf("step 3 needs the step-2 deltas; run Application.ComputeDeltas first (round is %s)", phaseOf(s.round))
+		return nil, fmt.Errorf(
+			"step 3 requires computed deltas; current phase is %s",
+			current,
+		)
 	}
+
 	round := s.round
-	round.Phase = phaseSent
-	request := AdjustArgs{Coordinator: s.id, CoordinatorBoot: s.instance, Round: round.Number}
+	round.Phase = phaseSending
+
+	request := AdjustArgs{
+		Coordinator:     s.id,
+		CoordinatorBoot: s.instance,
+		Round:           round.Number,
+	}
 	self := s.id
+
 	s.mu.Unlock()
 
-	// sends at once again. results land per node - this is not atomic
-	// broadcast, some nodes can succeed while others fail.
 	var workers sync.WaitGroup
+
 	for i := range round.Samples {
-		if round.Samples[i].Error != "" {
-			continue // failed in step 1, nothing measured to correct
+		s.mu.Lock()
+		sample := round.Samples[i]
+		s.mu.Unlock()
+
+		if sample.Error != "" {
+			continue
 		}
+
 		workers.Add(1)
-		go func(index int) {
+
+		go func(index int, sample Sample) {
 			defer workers.Done()
-			sample := &round.Samples[index]
+
 			adjustment := request
-			adjustment.Instance, adjustment.Generation, adjustment.DeltaMS = sample.Instance, sample.Generation, sample.DeltaMS
+			adjustment.Instance = sample.Instance
+			adjustment.Generation = sample.Generation
+			adjustment.DeltaMS = sample.DeltaMS
+
 			var reply AdjustReply
 			var err error
+
 			if sample.Node == self {
-				err = s.Adjust(adjustment, &reply) // our own clock needs no rpc
+				err = s.Adjust(adjustment, &reply)
 			} else {
-				err = call(s.peers[sample.Node], "TimeService.Adjust", adjustment, &reply)
+				client := s.peers[sample.Node]
+				if client == nil {
+					err = fmt.Errorf(
+						"no RPC connection to %s",
+						sample.Node,
+					)
+				} else {
+					err = call(
+						client,
+						"TimeService.Adjust",
+						adjustment,
+						&reply,
+					)
+				}
 			}
+
 			s.mu.Lock()
 			defer s.mu.Unlock()
+
 			if err != nil {
-				sample.Error = err.Error()
+				round.Samples[index].Error = err.Error()
+				round.Samples[index].Scheduled = false
 				return
 			}
-			sample.Scheduled = reply.Scheduled
-		}(i)
+
+			if !reply.Scheduled {
+				round.Samples[index].Error =
+					"adjustment was not confirmed"
+				round.Samples[index].Scheduled = false
+				return
+			}
+
+			round.Samples[index].Scheduled = true
+		}(i, sample)
 	}
+
 	workers.Wait()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	failures := 0
+	for _, sample := range round.Samples {
+		if sample.Error != "" || !sample.Scheduled {
+			failures++
+		}
+	}
+
+	if failures > 0 {
+		round.Phase = phasePartial
+		s.lastError = fmt.Sprintf(
+			"%d of %d adjustments were not confirmed",
+			failures,
+			len(round.Samples),
+		)
+		return round, fmt.Errorf("%s", s.lastError)
+	}
+
+	round.Phase = phaseSent
 	s.lastError = ""
 	return round, nil
-}
-
-// the three steps you trigger.
-
-func (a *Application) PollPeers(_ Empty, reply *Round) error {
-	return a.service.runPhase("Application.PollPeers", a.service.phase1PollPeers, reply)
-}
-
-func (a *Application) ComputeDeltas(args ComputeArgs, reply *Round) error {
-	threshold := args.OutlierThresholdMS
-	if threshold == 0 {
-		threshold = 2000
-	}
-	if !finite(threshold) || threshold <= 0 || threshold > 120000 {
-		return fmt.Errorf("outlierThresholdMS must be in (0, 120000], or zero for the 2000 ms default")
-	}
-	return a.service.runPhase("Application.ComputeDeltas", func() (*Round, error) {
-		return a.service.phase2ComputeDeltas(threshold)
-	}, reply)
-}
-
-func (a *Application) SendAdjustments(_ Empty, reply *Round) error {
-	return a.service.runPhase("Application.SendAdjustments", a.service.phase3SendAdjustments, reply)
 }

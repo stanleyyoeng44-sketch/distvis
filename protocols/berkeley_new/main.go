@@ -1,4 +1,6 @@
 // distvis:name Berkeley Clock Synchronization HANDMADE
+// distvis:description A fixed coordinator polls software clocks, rejects outliers, averages offsets and sends relative deltas for gradual adjustment.
+// distvis:start node-1 Application.Sync {"outlierThresholdMS":2000} Poll the group and move all reachable, stable clocks toward their filtered mean.
 package main
 
 import (
@@ -32,11 +34,10 @@ type ClockArgs struct {
 	DriftPPM float64 `json:"driftPPM"`
 }
 type ClockView struct {
-	TimeMS           float64 `json:"timeMS"`
-	HostOffsetMS     float64 `json:"hostOffsetMS"` // diagnostic only, never used to sync
-	DriftPPM         float64 `json:"driftPPM"`
-	PendingMS        float64 `json:"pendingMS"` // correction still to pay off
-	SlewRateFraction float64 `json:"slewRateFraction"`
+	TimeMS       float64 `json:"timeMS"`
+	HostOffsetMS float64 `json:"hostOffsetMS"` // software clock minus host clock: the observable error (errorMs)
+	DriftPPM     float64 `json:"driftPPM"`
+	SlewMsLeft   float64 `json:"slewMsLeft"` // smooth-adjustment remaining; 0 when settled or after a step
 }
 
 func finite(x float64) bool { return !math.IsNaN(x) && !math.IsInf(x, 0) }
@@ -74,10 +75,18 @@ func (c *clock) slew(deltaMS float64, now time.Time) {
 	c.anchor, c.correction = now, deltaMS
 }
 
+// step applies the correction as an immediate jump. This is the WRONG way to
+// do it (a negative delta makes time go backward); it exists only so scenario C
+// can contrast a jump against a smooth slew.
+func (c *clock) step(deltaMS float64, now time.Time) {
+	c.baseMS = c.read(now) + deltaMS
+	c.anchor, c.correction = now, 0
+}
+
 func (c *clock) view(now time.Time) ClockView {
 	value := c.read(now)
 	return ClockView{TimeMS: value, HostOffsetMS: value - float64(now.UnixMilli()), DriftPPM: c.driftPPM,
-		PendingMS: c.pending(now), SlewRateFraction: slewRate}
+		SlewMsLeft: c.pending(now)}
 }
 
 // node state, everything behind mu.
@@ -95,6 +104,7 @@ type TimeService struct {
 	lastApplied     uint64
 	lastDeltaMS     float64
 	busy            bool
+	stepMode        bool // true = jump immediately (scenario C), false = slew
 	lastError       string
 	round           *Round // the worksheet of the current round
 }
@@ -124,9 +134,5 @@ func configure(node *lab.Runtime) error {
 	if err := node.RegisterName("Application", &Application{service: s}, lab.Application()); err != nil {
 		return err
 	}
-	s.mu.Lock()
-	st := s.stateLocked()
-	s.mu.Unlock()
-	_ = s.report(st)
-	return node.Report("hey dude, I'm ready")
+	return s.report(s.stateLocked())
 }
