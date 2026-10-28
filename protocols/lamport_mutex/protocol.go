@@ -8,9 +8,7 @@ import (
 	"time"
 )
 
-// call bounds a peer operation so a dead node costs one timeout instead of a
-// hang past the platform's ~10s command deadline. On timeout the reply must
-// NOT be read.
+// call performs a peer RPC with a timeout.
 func call(client *rpc.Client, method string, args, reply any) error {
 	done := make(chan error, 1)
 	go func() { done <- client.Call(method, args, reply) }()
@@ -24,15 +22,14 @@ func call(client *rpc.Client, method string, args, reply any) error {
 
 type Empty struct{}
 
-// Request(ts, from): one broadcast, one timestamp, every copy identical.
+// ReqMsg is a request broadcast with the sender's timestamp.
 type ReqMsg struct {
 	From string `json:"from"`
 	TS   uint64 `json:"ts"`
 }
-type ReqReply struct{} // the answer is a separate Ack, not this reply
+type ReqReply struct{}
 
-// ForTS names the request being approved, so a late Ack for an OLD request can
-// never open the door for a new one. TS is the sender's clock (for merging).
+// ForTS identifies the request this Ack approves.
 type AckMsg struct {
 	From  string `json:"from"`
 	TS    uint64 `json:"ts"`
@@ -80,8 +77,7 @@ func entryLess(a, b QueueEntry) bool {
 	return priority(a.Node) < priority(b.Node)
 }
 
-// The queue is a SET of requests sorted by (ts, node); duplicates (a
-// retransmitted message) are ignored.
+// insertRequest keeps the queue sorted by (ts, node) and rejects duplicates.
 func insertRequest(queue []QueueEntry, entry QueueEntry) []QueueEntry {
 	for _, existing := range queue {
 		if existing == entry {
@@ -150,9 +146,7 @@ func (s *MutexService) blockedByMeLocked(their QueueEntry) bool {
 	return false // idle nodes block nobody
 }
 
-// Enter when everyone replied to me AND my request is at the queue head. The
-// head check is redundant (the reply rule guarantees it) but it is what you
-// can inspect.
+// tryEnterLocked enters the critical section once every Ack has arrived.
 func (s *MutexService) tryEnterLocked() {
 	if s.role != roleWaiting || len(s.acks) != len(s.members)-1 {
 		return
@@ -188,8 +182,7 @@ func (s *MutexService) send(to, method string, args, reply any) {
 
 // --- incoming messages ------------------------------------------------------
 
-// Request: merge clocks, queue the request, then reply now or defer the reply
-// while I am blocking it.
+// Request queues a request and replies now or defers the Ack.
 func (s *MutexService) Request(args ReqMsg, reply *ReqReply) error {
 	s.mu.Lock()
 	if args.From == "" || args.From == s.id || args.TS == 0 || !s.isMember(args.From) {
@@ -219,7 +212,7 @@ func (s *MutexService) Ack(args AckMsg, reply *AckReply) error {
 		return fmt.Errorf("malformed ack")
 	}
 	s.clock.onReceive(args.TS)
-	// only an Ack for the CURRENT request counts
+	// only an Ack for the current request counts
 	if s.role == roleWaiting && args.ForTS == s.myTS {
 		if s.acks == nil {
 			s.acks = map[string]bool{}
@@ -259,7 +252,6 @@ func (s *MutexService) Release(args ReleaseMsg, reply *ReleaseReply) error {
 	_ = s.report(st)
 	return nil
 }
-
 
 // acquire is the full request -> wait -> hold -> release cycle, shared by the
 // Acquire action and Auto.
@@ -303,8 +295,7 @@ func (s *MutexService) acquire(holdMs float64) error {
 	s.tryEnterLocked()
 	s.mu.Unlock()
 
-	// Wait until every peer Acked and our request is at the queue head. If a
-	// peer crashed this never completes, which is the point of fault scenario B.
+	// wait until every peer has Acked and the request is at the queue head.
 	<-entered
 
 	// Hold the critical section, then leave.

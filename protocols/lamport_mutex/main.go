@@ -17,8 +17,7 @@ func main() {
 	lab.Main(configure)
 }
 
-// priority is the number in the node id, used to break timestamp ties. Compare
-// the number, never the id string ("node-10" would lose against "node-2").
+// priority is the numeric part of the node id.
 func priority(id string) int {
 	parts := strings.Split(id, "-")
 	n, err := strconv.Atoi(parts[len(parts)-1])
@@ -28,8 +27,7 @@ func priority(id string) int {
 	return n
 }
 
-// Lamport clock: a counter. Every event ticks it and every receive does
-// max(local, remote)+1, so the values are comparable across nodes.
+// lamportClock is a Lamport logical clock.
 type lamportClock struct {
 	now uint64
 }

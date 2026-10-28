@@ -28,8 +28,7 @@ func cloneRound(r *Round) *Round {
 	return &cp
 }
 
-// bounded rpc call so a dead/blocked node can't hang the action past the
-// platform's ~10s command deadline. on timeout the reply must NOT be read.
+// call performs a peer RPC with a timeout.
 func call(client *rpc.Client, method string, args, reply any) error {
 	done := make(chan error, 1)
 	go func() { done <- client.Call(method, args, reply) }()
@@ -54,7 +53,7 @@ type AdjustArgs struct {
 	Round           uint64  `json:"round"`
 	Instance        string  `json:"instance"`
 	Generation      uint64  `json:"generation"`
-	DeltaMS         float64 `json:"deltaMS"` // RELATIVE correction
+	DeltaMS         float64 `json:"deltaMS"` // relative correction
 }
 type AdjustReply struct {
 	Scheduled bool      `json:"scheduled"`
@@ -67,8 +66,7 @@ type ModeArgs struct {
 	Step bool `json:"step"` // true = jump immediately, false = smooth slew
 }
 
-// one row per node: step 1 fills the measurements, step 2 included+delta,
-// step 3 scheduled (or Error).
+// Sample holds one node's measurement and correction for a round.
 type Sample struct {
 	Node       string  `json:"node"`
 	TimeMS     float64 `json:"timeMS"`
@@ -135,8 +133,7 @@ func (s *TimeService) stateLocked() State {
 
 // node-to-node rpcs.
 
-// Poll just reads the clock, but a slewing clock is a moving target so we
-// refuse and let the coordinator try again later.
+// Poll returns the node's current clock reading.
 func (s *TimeService) Poll(_ Empty, reply *PollReply) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -148,22 +145,17 @@ func (s *TimeService) Poll(_ Empty, reply *PollReply) error {
 	return nil
 }
 
-// Adjust schedules the gradual correction. the guards exist because a caller
-// timeout does NOT cancel a net/rpc call and applying the same delta twice
-// would drift the clock instead of fixing it.
+// Adjust schedules a correction; duplicate or stale requests are rejected.
 func (s *TimeService) Adjust(args AdjustArgs, reply *AdjustReply) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	// sane input only
 	if args.Coordinator != s.coordinator || args.CoordinatorBoot == "" || args.Round == 0 ||
 		!finite(args.DeltaMS) || math.Abs(args.DeltaMS) > 120000 {
 		return fmt.Errorf("invalid coordinator, round or correction")
 	}
-	// a restarted coordinator would restart round numbering, refuse it
 	if s.coordinatorBoot != "" && s.coordinatorBoot != args.CoordinatorBoot {
 		return fmt.Errorf("coordinator restarted; start a fresh experiment (no failover protocol)")
 	}
-	// no duplicate rounds, no stale measurements, no overlapping slews
 	if args.Round <= s.lastApplied {
 		return fmt.Errorf("duplicate or stale adjustment for round %d", args.Round)
 	}
@@ -175,9 +167,9 @@ func (s *TimeService) Adjust(args AdjustArgs, reply *AdjustReply) error {
 		return fmt.Errorf("previous correction is still slewing")
 	}
 	if s.stepMode {
-		s.clock.step(args.DeltaMS, now) // jump (scenario C)
+		s.clock.step(args.DeltaMS, now) // jump
 	} else {
-		s.clock.slew(args.DeltaMS, now) // smooth (the algorithm's real behaviour)
+		s.clock.slew(args.DeltaMS, now) // slew
 	}
 	s.generation++
 	s.coordinatorBoot, s.lastApplied, s.lastDeltaMS = args.CoordinatorBoot, args.Round, args.DeltaMS
@@ -210,25 +202,21 @@ func (a *Application) Sync(args ComputeArgs, reply *Round) error {
 	s := a.service
 
 	return s.runPhase("Application.Sync", func() (*Round, error) {
-		// Step 1: poll all clocks.
 		round, err := s.phase1PollPeers()
 		if err != nil {
 			return round, err
 		}
 
-		// Step 2: calculate median, filter outliers, compute mean and deltas.
 		round, err = s.phase2ComputeDeltas(threshold)
 		if err != nil {
 			return nil, err
 		}
 
-		// Step 3: schedule gradual clock adjustments.
 		return s.phase3SendAdjustments()
 	}, reply)
 }
 
-// ConfigureClock is an external disturbance for experiments: it rebuilds the
-// clock and may jump time / cancel a slew. the algorithm itself never jumps.
+// ConfigureClock rebuilds the clock for experiments.
 func (a *Application) ConfigureClock(args ClockArgs, reply *State) error {
 	if err := validateClock(args); err != nil {
 		return err
@@ -246,9 +234,7 @@ func (a *Application) ConfigureClock(args ClockArgs, reply *State) error {
 	return s.report(*reply)
 }
 
-// SetMode chooses how the NEXT corrections are applied: step=true jumps the
-// clock immediately (bad: time can go backward), step=false slews gradually
-// (the algorithm's real behaviour). Scenario C compares the two trajectories.
+// SetMode selects whether corrections are applied as a step or a slew.
 func (a *Application) SetMode(args ModeArgs, reply *State) error {
 	s := a.service
 	s.mu.Lock()
@@ -329,14 +315,12 @@ func (s *TimeService) phase1PollPeers() (*Round, error) {
 		number = s.round.Number + 1
 	}
 	round := &Round{Number: number, Phase: phasePolled, Samples: make([]Sample, len(s.members))}
-	// slot 0 is the coordinator itself: offset 0, no invented rtt. it is a
-	// normal participant here, NOT a time authority.
+	// the coordinator samples itself with a zero offset.
 	round.Samples[0] = Sample{Node: s.id, TimeMS: s.clock.read(time.Now()), Instance: s.instance, Generation: s.generation}
 	members := s.members
 	s.mu.Unlock()
 
-	// poll everyone at once so one dead node costs one timeout, not N.
-	// each goroutine owns its own slot.
+	// poll peers concurrently.
 	var workers sync.WaitGroup
 	for i := 1; i < len(members); i++ {
 		workers.Add(1)
@@ -373,9 +357,7 @@ func (s *TimeService) pollOne(peer string) Sample {
 	s.mu.Lock()
 	localAtReceipt := s.clock.read(end)
 	s.mu.Unlock()
-	// the peer read its clock mid-flight; assuming symmetric paths that was at
-	// the midpoint: offset = peerTime + RTT/2 - ourTimeAtReceipt. same trick
-	// as cristian.
+	// offset = peer time + RTT/2 - local time at receipt.
 	sample.TimeMS = reply.TimeMS
 	sample.OffsetMS = reply.TimeMS + sample.RTTMS/2 - localAtReceipt
 	sample.Instance, sample.Generation = reply.Instance, reply.Generation
@@ -401,9 +383,6 @@ func (s *TimeService) phase2ComputeDeltas(thresholdMS float64) (*Round, error) {
 	return s.round, nil
 }
 
-// offsets 0/100/200/10000 with threshold 300: median 150 -> keep 0/100/200 ->
-// mean 100 -> deltas +100/0/-100/-9900. the outlier loses its VOTE but still
-// gets the biggest correction.
 func averageOffsets(samples []Sample, threshold float64) (median, mean float64, err error) {
 	if !finite(threshold) || threshold <= 0 {
 		return 0, 0, fmt.Errorf("outlier threshold must be positive and finite")

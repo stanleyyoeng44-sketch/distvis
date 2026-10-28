@@ -7,9 +7,7 @@ import (
 	"time"
 )
 
-// call bounds a peer operation so a dead node costs one timeout instead of a
-// hang past the platform's ~10s command deadline. On timeout the reply must
-// NOT be read.
+// call performs a peer RPC with a timeout.
 func call(client *rpc.Client, method string, args, reply any) error {
 	done := make(chan error, 1)
 	go func() { done <- client.Call(method, args, reply) }()
@@ -23,19 +21,12 @@ func call(client *rpc.Client, method string, args, reply any) error {
 
 type Empty struct{}
 
-// The Bully algorithm (Garcia-Molina): the highest live node wins.
-//
-//  1. StartElection: become candidate, send Election to every HIGHER node.
-//  2. Each higher node answers OK and starts its own election (the bullying).
-//  3. Any OK means I back down and wait for the winner.
-//  4. No OK means I am the highest alive: broadcast Coordinator.
-//  5. Receiving Coordinator records the coordinator and ends my election.
 type ElectionMsg struct {
 	From string `json:"from"`
 	ID   int    `json:"id"`
 }
 type ElectionReply struct {
-	OK bool `json:"ok"` // "I am alive and I outrank you"
+	OK bool `json:"ok"` // true if the receiver outranks the sender
 }
 
 type CoordinatorMsg struct {
@@ -188,10 +179,7 @@ func (s *ElectionService) campaign(round uint64) {
 	deliver.Wait()
 }
 
-// Election answers OK (I outrank you) and starts my own election: the bullying
-// takeover. The reply IS the OK the sender is waiting for. A node that is
-// already the coordinator answers OK and re-announces itself instead of
-// running another round for every late Election message.
+// Election replies OK and starts the receiver's own election.
 func (s *ElectionService) Election(args ElectionMsg, reply *ElectionReply) error {
 	s.mu.Lock()
 	if args.From == "" || args.From == s.id || !s.isMember(args.From) {
@@ -200,7 +188,7 @@ func (s *ElectionService) Election(args ElectionMsg, reply *ElectionReply) error
 	}
 	if s.priority <= args.ID {
 		s.mu.Unlock()
-		reply.OK = false // defensive: senders only contact higher priorities
+		reply.OK = false
 		return nil
 	}
 	reply.OK = true
@@ -230,10 +218,7 @@ func (s *ElectionService) Election(args ElectionMsg, reply *ElectionReply) error
 	return nil
 }
 
-// Coordinator records the new coordinator and abandons our own election. A
-// lower-priority announcement is not accepted: such a node cannot be
-// coordinator while this node is alive. If we are already the coordinator we
-// re-announce ourselves; otherwise we challenge it with our own election.
+// Coordinator records the announced coordinator.
 func (s *ElectionService) Coordinator(args CoordinatorMsg, reply *CoordinatorReply) error {
 	s.mu.Lock()
 	if args.From == "" || args.From == s.id || !s.isMember(args.From) {
@@ -266,7 +251,7 @@ func (s *ElectionService) Coordinator(args CoordinatorMsg, reply *CoordinatorRep
 	return nil
 }
 
-// StartElection runs one round from THIS node (scenario C: manual trigger).
+// StartElection runs one round from this node.
 func (a *Application) StartElection(_ Empty, reply *State) error {
 	s := a.service
 	s.startElection()

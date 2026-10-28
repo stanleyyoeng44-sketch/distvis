@@ -18,8 +18,7 @@ func main() {
 	lab.Main(configure)
 }
 
-// my software clock. corrections are never applied as a jump, only as a
-// temporary rate change (max 10%), so time can never go backwards.
+// clock is a software clock that applies corrections by slewing.
 type clock struct {
 	anchor     time.Time
 	baseMS     float64
@@ -27,7 +26,7 @@ type clock struct {
 	correction float64 // total correction scheduled at anchor
 }
 
-const slewRate = 0.10 // exaggerated so the demo converges in seconds
+const slewRate = 0.10
 
 type ClockArgs struct {
 	OffsetMS float64 `json:"offsetMS"`
@@ -69,15 +68,13 @@ func (c *clock) applied(now time.Time) float64 {
 
 func (c *clock) pending(now time.Time) float64 { return c.correction - c.applied(now) }
 
-// slew rebases on the current value so scheduling a correction never jumps.
+// slew schedules a gradual correction.
 func (c *clock) slew(deltaMS float64, now time.Time) {
 	c.baseMS = c.read(now)
 	c.anchor, c.correction = now, deltaMS
 }
 
-// step applies the correction as an immediate jump. This is the WRONG way to
-// do it (a negative delta makes time go backward); it exists only so scenario C
-// can contrast a jump against a smooth slew.
+// step applies the correction as an immediate jump.
 func (c *clock) step(deltaMS float64, now time.Time) {
 	c.baseMS = c.read(now) + deltaMS
 	c.anchor, c.correction = now, 0
@@ -104,7 +101,7 @@ type TimeService struct {
 	lastApplied     uint64
 	lastDeltaMS     float64
 	busy            bool
-	stepMode        bool // true = jump immediately (scenario C), false = slew
+	stepMode        bool // true = jump, false = slew
 	lastError       string
 	round           *Round // the worksheet of the current round
 }
@@ -117,7 +114,7 @@ func configure(node *lab.Runtime) error {
 		return err
 	}
 	index := 0
-	for i, id := range node.Nodes { // range yields both the index and its value.
+	for i, id := range node.Nodes {
 		if id == node.ID {
 			index = i
 		}
@@ -125,7 +122,6 @@ func configure(node *lab.Runtime) error {
 	s := &TimeService{
 		id: node.ID, coordinator: node.Nodes[0], members: node.Nodes,
 		instance: rand.Text(), peers: peers, report: node.Report,
-		// everyone starts with a different offset so the first round has work to do
 		clock: newClock(time.Now(), ClockArgs{OffsetMS: float64(index) * 750}),
 	}
 	if err := node.RegisterName("TimeService", s); err != nil {

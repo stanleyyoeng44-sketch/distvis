@@ -1,10 +1,8 @@
-// The module name identifies this lesson; package main inside it is an executable.
 module berkeley_new
 
-// This is the minimum Go version used by the DistVis SDK.
 go 1.24
 
-require distvis v0.0.0 // Placeholder version resolved by the local replacement.
+require distvis v0.0.0
 
 require (
 	golang.org/x/net v0.34.0 // indirect
@@ -15,5 +13,4 @@ require (
 	google.golang.org/protobuf v1.36.6 // indirect
 )
 
-// A relative path keeps the checkout movable. DistVis overrides it in Docker.
 replace distvis => ../..
