@@ -1,0 +1,113 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "87c72f4a-6b91-4a56-a5e0-5a10de9da513",
+    "experimentId": "1b37a1c7-5686-43ed-b7b5-e5fd4fd4d626",
+    "results": [
+      {
+        "label": "node-1 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-17"
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"applied\",\"op\":\"==\",\"value\":1}",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-111"
+      },
+      {
+        "label": "node-1 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-170"
+      },
+      {
+        "label": "node-1 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-247"
+      },
+      {
+        "label": "node-1 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-346"
+      },
+      {
+        "label": "{\"node\":\"node-5\",\"path\":\"applied\",\"op\":\"==\",\"value\":5}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-5\",\"path\":\"values.x\",\"op\":\"==\",\"value\":\"4\"}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "decidedSlots": 5,
+    "conflictingSlots": [],
+    "chosenPoints": {
+      "1": {
+        "seq": 64,
+        "timeMs": 981.2279310002923,
+        "ballot": 17,
+        "acceptors": [
+          "node-1",
+          "node-3",
+          "node-5"
+        ]
+      },
+      "2": {
+        "seq": 152,
+        "timeMs": 2062.0131259988993,
+        "ballot": 33,
+        "acceptors": [
+          "node-1",
+          "node-2",
+          "node-3"
+        ]
+      },
+      "3": {
+        "seq": 229,
+        "timeMs": 2465.5511609986424,
+        "ballot": 49,
+        "acceptors": [
+          "node-1",
+          "node-2",
+          "node-3"
+        ]
+      },
+      "4": {
+        "seq": 306,
+        "timeMs": 2878.133077999577,
+        "ballot": 65,
+        "acceptors": [
+          "node-1",
+          "node-2",
+          "node-4"
+        ]
+      },
+      "5": {
+        "seq": 461,
+        "timeMs": 5910.245876999572,
+        "ballot": 81,
+        "acceptors": [
+          "node-1",
+          "node-2",
+          "node-5"
+        ]
+      }
+    },
+    "finalApplied": {
+      "node-1": 5,
+      "node-2": 5,
+      "node-3": 5,
+      "node-4": 5,
+      "node-5": 5
+    },
+    "prefixExecutionChecked": true,
+    "runId": "87c72f4a-6b91-4a56-a5e0-5a10de9da513",
+    "passed": true,
+    "errors": []
+  }
+}

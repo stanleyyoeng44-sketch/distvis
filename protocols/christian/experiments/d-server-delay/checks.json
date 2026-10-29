@@ -1,0 +1,55 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "d05330b4-91bc-440a-8add-6930c6dca9ae",
+    "experimentId": "ee2926ba-5ba8-43b0-b4a0-1cd91dfaa087",
+    "results": [
+      {
+        "label": "node-2 starts off",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.SetServerDelay result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "node-2 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-16"
+      },
+      {
+        "label": "RTT includes the 1000 ms queue",
+        "ok": true
+      },
+      {
+        "label": "node-2 ends up about 500 ms ahead",
+        "ok": true
+      },
+      {
+        "label": "error is about delay/2",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.SetServerDelay result (ok)",
+        "ok": true,
+        "commandId": "input-27"
+      },
+      {
+        "label": "node-2 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-32"
+      },
+      {
+        "label": "without queueing the error is back near 0",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "timestampCalculationsChecked": 2,
+    "runId": "d05330b4-91bc-440a-8add-6930c6dca9ae",
+    "passed": true,
+    "errors": []
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "id": "variant-no-prepare-log",
+  "name": "2PC variant: YES without durable prepared record",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Variant",
+        "values": {
+          "skipPrepareSave": true
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Transfer",
+        "values": {
+          "from": "node-2",
+          "to": "node-3",
+          "amount": 30,
+          "pauseAfterDecisionMs": 4000
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "node-1",
+        "path": "decision",
+        "op": "==",
+        "value": "commit"
+      },
+      "timeout": 20000
+    },
+    {
+      "fault": {
+        "kind": "crash",
+        "node": "node-2"
+      }
+    },
+    {
+      "fault": {
+        "kind": "recover",
+        "node": "node-2"
+      }
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "until": {
+        "node": "node-3",
+        "path": "state",
+        "op": "==",
+        "value": "committed"
+      },
+      "timeout": 20000
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "balance",
+        "op": "==",
+        "value": 100
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "balance",
+        "op": "==",
+        "value": 130
+      }
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "phase",
+        "op": "==",
+        "value": "decided"
+      }
+    }
+  ]
+}

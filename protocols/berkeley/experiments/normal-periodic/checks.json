@@ -1,0 +1,62 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "cc969303-3627-4672-b044-0981cd154246",
+    "experimentId": "78c91bef-d630-48b0-b005-506b6ed6e59c",
+    "results": [
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastAppliedRound\",\"op\":\">=\",\"value\":2}",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.Read result (ok)",
+        "ok": true,
+        "commandId": "input-203"
+      },
+      {
+        "label": "node-2 Application.Read result (ok)",
+        "ok": true,
+        "commandId": "input-219"
+      },
+      {
+        "label": "node-3 Application.Read result (ok)",
+        "ok": true,
+        "commandId": "input-225"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"errorMs\",\"op\":\"<=\",\"value\":850}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"errorMs\",\"op\":\"<=\",\"value\":850}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"errorMs\",\"op\":\"<=\",\"value\":850}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"errorMs\",\"op\":\">=\",\"value\":650}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"errorMs\",\"op\":\">=\",\"value\":650}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"errorMs\",\"op\":\">=\",\"value\":650}",
+        "ok": true
+      },
+      {
+        "label": "{\"spread\":\"errorMs\",\"op\":\"<\",\"value\":40}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "filteredRoundsChecked": 5,
+    "runId": "cc969303-3627-4672-b044-0981cd154246",
+    "passed": true,
+    "errors": []
+  }
+}

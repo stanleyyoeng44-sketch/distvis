@@ -1,0 +1,48 @@
+{
+  "id": "normal",
+  "name": "Quorum normal: sequential write and read",
+  "settings": {
+    "nodeCount": 5,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Put",
+        "values": {
+          "key": "x",
+          "value": "1"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.Get",
+        "values": {
+          "key": "x",
+          "minCounter": 1
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "lastGet.item.value",
+        "op": "==",
+        "value": "1"
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "lastGet.stale",
+        "op": "==",
+        "value": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+\section{Reproduction index}\label{app:repro}
+Every scenario in this report, with where its evidence lives.
+Automated scenarios run with
+\texttt{node scripts/scenarios.mjs run <protocol> <id>}.
+Exported runs are in \src{report}; screenshots are in
+\nolinkurl{report/stanleyreport/figures/}.
+
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}lllX@{}}
+\toprule
+Protocol & Scenario & \nolinkurl{scenarios.json} id & Exported run (\nolinkurl{report/}) \\ \midrule
+Cristian & normal          & \texttt{a-normal}       & \nolinkurl{cristian_scenA_normal.json} \\
+Cristian & server crash    & \texttt{b-crash}        & \nolinkurl{cristian_scenB_crash.json} \\
+Cristian & asymmetric      & \texttt{c-asymmetric}   & \nolinkurl{cristian_scenC_asymmetric.json} \\
+Cristian & server delay    & \texttt{d-server-delay} & \nolinkurl{cristian_scenD_serverDelay.json} \\
+Cristian & variant         & \texttt{e-variant}      & \nolinkurl{cristian_designVariant.json} \\
+\midrule
+NTP & processing time & \TODO{} & \TODO{} \\
+NTP & filtering       & \TODO{} & \TODO{} \\
+NTP & stratum chain   & \TODO{} & \TODO{} \\
+NTP & crash           & \TODO{} & \TODO{} \\
+NTP & partition       & \TODO{} & \TODO{} \\
+NTP & variant         & \TODO{} & \TODO{} \\
+\midrule
+Lamport/vector & slide 37     & \TODO{} & \TODO{} \\
+Lamport/vector & equal $L$    & \TODO{} & \TODO{} \\
+Lamport/vector & Auto         & \TODO{} & \TODO{} \\
+Lamport/vector & crash        & \TODO{} & \TODO{} \\
+Lamport/vector & blocked link & \TODO{} & \TODO{} \\
+Lamport/vector & variant      & \TODO{} & \TODO{} \\
+\midrule
+R--A & two requests  & \TODO{} & \TODO{} \\
+R--A & crash         & \TODO{} & \TODO{} \\
+R--A & jitter        & \TODO{} & \TODO{} \\
+R--A & variant       & \TODO{} & \TODO{} \\
+\bottomrule
+\end{tabularx}
+\end{table}

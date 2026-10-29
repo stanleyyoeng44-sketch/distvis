@@ -1,0 +1,86 @@
+{
+  "id": "partition",
+  "name": "Lamport C - blocked link and healing",
+  "settings": {
+    "runtime": "docker",
+    "nodeCount": 3,
+    "latency": 80,
+    "bandwidth": 128,
+    "seed": 42
+  },
+  "steps": [
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-3",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Acquire",
+        "values": {
+          "holdMs": 2000
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "node-2",
+        "path": "lastError",
+        "op": "includes",
+        "value": "node-3"
+      }
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "entries",
+        "value": 0
+      }
+    },
+    {
+      "fault": {
+        "kind": "heal"
+      }
+    },
+    {
+      "wait": 4000
+    },
+    {
+      "check": {
+        "all": [
+          {
+            "node": "node-2",
+            "path": "operation",
+            "value": "waiting"
+          },
+          {
+            "node": "node-2",
+            "path": "missingAcks",
+            "value": [
+              "node-3"
+            ]
+          },
+          {
+            "node": "node-2",
+            "path": "entries",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "check": {
+        "atMostOne": {
+          "path": "role",
+          "value": "critical"
+        }
+      }
+    }
+  ]
+}

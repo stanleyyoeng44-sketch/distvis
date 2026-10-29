@@ -1,0 +1,72 @@
+{
+  "id": "crash",
+  "name": "Quorum crash: majority still available",
+  "settings": {
+    "nodeCount": 5,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "fault": {
+        "kind": "crash",
+        "node": "node-5"
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Put",
+        "values": {
+          "key": "x",
+          "value": "1"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.Get",
+        "values": {
+          "key": "x"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "lastGet.item.value",
+        "op": "==",
+        "value": "1"
+      }
+    },
+    {
+      "fault": {
+        "kind": "recover",
+        "node": "node-5"
+      }
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "input": {
+        "node": "node-5",
+        "method": "Application.Get",
+        "values": {
+          "key": "x"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-5",
+        "path": "lastGet.item.value",
+        "op": "==",
+        "value": "1"
+      }
+    }
+  ]
+}

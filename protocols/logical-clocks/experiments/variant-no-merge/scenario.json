@@ -1,0 +1,87 @@
+{
+  "id": "variant-no-merge",
+  "name": "Clocks variant: omit receive merge",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Variant",
+        "values": {
+          "omitReceiveMerge": true
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Local",
+        "values": {
+          "label": "a"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Send",
+        "values": {
+          "to": "node-2",
+          "label": "b",
+          "receiveLabel": "c"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "clock.lamport",
+        "op": "==",
+        "value": 1
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.CompareEvents",
+        "values": {
+          "left": {
+            "$state": {
+              "node": "node-1",
+              "path": "events.1.timestamp"
+            }
+          },
+          "right": {
+            "$state": {
+              "node": "node-2",
+              "path": "events.0.timestamp"
+            }
+          }
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastCompare.vector",
+        "op": "==",
+        "value": "concurrent"
+      }
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastCompare.lamport",
+        "op": "==",
+        "value": "a>b"
+      }
+    }
+  ]
+}

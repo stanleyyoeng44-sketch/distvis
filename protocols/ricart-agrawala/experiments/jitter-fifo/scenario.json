@@ -1,0 +1,70 @@
+{
+  "id": "jitter-fifo",
+  "name": "RA random load: exponential FIFO",
+  "settings": {
+    "nodeCount": 5,
+    "latency": 80,
+    "delayModel": "exponential",
+    "jitter": 80
+  },
+  "steps": [
+    {
+      "concurrent": [
+        {
+          "node": "node-1",
+          "method": "Application.Auto",
+          "values": {
+            "count": 2
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Application.Auto",
+          "values": {
+            "count": 2
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Application.Auto",
+          "values": {
+            "count": 2
+          }
+        },
+        {
+          "node": "node-4",
+          "method": "Application.Auto",
+          "values": {
+            "count": 2
+          }
+        },
+        {
+          "node": "node-5",
+          "method": "Application.Auto",
+          "values": {
+            "count": 2
+          }
+        }
+      ],
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "completed",
+        "op": "==",
+        "value": 2
+      },
+      "timeout": 60000
+    },
+    {
+      "check": {
+        "atMostOne": {
+          "path": "role",
+          "value": "critical"
+        }
+      },
+      "label": "No overlapping critical sections in reported history"
+    }
+  ]
+}

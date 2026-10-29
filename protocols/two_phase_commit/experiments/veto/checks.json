@@ -1,0 +1,47 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "e2cc197c-d835-47ca-9517-b56706dbaaf4",
+    "experimentId": "bf09d417-ab4a-4393-8f94-43749233f775",
+    "results": [
+      {
+        "label": "node-1 Application.Transfer result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"phase\",\"op\":\"==\",\"value\":\"finished\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"decision\",\"op\":\"==\",\"value\":\"abort\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"balance\",\"op\":\"==\",\"value\":100}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"balance\",\"op\":\"==\",\"value\":100}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"state\",\"op\":\"==\",\"value\":\"aborted\"}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "balances": {
+      "node-2": 100,
+      "node-3": 100
+    },
+    "totalBalance": 200,
+    "transactionDecisions": {
+      "T1": "abort"
+    },
+    "runId": "e2cc197c-d835-47ca-9517-b56706dbaaf4",
+    "passed": true,
+    "errors": []
+  }
+}

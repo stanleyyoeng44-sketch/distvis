@@ -1,0 +1,74 @@
+{
+  "id": "normal",
+  "name": "Lamport A - concurrent requests",
+  "settings": {
+    "runtime": "docker",
+    "nodeCount": 3,
+    "latency": 80,
+    "bandwidth": 128,
+    "seed": 42
+  },
+  "steps": [
+    {
+      "concurrent": [
+        {
+          "node": "node-1",
+          "method": "Application.Acquire",
+          "values": {
+            "holdMs": 2000
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Application.Acquire",
+          "values": {
+            "holdMs": 2000
+          }
+        }
+      ],
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": [
+          "node-1",
+          "node-3"
+        ],
+        "path": "completed",
+        "value": 1
+      }
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "queue",
+        "value": []
+      }
+    },
+    {
+      "check": {
+        "node": "*",
+        "path": "role",
+        "value": "idle"
+      }
+    },
+    {
+      "check": {
+        "atMostOne": {
+          "path": "role",
+          "value": "critical"
+        }
+      },
+      "label": "Critical sections never overlap"
+    },
+    {
+      "check": {
+        "messages": {
+          "value": 12,
+          "op": "=="
+        }
+      },
+      "label": "Two acquisitions use 12 algorithm messages"
+    }
+  ]
+}

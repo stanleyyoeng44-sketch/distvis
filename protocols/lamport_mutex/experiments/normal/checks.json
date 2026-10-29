@@ -1,0 +1,56 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "f26fa1e8-9a25-42e3-99ac-496dcae25790",
+    "experimentId": "9cea43a5-3320-4126-b7e3-8085c3fcd105",
+    "results": [
+      {
+        "label": "node-1 Application.Acquire result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "node-3 Application.Acquire result (ok)",
+        "ok": true,
+        "commandId": "input-14"
+      },
+      {
+        "label": "{\"node\":[\"node-1\",\"node-3\"],\"path\":\"completed\",\"value\":1}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"queue\",\"value\":[]}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"role\",\"value\":\"idle\"}",
+        "ok": true
+      },
+      {
+        "label": "Critical sections never overlap",
+        "ok": true
+      },
+      {
+        "label": "Two acquisitions use 12 algorithm messages",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "maximumCriticalNodes": 1,
+    "observedEntries": 2,
+    "entryOrder": [
+      [
+        "node-1",
+        1
+      ],
+      [
+        "node-3",
+        1
+      ]
+    ],
+    "runId": "f26fa1e8-9a25-42e3-99ac-496dcae25790",
+    "passed": true,
+    "errors": []
+  }
+}

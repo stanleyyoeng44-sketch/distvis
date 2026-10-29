@@ -1,0 +1,104 @@
+{
+  "id": "b-crash",
+  "name": "Cristian fault A \u00b7 time server crashes",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "until": {
+        "node": "node-2",
+        "path": "errorMs",
+        "op": "abs>",
+        "value": 500
+      },
+      "label": "node-2 starts off"
+    },
+    {
+      "fault": {
+        "kind": "crash",
+        "node": "node-1"
+      }
+    },
+    {
+      "note": "The only time server is gone; the request is dropped and Sync waits for the 10 s RPC timeout."
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Sync",
+        "values": {
+          "server": "node-1"
+        }
+      },
+      "expect": "error",
+      "timeout": 20000
+    },
+    {
+      "until": {
+        "node": "node-2",
+        "path": "failedSyncs",
+        "value": 1
+      },
+      "timeout": 15000,
+      "label": "failure is recorded"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "errorMs",
+        "op": "abs>",
+        "value": 500
+      },
+      "label": "clock was NOT changed by the failed sync"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastError",
+        "op": "includes",
+        "value": "clock unchanged"
+      },
+      "label": "lastError explains the failure"
+    },
+    {
+      "fault": {
+        "kind": "recover",
+        "node": "node-1"
+      }
+    },
+    {
+      "until": {
+        "node": "node-1",
+        "path": "role",
+        "value": "server"
+      },
+      "timeout": 30000,
+      "label": "node-1 is back"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Sync",
+        "values": {
+          "server": "node-1"
+        }
+      },
+      "expect": "ok",
+      "timeout": 20000
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.errorAfterMs",
+        "op": "abs<=",
+        "value": 60
+      },
+      "label": "after recovery a retried sync works"
+    }
+  ]
+}

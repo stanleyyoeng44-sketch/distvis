@@ -1,0 +1,28 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "1449649c-ab65-438d-8907-752b9219fb58",
+    "experimentId": "4e0e9826-6e1a-4c1a-b985-b3fb4839d8ce",
+    "results": [
+      {
+        "label": "{\"node\":\"*\",\"path\":\"coordinator\",\"op\":\"==\",\"value\":\"node-5\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-5\",\"path\":\"role\",\"op\":\"==\",\"value\":\"coordinator\"}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "algorithmMessages": {
+      "Election": 10,
+      "Coordinator": 20,
+      "OK": 10
+    },
+    "algorithmMessageTotal": 40,
+    "runId": "1449649c-ab65-438d-8907-752b9219fb58",
+    "passed": true,
+    "errors": []
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "id": "d-server-delay",
+  "name": "Cristian C \u00b7 server queuing delay (1000 ms)",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "until": {
+        "node": "node-2",
+        "path": "errorMs",
+        "op": "abs>",
+        "value": 500
+      },
+      "label": "node-2 starts off"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.SetServerDelay",
+        "values": {
+          "delayMs": 1000
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "note": "Ts is read after 80 ms + 1000 ms queueing; only 80 ms of the 1160 ms RTT is really the reply. Expected error about +500 ms."
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Sync",
+        "values": {
+          "server": "node-1"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.rttMs",
+        "op": ">=",
+        "value": 1100
+      },
+      "label": "RTT includes the 1000 ms queue"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.errorAfterMs",
+        "op": ">=",
+        "value": 400
+      },
+      "label": "node-2 ends up about 500 ms ahead"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.errorAfterMs",
+        "op": "<=",
+        "value": 600
+      },
+      "label": "error is about delay/2"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.SetServerDelay",
+        "values": {
+          "delayMs": 0
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Sync",
+        "values": {
+          "server": "node-1"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.errorAfterMs",
+        "op": "abs<=",
+        "value": 60
+      },
+      "label": "without queueing the error is back near 0"
+    }
+  ]
+}

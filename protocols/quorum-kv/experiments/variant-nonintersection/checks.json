@@ -1,0 +1,58 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "aaca5306-1249-4d96-93e4-74870854e0bb",
+    "experimentId": "910ada43-63a6-47ce-8288-74202194744f",
+    "results": [
+      {
+        "label": "node-1 Application.Mode result (ok)",
+        "ok": true,
+        "commandId": "input-17"
+      },
+      {
+        "label": "node-2 Application.Mode result (ok)",
+        "ok": true,
+        "commandId": "input-20"
+      },
+      {
+        "label": "node-3 Application.Mode result (ok)",
+        "ok": true,
+        "commandId": "input-23"
+      },
+      {
+        "label": "node-4 Application.Mode result (ok)",
+        "ok": true,
+        "commandId": "input-26"
+      },
+      {
+        "label": "node-5 Application.Mode result (ok)",
+        "ok": true,
+        "commandId": "input-29"
+      },
+      {
+        "label": "node-1 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-36"
+      },
+      {
+        "label": "node-3 Application.Get result (ok)",
+        "ok": true,
+        "commandId": "input-56"
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"lastGet.stale\",\"op\":\"==\",\"value\":true}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"lastGet.item.version.counter\",\"op\":\"==\",\"value\":0}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "monotonicReplicaVersionsChecked": 1,
+    "runId": "aaca5306-1249-4d96-93e4-74870854e0bb",
+    "passed": true,
+    "errors": []
+  }
+}

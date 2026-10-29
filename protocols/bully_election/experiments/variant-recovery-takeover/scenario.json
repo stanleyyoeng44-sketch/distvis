@@ -1,0 +1,52 @@
+{
+  "id": "variant-recovery-takeover",
+  "name": "Bully variant: recovered highest node takes over",
+  "settings": {
+    "nodeCount": 7,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "until": {
+        "node": "*",
+        "path": "coordinator",
+        "op": "==",
+        "value": "node-7"
+      },
+      "timeout": 20000
+    },
+    {
+      "fault": {
+        "kind": "crash",
+        "node": "node-7"
+      }
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "coordinator",
+        "op": "==",
+        "value": "node-6"
+      },
+      "timeout": 25000
+    },
+    {
+      "fault": {
+        "kind": "recover",
+        "node": "node-7"
+      }
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "coordinator",
+        "op": "==",
+        "value": "node-7"
+      },
+      "timeout": 25000
+    }
+  ]
+}

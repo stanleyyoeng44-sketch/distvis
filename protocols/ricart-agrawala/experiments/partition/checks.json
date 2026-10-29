@@ -1,0 +1,34 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "a4edab5f-e88d-4d55-9ac4-95706b613609",
+    "experimentId": "51aaf8e4-e84e-493a-a049-bfafe670eccb",
+    "results": [
+      {
+        "label": "node-1 Application.Acquire result (ok)",
+        "ok": true,
+        "commandId": "input-14"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"entries\",\"op\":\"==\",\"value\":0}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"entries\",\"op\":\"==\",\"value\":0}",
+        "ok": true
+      },
+      {
+        "label": "No overlapping critical sections in reported history",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "maximumCriticalNodes": 0,
+    "observedEntries": 0,
+    "entryOrder": [],
+    "runId": "a4edab5f-e88d-4d55-9ac4-95706b613609",
+    "passed": true,
+    "errors": []
+  }
+}

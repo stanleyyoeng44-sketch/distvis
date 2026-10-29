@@ -1,9 +1,10 @@
 // distvis:name Lamport Mutual Exclusion
-// distvis:description Decentralized mutual exclusion with Lamport clocks: a node broadcasts Request(ts), others queue it in timestamp order and reply Ack; it enters the critical section once every Ack has arrived and its request is first, then broadcasts Release.
-// distvis:start node-1 Application.Acquire {"holdMs":2000} Request the critical section and hold it for 2 seconds.
+// distvis:description Timestamp-ordered requests, deferred acknowledgements and explicit releases. Select Ricart–Agrawala before any requests to compare the release-free variant.
+// distvis:start node-1 Application.Acquire {"holdMs":2000} Start an acquisition; watch operation progress from waiting to critical to completed.
 package main
 
 import (
+	"context"
 	"net/rpc"
 	"strconv"
 	"strings"
@@ -13,24 +14,16 @@ import (
 	lab "distvis/sdk/rpc"
 )
 
-func main() {
-	lab.Main(configure)
-}
+func main() { lab.Main(configure) }
 
-// priority is the numeric part of the node id.
+// priority compares numeric node IDs, so node-2 precedes node-10.
 func priority(id string) int {
 	parts := strings.Split(id, "-")
-	n, err := strconv.Atoi(parts[len(parts)-1])
-	if err != nil {
-		return 0
-	}
+	n, _ := strconv.Atoi(parts[len(parts)-1])
 	return n
 }
 
-// lamportClock is a Lamport logical clock.
-type lamportClock struct {
-	now uint64
-}
+type lamportClock struct{ now uint64 }
 
 func (c *lamportClock) tick() uint64 {
 	c.now++
@@ -48,27 +41,39 @@ const (
 	roleIdle     = "idle"
 	roleWaiting  = "waiting"
 	roleCritical = "critical"
+	lamport      = "lamport"
+	ricart       = "ricart-agrawala"
 )
 
 type MutexService struct {
-	mu          sync.Mutex
-	id          string
-	members     []string
-	peers       map[string]*rpc.Client
-	report      func(any) error
-	clock       lamportClock
-	role        string // idle | waiting | critical
-	myTS        uint64 // timestamp of my current request; 0 when idle
-	acks        map[string]bool
-	queue       []QueueEntry
-	deferred    []QueueEntry // requests I am withholding an Ack for
-	entries     int          // times entered the critical section
-	lastWaitMS  float64      // how long the last acquire waited to enter
-	waitStart   time.Time
-	entered     chan struct{} // closed when the current acquire enters
-	sent        uint64
-	autoRunning bool
-	lastErr     string
+	mu        sync.Mutex
+	id        string
+	members   []string
+	peers     map[string]*rpc.Client
+	report    func(any) error
+	ctx       context.Context
+	algorithm string
+	clock     lamportClock
+	role      string
+	myTS      uint64
+	acks      map[string]bool
+	queue     []QueueEntry
+	deferred  []QueueEntry
+	// Released request timestamps prevent delayed messages from re-queuing them.
+	released map[string]uint64
+
+	entries          int
+	completed        int
+	lastWaitMS       float64
+	waitStart        time.Time
+	entered          chan struct{}
+	operationRunning bool
+	operation        string
+	autoRunning      bool
+	sent             uint64
+	sendErrors       uint64
+	lastErr          string
+	reportSeq        uint64
 }
 
 type Application struct{ service *MutexService }
@@ -80,13 +85,27 @@ func configure(node *lab.Runtime) error {
 	}
 	s := &MutexService{
 		id: node.ID, members: node.Nodes, peers: peers, report: node.Report,
-		role: roleIdle,
+		ctx: context.Background(), algorithm: lamport, role: roleIdle,
+		operation: "none", released: make(map[string]uint64),
 	}
+	// Inputs can arrive as soon as the runtime publishes its schema. Cancel a
+	// stable context on shutdown rather than replacing it in the start hook.
+	ctx, cancel := context.WithCancel(s.ctx)
+	s.ctx = ctx
+	node.OnStart(func(ctx context.Context) error {
+		<-ctx.Done()
+		cancel()
+		return nil
+	})
 	if err := node.RegisterName("MutexService", s); err != nil {
+		cancel()
 		return err
 	}
 	if err := node.RegisterName("Application", &Application{service: s}, lab.Application()); err != nil {
+		cancel()
 		return err
 	}
-	return s.report(s.stateLocked())
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.reportLocked()
 }

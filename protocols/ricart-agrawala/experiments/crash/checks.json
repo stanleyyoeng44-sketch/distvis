@@ -1,0 +1,38 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "ea805f80-9426-4cb8-bd9f-9c85f3369e72",
+    "experimentId": "e125cdf2-5c60-4016-9822-3e38ae6ca54b",
+    "results": [
+      {
+        "label": "node-1 Application.Acquire result (ok)",
+        "ok": true,
+        "commandId": "input-15"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"role\",\"op\":\"==\",\"value\":\"waiting\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"entries\",\"op\":\"==\",\"value\":0}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"missingAcks\",\"op\":\"includes\",\"value\":\"node-2\"}",
+        "ok": true
+      },
+      {
+        "label": "No overlapping critical sections in reported history",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "maximumCriticalNodes": 0,
+    "observedEntries": 0,
+    "entryOrder": [],
+    "runId": "ea805f80-9426-4cb8-bd9f-9c85f3369e72",
+    "passed": true,
+    "errors": []
+  }
+}

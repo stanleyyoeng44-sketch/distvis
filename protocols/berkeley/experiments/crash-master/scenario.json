@@ -1,0 +1,126 @@
+{
+  "id": "crash-master",
+  "name": "Berkeley crash: drift while down, converge after recovery",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Auto",
+        "values": {
+          "enabled": false
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.SetClock",
+        "values": {
+          "offsetMS": 750,
+          "driftPPM": 0
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.SetClock",
+        "values": {
+          "offsetMS": 750,
+          "driftPPM": 10000
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.SetClock",
+        "values": {
+          "offsetMS": 750,
+          "driftPPM": -10000
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Auto",
+        "values": {
+          "enabled": true
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "lastAppliedRound",
+        "op": ">=",
+        "value": 2
+      },
+      "timeout": 30000
+    },
+    {
+      "until": {
+        "spread": "errorMs",
+        "op": "<",
+        "value": 100
+      },
+      "timeout": 30000
+    },
+    {
+      "fault": {
+        "kind": "crash",
+        "node": "node-1"
+      }
+    },
+    {
+      "wait": 12000
+    },
+    {
+      "check": {
+        "spread": "errorMs",
+        "nodes": [
+          "node-2",
+          "node-3"
+        ],
+        "op": ">",
+        "value": 150
+      }
+    },
+    {
+      "fault": {
+        "kind": "recover",
+        "node": "node-1"
+      }
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "lastAppliedRound",
+        "op": ">=",
+        "value": 4
+      },
+      "timeout": 45000
+    },
+    {
+      "until": {
+        "spread": "errorMs",
+        "op": "<",
+        "value": 120
+      },
+      "timeout": 45000
+    }
+  ]
+}

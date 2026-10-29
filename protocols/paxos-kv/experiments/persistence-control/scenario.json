@@ -1,0 +1,185 @@
+{
+  "id": "persistence-control",
+  "name": "Paxos KV control: intersection remembers chosen value",
+  "settings": {
+    "nodeCount": 5,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-4",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-5",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-4",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-5",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-3",
+        "to": "node-4",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-3",
+        "to": "node-5",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Put",
+        "values": {
+          "key": "x",
+          "value": "first"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "node-3",
+        "path": "applied",
+        "op": "==",
+        "value": 1
+      },
+      "timeout": 20000
+    },
+    {
+      "fault": {
+        "kind": "crash",
+        "node": "node-3"
+      }
+    },
+    {
+      "fault": {
+        "kind": "heal"
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-3",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-4",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-5",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-3",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-4",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-5",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "recover",
+        "node": "node-3"
+      }
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "input": {
+        "node": "node-4",
+        "method": "Application.Put",
+        "values": {
+          "key": "x",
+          "value": "second"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-4",
+        "path": "log.1.value.value",
+        "op": "==",
+        "value": "first"
+      }
+    },
+    {
+      "check": {
+        "node": "node-4",
+        "path": "log.2.value.value",
+        "op": "==",
+        "value": "second"
+      }
+    }
+  ]
+}

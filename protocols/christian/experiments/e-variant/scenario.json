@@ -1,0 +1,79 @@
+{
+  "id": "e-variant",
+  "name": "Cristian design variant \u00b7 +0 vs +RTT/2 vs +RTT (200 ms links)",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 200
+  },
+  "steps": [
+    {
+      "until": {
+        "node": "node-2",
+        "path": "errorMs",
+        "op": "abs>",
+        "value": 500
+      },
+      "label": "node-2 starts off"
+    },
+    {
+      "note": "RTT is about 400 ms. zero ignores the reply delay, full counts the whole round trip, half is Cristian."
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Sync",
+        "values": {
+          "mode": "zero"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.errorAfterMs",
+        "op": "<=",
+        "value": -150
+      },
+      "label": "zero: about 200 ms BEHIND (missed the reply delay)"
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Sync",
+        "values": {
+          "mode": "full"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.errorAfterMs",
+        "op": ">=",
+        "value": 150
+      },
+      "label": "full: about 200 ms AHEAD (also counted the request delay)"
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Sync",
+        "values": {
+          "mode": "half"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.errorAfterMs",
+        "op": "abs<=",
+        "value": 60
+      },
+      "label": "half (Cristian): about 0"
+    }
+  ]
+}

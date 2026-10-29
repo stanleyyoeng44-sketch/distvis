@@ -1,0 +1,30 @@
+\section{Summary}
+
+\subsection{Comparison of the three physical-clock / logical-clock approaches}
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}lXXX@{}}
+\toprule
+ & Cristian & NTP & Lamport / vector \\ \midrule
+What it gives       & \TODO{} & \TODO{} & \TODO{} \\
+Messages per sync   & \TODO{} & \TODO{} & --- \\
+Main error source   & \TODO{} & \TODO{} & --- \\
+Effect of a crash   & \TODO{} & \TODO{} & \TODO{} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{What each design variant taught me}
+\begin{itemize}[itemsep=2pt]
+  \item \textbf{Cristian:} \TODO{one sentence}
+  \item \textbf{NTP:} \TODO{one sentence}
+  \item \textbf{Lamport / vector:} \TODO{one sentence}
+  \item \textbf{Ricart--Agrawala:} \TODO{one sentence}
+\end{itemize}
+
+\subsection{Problems I ran into}
+\TODO{Bugs you found while implementing (e.g.\ the race without the mutex in the
+Lamport code, the channel-swap race noted in \nolinkurl{randa/locks.go}), and how you
+fixed them.}
+
+\subsection{Bonus (optional)}
+\TODO{Automated scenarios, tests, tooling, or delete this subsection.}

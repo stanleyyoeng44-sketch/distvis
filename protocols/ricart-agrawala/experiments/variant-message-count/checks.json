@@ -1,0 +1,47 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "0120ce39-976a-4499-8a8b-5a5579092526",
+    "experimentId": "6291c014-e0f4-4a2b-958f-a384cee22aa9",
+    "results": [
+      {
+        "label": "node-1 Application.Acquire result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"completed\",\"op\":\"==\",\"value\":1}",
+        "ok": true
+      },
+      {
+        "label": "{\"messages\":{\"method\":\"MutexService.Request\",\"op\":\"==\",\"value\":2}}",
+        "ok": true
+      },
+      {
+        "label": "{\"messages\":{\"method\":\"MutexService.Ack\",\"op\":\"==\",\"value\":2}}",
+        "ok": true
+      },
+      {
+        "label": "{\"messages\":{\"method\":\"MutexService.Release\",\"op\":\"==\",\"value\":0}}",
+        "ok": true
+      },
+      {
+        "label": "No overlapping critical sections in reported history",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "maximumCriticalNodes": 1,
+    "observedEntries": 1,
+    "entryOrder": [
+      [
+        "node-1",
+        1
+      ]
+    ],
+    "runId": "0120ce39-976a-4499-8a8b-5a5579092526",
+    "passed": true,
+    "errors": []
+  }
+}

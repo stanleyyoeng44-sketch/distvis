@@ -1,0 +1,34 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "17e07f10-0dbf-45cf-bc02-0aee96a101ec",
+    "experimentId": "589942b6-9522-4c71-ad6d-7bf40f41ef77",
+    "results": [
+      {
+        "label": "node-2 Application.Acquire result (ok)",
+        "ok": true,
+        "commandId": "input-15"
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"lastError\",\"op\":\"includes\",\"value\":\"node-3\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"all\":[{\"node\":\"node-2\",\"path\":\"operation\",\"value\":\"waiting\"},{\"node\":\"node-2\",\"path\":\"entries\",\"value\":0},{\"node\":\"node-2\",\"path\":\"missingAcks\",\"value\":[\"node-3\"]}]}",
+        "ok": true
+      },
+      {
+        "label": "{\"atMostOne\":{\"path\":\"role\",\"value\":\"critical\"}}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "maximumCriticalNodes": 0,
+    "observedEntries": 0,
+    "entryOrder": [],
+    "runId": "17e07f10-0dbf-45cf-bc02-0aee96a101ec",
+    "passed": true,
+    "errors": []
+  }
+}

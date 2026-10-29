@@ -101,6 +101,22 @@ Counters and history are saved via `sdk.Save` **before** publishing an event or 
 
 Snapshots allocate fresh vector/history storage when updated. Without these copies, Go slices could share backing arrays and a later event could retroactively rewrite an earlier timestamp. Read snapshots therefore remain safe while other RPCs run concurrently.
 
+## Additional application controls
+
+[controls.go](controls.go) provides `Auto(count)` [a bounded random sequence of local/send events; default 8, maximum 20], `CompareEvents(left,right)` [compare complete Lamport/vector/total timestamps], and `Variant(omitReceiveMerge)` [deliberately omit the maximum merge before a receive increment]. Select the variant before events. The original `Compare` remains available for entering just two vectors.
+
+State now also reports `role`, `autoRunning`, `messagesSent`, and `lastCompare`. CompareEvents reports the vector relation, scalar order, total order, and `agrees`: whether a vector-causal relation implies the corresponding scalar order. It does not authenticate user-entered timestamps or compare them against the real message graph. In the broken variant the vectors themselves can be wrong, so the independent evidence checker also verifies every recorded send/receive edge.
+
+## Discussion
+
+**Does a smaller Lamport number prove causality?** No: b has Lamport 2 and e has Lamport 1, but their vectors are concurrent. Lamport order is necessary for a causal edge [one event can affect the other through local order and messages], not sufficient to establish one. The six-event experiment verifies both cases.
+
+**What do equal Lamport values mean?** The three first local events all have value 1 and pairwise incomparable vectors. The total-order tie-break still sorts them, but that ordering is a convention based on node identity. It does not describe physical time or invent a message path.
+
+**Why merge before incrementing on receive?** The receiver must include the sender's known history before recording its own new event. Without the maximum merge, a send at scalar 2 can cause a receive stamped 1, and their vectors can falsely appear concurrent. The variant and the independent message-edge check show this failure directly.
+
+**What does the automatic-event check establish?** It reconstructs causal paths from local event order and recorded messages, then checks both directions of the vector-clock equivalence and that Lamport order agrees with every causal path. The scenario also calls CompareEvents on actual recorded timestamps from all three nodes, not prewritten expected vectors. The safe automatic trace had no violations. Random generation changes the exact trace, so passing one run is evidence rather than a proof for every possible execution.
+
 ## Boundaries
 
 - Fixed membership, 2–12 nodes. Recovery validates ordered membership and node identity before restoring state.
@@ -117,3 +133,14 @@ go -C protocols/logical-clocks vet ./...
 ```
 
 Tests reproduce all six lecture timestamps exactly, compare all four vector relations, check max-before-increment and immutable snapshots, reject malformed vectors/overflow, check persistence ordering and restore, fail closed on storage errors, stress concurrent events/history bounds, and verify real net/rpc send/receive behavior without an extra acknowledgement event. The acceptance script repeats the trace in Docker and verifies node recovery.
+
+## Verified experiment evidence
+
+One folder per experiment; each contains its report, exact scenario, full export, and check results. These current-code records supersede historical observations elsewhere in the repository.
+
+- [Clocks normal: lecture six events](experiments/normal-six-events/README.md)
+- [Clocks: equal Lamport concurrent events](experiments/equal-concurrent/README.md)
+- [Clocks: automatic random events](experiments/auto-invariant/README.md)
+- [Clocks crash: durable counters](experiments/crash-recovery/README.md)
+- [Clocks partition: local events continue](experiments/partition/README.md)
+- [Clocks variant: omit receive merge](experiments/variant-no-merge/README.md)

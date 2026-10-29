@@ -1,0 +1,92 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "c9af5fef-8b91-402f-8880-b1902de63c17",
+    "experimentId": "b5fe57fd-c7b1-42df-a34a-ce0befebd3e3",
+    "results": [
+      {
+        "label": "node-1 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-17"
+      },
+      {
+        "label": "node-2 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-18"
+      },
+      {
+        "label": "node-3 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-19"
+      },
+      {
+        "label": "node-5 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-21"
+      },
+      {
+        "label": "node-4 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-20"
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"completed\",\"op\":\"==\",\"value\":2}",
+        "ok": true
+      },
+      {
+        "label": "No overlapping critical sections in reported history",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "maximumCriticalNodes": 1,
+    "observedEntries": 10,
+    "entryOrder": [
+      [
+        "node-1",
+        1
+      ],
+      [
+        "node-2",
+        1
+      ],
+      [
+        "node-3",
+        1
+      ],
+      [
+        "node-4",
+        1
+      ],
+      [
+        "node-5",
+        1
+      ],
+      [
+        "node-1",
+        18
+      ],
+      [
+        "node-2",
+        25
+      ],
+      [
+        "node-3",
+        32
+      ],
+      [
+        "node-4",
+        39
+      ],
+      [
+        "node-5",
+        46
+      ]
+    ],
+    "actualLinkOrderReversals": 19,
+    "runId": "c9af5fef-8b91-402f-8880-b1902de63c17",
+    "passed": true,
+    "errors": []
+  }
+}

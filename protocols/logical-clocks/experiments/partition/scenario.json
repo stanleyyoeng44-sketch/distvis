@@ -1,0 +1,74 @@
+{
+  "id": "partition",
+  "name": "Clocks partition: local events continue",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-3",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Send",
+        "values": {
+          "to": "node-3",
+          "label": "lost",
+          "receiveLabel": "absent"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastDelivery.confirmed",
+        "op": "==",
+        "value": false
+      }
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.Local",
+        "values": {
+          "label": "independent"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "fault": {
+        "kind": "heal"
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Send",
+        "values": {
+          "to": "node-3",
+          "label": "new-send",
+          "receiveLabel": "new-receive"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastDelivery.confirmed",
+        "op": "==",
+        "value": true
+      }
+    }
+  ]
+}

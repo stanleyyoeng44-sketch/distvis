@@ -1,0 +1,221 @@
+\section{Cristian clock synchronization}\label{sec:cristian}
+Handout: LAB1 §3.1 \\
+Code: \src{protocols/christian} \\
+README: \src{protocols/christian/README.md}
+
+% ---------------------------------------------------------------------
+\subsection{Algorithm}
+A client reads its clock ($T_0$), asks the time server for the time, receives the
+server's reading $T_s$, and reads its clock again ($T_1$). It then sets
+\[
+  C \leftarrow T_s + \frac{T_1 - T_0}{2}, \qquad
+  \text{worst-case error} \le \frac{T_1 - T_0}{2} = \frac{\mathrm{RTT}}{2}.
+\]
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \proc{1.6}{server}{9}
+  \proc{0}{client}{9}
+  \node[ev,label=below:{\scriptsize $T_0$}] (t0) at (1,0) {};
+  \node[ev,label=above:{\scriptsize $T_s$}] (ts) at (4.5,1.6) {};
+  \node[ev,label=below:{\scriptsize $T_1$}] (t1) at (8,0) {};
+  \draw[msg] (t0) -- node[lbl,above left]{Ask} (ts);
+  \draw[msg] (ts) -- node[lbl,above right]{$T_s$} (t1);
+  \draw[<->,gray] (1,-0.7) -- node[below,lbl]{RTT $=T_1-T_0$} (8,-0.7);
+\end{tikzpicture}
+\caption{One Cristian round.}
+\end{figure}
+
+\TODO{2--4 sentences in your own words: why the midpoint, and what assumption
+(symmetric delay) the formula depends on.}
+
+% ---------------------------------------------------------------------
+\subsection{Implementation}
+\begin{itemize}[itemsep=2pt]
+  \item Formula: \TODO{function name} in \src{protocols/christian/protocol.go}
+  \item Client side (one \fld{Sync}): \TODO{} \quad Server side (\fld{TimeService.Ask}): \TODO{}
+  \item Simulated clock (offset + drift): \src{protocols/christian/clock.go}
+  \item Automated scenarios: \src{protocols/christian/scenarios.json}
+\end{itemize}
+
+\phead{State fields reported}
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Field & Meaning \\ \midrule
+\fld{role}              & \TODO{} \\
+\fld{errorMs}           & \TODO{} \\
+\fld{driftPPM}          & \TODO{} \\
+\fld{syncs} / \fld{failedSyncs} & \TODO{} \\
+\fld{lastSync}          & \TODO{($t_0$, $T_s$, $t_1$, RTT, estimate, correction, error bound, error before/after)} \\
+\fld{lastError}         & \TODO{} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\phead{Application inputs}
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+\toprule
+Input & Fields & Effect \\ \midrule
+\fld{Application.Sync}           & \fld{server}, \fld{mode} & \TODO{} \\
+\fld{Application.SetServerDelay} & \fld{delayMs}            & \TODO{} \\
+\fld{Application.SetClock}       & \fld{offsetMs}, \fld{driftPPM} & \TODO{} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ---------------------------------------------------------------------
+\subsection{Scenario coverage}
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}llXl@{}}
+\toprule
+Report section & Handout & What it shows & Export \\ \midrule
+\ref{sec:cr-normal}  & A          & symmetric sync, error $\to 0$ & \nolinkurl{cristian_scenA_normal.json} \\
+\ref{sec:cr-crash}   & (fault A)  & time server crashes           & \nolinkurl{cristian_scenB_crash.json} \\
+\ref{sec:cr-asym}    & B          & asymmetric link               & \nolinkurl{cristian_scenC_asymmetric.json} \\
+\ref{sec:cr-queue}   & C          & server queuing delay          & \nolinkurl{cristian_scenD_serverDelay.json} \\
+\ref{sec:cr-variant} & variant    & $+0$ vs $+\mathrm{RTT}/2$ vs $+\mathrm{RTT}$ & \nolinkurl{cristian_designVariant.json} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ---------------------------------------------------------------------
+\scenario{Normal: one sync over symmetric links}{cr-normal}
+\phead{Setup}
+\begin{setuptable}
+Nodes / latency & 3 nodes, \TODO{80}\,ms, Docker \\
+Scenario id     & \texttt{a-normal} \\
+Export          & \jsonfile{cristian_scenA_normal.json} \\
+\end{setuptable}
+\phead{Steps}
+\begin{steps}
+  \item Record the initial \fld{errorMs} of every node.
+  \item On node-2 run \fld{Application.Sync} with \fld{server=node-1}, \fld{mode=half}.
+  \item \TODO{}
+\end{steps}
+\phead{Result}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Node & errorBefore (ms) & RTT (ms) & correction (ms) & errorAfter (ms) & bound (ms) \\ \midrule
+node-2 & \fillin & \fillin & \fillin & \fillin & \fillin \\
+node-3 & \fillin & \fillin & \fillin & \fillin & \fillin \\
+\bottomrule
+\end{tabular}
+\end{table}
+\screenshot{cristian-normal.png}{Cristian normal case: request/reply arrows and the state report carrying \fld{lastSync}.}
+\phead{Explanation}
+\TODO{3--5 sentences: what you saw, did it match the expectation, why. Mention drift
+after the sync.}
+
+% ---------------------------------------------------------------------
+\scenario{Fault A: the time server crashes}{cr-crash}
+\phead{Setup}
+\begin{setuptable}
+Nodes / latency & 3 nodes, \TODO{}\,ms, Docker \\
+Scenario id     & \texttt{b-crash} \\
+Export          & \jsonfile{cristian_scenB_crash.json} \\
+\end{setuptable}
+\phead{Steps}
+\begin{steps}
+  \item Crash node-1 (``Simulate crash'').
+  \item On node-2 run \fld{Sync}; wait for the RPC timeout.
+  \item Recover node-1 and run \fld{Sync} again.
+\end{steps}
+\screenshot{cristian-crash.png}{Request dropped (red $\times$) while node-1 is down.}
+\phead{Explanation}
+\TODO{3--5 sentences. Was the clock changed by the failed sync? What does
+\fld{lastError} say? Single point of failure.}
+
+% ---------------------------------------------------------------------
+\scenario{Fault B: asymmetric link delay}{cr-asym}
+\phead{Setup}
+\begin{setuptable}
+Nodes / latency & 3 nodes, \TODO{200}\,ms, Docker \\
+Link faults     & node-2$\to$node-1 = 2000\,ms, node-1$\to$node-2 = 200\,ms, then reversed \\
+Scenario id     & \texttt{c-asymmetric} \\
+Export          & \jsonfile{cristian_scenC_asymmetric.json} \\
+\end{setuptable}
+\phead{Expected value}
+With request delay $d_\text{req}$ and reply delay $d_\text{rep}$, the error after the
+sync is $\dfrac{d_\text{req} - d_\text{rep}}{2}$ (derive it in one line: \TODO{}).
+\phead{Result}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Links (req / reply) & RTT & assumed reply delay & predicted error & measured \fld{errorAfterMs} \\ \midrule
+2000 / 200 & \fillin & \fillin & $+900$ & \fillin \\
+200 / 2000 & \fillin & \fillin & $-900$ & \fillin \\
+healed     & \fillin & \fillin & $0$    & \fillin \\
+\bottomrule
+\end{tabular}
+\end{table}
+\screenshot{cristian-asym.png}{Asymmetric link: long request arrow, short reply arrow.}
+\phead{Explanation}
+\TODO{3--5 sentences. Can the client detect the asymmetry from the RTT alone?}
+
+% ---------------------------------------------------------------------
+\scenario{Handout scenario C: server queuing delay}{cr-queue}
+\phead{Setup}
+\begin{setuptable}
+Nodes / latency & 3 nodes, \TODO{}\,ms, Docker \\
+Fault           & \fld{SetServerDelay(1000)} on node-1 \\
+Scenario id     & \texttt{d-server-delay} \\
+Export          & \jsonfile{cristian_scenD_serverDelay.json} \\
+\end{setuptable}
+\phead{Result}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Server delay & RTT (ms) & predicted error (ms) & measured error (ms) \\ \midrule
+1000\,ms & \fillin & \fillin & \fillin \\
+0\,ms    & \fillin & \fillin & \fillin \\
+\bottomrule
+\end{tabular}
+\end{table}
+\screenshot{cristian-queue.png}{Server queuing delay: gap between request arrival and reply on node-1.}
+\phead{Explanation}
+\TODO{3--5 sentences. Why is the server's waiting time mistaken for network time,
+and how does NTP's $t_2 - t_1$ fix it (link to Section~\ref{sec:ntp}).}
+
+% ---------------------------------------------------------------------
+\scenario{Design variant: $+0$ vs.\ $+\mathrm{RTT}/2$ vs.\ $+\mathrm{RTT}$}{cr-variant}
+\phead{Setup}
+\begin{setuptable}
+Nodes / latency & 3 nodes, \TODO{200}\,ms, Docker \\
+Variant switch  & \fld{mode} field of \fld{Sync}: \texttt{zero}, \texttt{half}, \texttt{full} \\
+Scenario id     & \texttt{e-variant} \\
+Export          & \jsonfile{cristian_designVariant.json} \\
+\end{setuptable}
+\phead{Result}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Mode & Estimate & RTT & measured error & worst-case bound \\ \midrule
+\texttt{zero} & $T_s$                      & \fillin & \fillin & \fillin \\
+\texttt{half} & $T_s + \mathrm{RTT}/2$     & \fillin & \fillin & \fillin \\
+\texttt{full} & $T_s + \mathrm{RTT}$       & \fillin & \fillin & \fillin \\
+\bottomrule
+\end{tabular}
+\end{table}
+\phead{Explanation}
+\TODO{3--5 sentences: why the midpoint minimises the worst-case error.}
+
+% ---------------------------------------------------------------------
+\subsection{Discussion questions}
+\begin{qa}{How large is the error when the delays are not symmetric?}
+\TODO{2--4 sentences.}
+\end{qa}
+\begin{qa}{Why add RTT/2 rather than 0 or RTT?}
+\TODO{2--4 sentences.}
+\end{qa}
+\begin{qa}{\TODO{other question from the protocol README}}
+\TODO{2--4 sentences.}
+\end{qa}
+
+\subsection{Boundaries (what is not implemented)}
+\begin{itemize}[itemsep=1pt]
+  \item \TODO{e.g.\ no periodic sync, no server failover, no multi-sample filtering,
+        corrections are steps (can move the clock backwards), clocks not persisted.}
+\end{itemize}

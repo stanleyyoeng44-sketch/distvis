@@ -1,0 +1,149 @@
+{
+  "id": "variant-jump",
+  "name": "Berkeley variant: jump versus slew",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Auto",
+        "values": {
+          "enabled": false
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Sync",
+        "values": {}
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "slewMsLeft",
+        "op": "<",
+        "value": -500
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "clockAfterAdjustmentMS",
+        "op": "==",
+        "value": {
+          "$state": {
+            "node": "node-3",
+            "path": "clockBeforeAdjustmentMS"
+          }
+        }
+      }
+    },
+    {
+      "wait": 9000
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.ConfigureClock",
+        "values": {
+          "offsetMS": 0
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.ConfigureClock",
+        "values": {
+          "offsetMS": 750
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.ConfigureClock",
+        "values": {
+          "offsetMS": 1500
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.SetMode",
+        "values": {
+          "step": true
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.SetMode",
+        "values": {
+          "step": true
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.SetMode",
+        "values": {
+          "step": true
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Sync",
+        "values": {}
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "slewMsLeft",
+        "op": "==",
+        "value": 0
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "lastAdjMs",
+        "op": "<",
+        "value": -600
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "clockAfterAdjustmentMS",
+        "op": "<",
+        "value": {
+          "$state": {
+            "node": "node-3",
+            "path": "clockBeforeAdjustmentMS"
+          }
+        }
+      }
+    }
+  ]
+}

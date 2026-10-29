@@ -1,0 +1,46 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "2189eaee-537c-4f0f-b033-cafed3b72af1",
+    "experimentId": "e0d1cfd7-98ab-4af4-b7d8-bb4a15b6dbb5",
+    "results": [
+      {
+        "label": "node-2 starts off",
+        "ok": true
+      },
+      {
+        "label": "node-2 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "zero: about 200 ms BEHIND (missed the reply delay)",
+        "ok": true
+      },
+      {
+        "label": "node-2 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-23"
+      },
+      {
+        "label": "full: about 200 ms AHEAD (also counted the request delay)",
+        "ok": true
+      },
+      {
+        "label": "node-2 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-36"
+      },
+      {
+        "label": "half (Cristian): about 0",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "timestampCalculationsChecked": 3,
+    "runId": "2189eaee-537c-4f0f-b033-cafed3b72af1",
+    "passed": true,
+    "errors": []
+  }
+}

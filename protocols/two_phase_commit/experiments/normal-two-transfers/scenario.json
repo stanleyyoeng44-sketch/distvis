@@ -1,0 +1,84 @@
+{
+  "id": "normal-two-transfers",
+  "name": "2PC normal: two transfers conserve 200",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Transfer",
+        "values": {
+          "from": "node-2",
+          "to": "node-3",
+          "amount": 30
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "node-1",
+        "path": "phase",
+        "op": "==",
+        "value": "finished"
+      },
+      "timeout": 20000
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "balance",
+        "op": "==",
+        "value": 70
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "balance",
+        "op": "==",
+        "value": 130
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Transfer",
+        "values": {
+          "from": "node-2",
+          "to": "node-3",
+          "amount": 30
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "node-1",
+        "path": "phase",
+        "op": "==",
+        "value": "finished"
+      },
+      "timeout": 20000
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "balance",
+        "op": "==",
+        "value": 40
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "balance",
+        "op": "==",
+        "value": 160
+      }
+    }
+  ]
+}

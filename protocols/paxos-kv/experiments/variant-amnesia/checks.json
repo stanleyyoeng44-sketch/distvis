@@ -1,0 +1,65 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "58ff85df-be79-4220-8634-e250a66fbbb4",
+    "experimentId": "343f7b1b-1c3a-40d8-bbd2-112e00ea0f44",
+    "results": [
+      {
+        "label": "node-3 Application.Amnesia result (ok)",
+        "ok": true,
+        "commandId": "input-17"
+      },
+      {
+        "label": "node-1 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-26"
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"applied\",\"op\":\"==\",\"value\":1}",
+        "ok": true
+      },
+      {
+        "label": "node-4 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-101"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"values.x\",\"op\":\"==\",\"value\":\"first\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-4\",\"path\":\"values.x\",\"op\":\"==\",\"value\":\"second\"}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "decidedSlots": 1,
+    "conflictingSlots": [
+      "1"
+    ],
+    "chosenPoints": {
+      "1": {
+        "seq": 61,
+        "timeMs": 1045.5832169987261,
+        "ballot": 17,
+        "acceptors": [
+          "node-1",
+          "node-2",
+          "node-3"
+        ]
+      }
+    },
+    "finalApplied": {
+      "node-1": 1,
+      "node-2": 1,
+      "node-3": 0,
+      "node-4": 1,
+      "node-5": 0
+    },
+    "prefixExecutionChecked": true,
+    "runId": "58ff85df-be79-4220-8634-e250a66fbbb4",
+    "passed": true,
+    "errors": []
+  }
+}

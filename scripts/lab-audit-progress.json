@@ -1,0 +1,15 @@
+{
+  "assignment": ["docs/LAB1.md", "docs/LAB1.en.md"],
+  "secondAudit": "2026-10-29: corrected Berkeley coordinator recovery, measured jump evidence, actual-event comparisons, state publication ordering, 2PC durable outcomes, evidence-checker coverage and stale platform tests; all 53 scenarios rerun",
+  "scope": ["christian", "berkeley", "logical-clocks", "lamport_mutex", "ricart-agrawala", "bully_election", "quorum-kv", "paxos-kv", "two_phase_commit"],
+  "status": "selected requirements implemented, documented, and verified in recorded executions",
+  "entryPoint": "protocols/README.md",
+  "reportSource": "report/report.odt",
+  "excluded": "report/stanleyreport",
+  "verifiedProtocols": 9,
+  "selectedPassingDockerExperiments": 53,
+  "verification": ["go test -race -count=1 ./... in all nine modules", "go vet ./... in all nine modules", "scenario assertions", "independent history invariants where applicable", "selected export/non-test-Go-source equality", "all selected report links", "ODT ZIP/XML validation", "LibreOffice opening and PDF rendering", "git diff --check"],
+  "gradeGuarantee": false,
+  "remaining": [],
+  "boundaries": "See each protocol README; finite observations and tests are not a proof for every schedule. Unsafe variants are labeled. Existing unrelated prototypes were preserved, not counted as selected submissions."
+}

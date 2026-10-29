@@ -1,0 +1,51 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "b77b97bf-ad4b-4182-8224-ec233b0a7c2a",
+    "experimentId": "971f85c5-af08-417f-a3e5-c52925102969",
+    "results": [
+      {
+        "label": "node-1 Application.Transfer result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"votes.node-3\",\"op\":\"==\",\"value\":\"yes\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"state\",\"op\":\"==\",\"value\":\"uncertain\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"phase\",\"op\":\"==\",\"value\":\"finished\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"decision\",\"op\":\"==\",\"value\":\"abort\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"balance\",\"op\":\"==\",\"value\":100}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"balance\",\"op\":\"==\",\"value\":100}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "balances": {
+      "node-2": 100,
+      "node-3": 100
+    },
+    "totalBalance": 200,
+    "transactionDecisions": {
+      "T1": "abort"
+    },
+    "runId": "b77b97bf-ad4b-4182-8224-ec233b0a7c2a",
+    "passed": true,
+    "errors": []
+  }
+}

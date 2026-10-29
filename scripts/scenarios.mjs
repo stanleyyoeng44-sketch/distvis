@@ -9,9 +9,10 @@
 // Scenario files live in protocols/<folder>/scenarios.json. See the scenario format appendix in docs/LAB1.md.
 // DISTVIS_SCENARIO_DIR=<dir> reads <dir>/<folder>/scenarios.json instead (code still comes from
 // protocols/<folder>), e.g. to grade extra scenarios without touching the protocol directory.
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { get, resolveValues, validateResult } from './scenario-conditions.mjs';
 
 const base = process.env.DISTVIS_URL || 'http://localhost:3000';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'protocols');
@@ -49,15 +50,26 @@ async function ensureProtocol(folder) {
   const list = await api('/api/protocol-projects');
   const found = list.find(p => !p.archived && p.origin?.directory === directory);
   const snapshot = await api(`/api/project?protocol=${encodeURIComponent(entry.id)}`);
+  // Evidence contains source snapshots itself. Importing it recursively would
+  // inflate every later export; it is submission material, not build input.
+  snapshot.files = snapshot.files.filter(f => !f.path.startsWith('experiments/'));
   if (!found) {
     const created = await api('/api/protocol-projects', { name: entry.name, protocol: entry.id });
     console.log(`+ 协议 ${entry.name}`);
+    // Keep the directory origin recorded by creation, but omit report exports
+    // from the executable snapshot even on a fresh platform installation.
+    if (created.projects.shared.files.some(f => f.path.startsWith('experiments/'))) {
+      return api(`/api/protocol-projects/${created.id}`, {
+        revision: created.revision,
+        projects: { ...created.projects, shared: { entry: snapshot.entry, encoding: 'base64', files: snapshot.files } },
+      });
+    }
     return created;
   }
   const full = await api(`/api/protocol-projects/${found.id}`);
   if (full.projects?.shared?.sha256 === snapshot.sha256 && !Object.keys(full.projects).some(k => k !== 'shared')) return full;
   const updated = await api(`/api/protocol-projects/${found.id}`, {
-    revision: full.revision, projects: { shared: { entry: snapshot.entry, encoding: 'base64', files: snapshot.files.map(f => ({ path: f.path, content: f.content, encoding: f.encoding || 'base64' })) } },
+    revision: full.revision, projects: { ...full.projects, shared: { entry: snapshot.entry, encoding: 'base64', files: snapshot.files.map(f => ({ path: f.path, content: f.content, encoding: f.encoding || 'base64' })) } },
   });
   console.log(`~ 协议 ${entry.name} 已同步目录代码 (revision ${updated.revision})`);
   return updated;
@@ -94,10 +106,6 @@ async function setup(folder) {
 
 // ---- conditions ------------------------------------------------------------
 
-function get(obj, path) {
-  if (!path) return obj;
-  return path.split('.').reduce((v, k) => (v == null ? undefined : v[k]), obj);
-}
 function compare(actual, op, expected) {
   switch (op ?? '==') {
     case '==': return JSON.stringify(actual) === JSON.stringify(expected);
@@ -145,7 +153,8 @@ class View {
     if (cond.not) return !this.test(cond.not);
     if (cond.node) {
       const nodes = this.nodes(cond.node);
-      const check = n => compare(get(this.states[n], cond.path), cond.op, cond.value);
+      const expected = resolveValues(cond.value, this.states);
+      const check = n => compare(get(this.states[n], cond.path), cond.op, expected);
       return cond.node === 'any' ? nodes.some(check) : nodes.length > 0 && nodes.every(check);
     }
     if (cond.same) {
@@ -157,6 +166,10 @@ class View {
       return values.size > 1;
     }
     if (cond.messages) return compare(this.messageCount(cond.messages), cond.messages.op || '>=', cond.messages.value);
+    if (cond.spread) {
+      const values = this.nodes(cond.nodes || '*').map(n => get(this.states[n], cond.spread));
+      return values.length > 0 && values.every(Number.isFinite) && compare(Math.max(...values) - Math.min(...values), cond.op, cond.value);
+    }
     if (cond.atMostOne || cond.moreThanOne) {
       // History invariant: replay state events and count nodes matching at every point.
       const spec = cond.atMostOne || cond.moreThanOne, current = {};
@@ -224,6 +237,20 @@ async function runScenario(folder, protocol, experiment, scenario, keep) {
           try { await api(path + '/faults', f); break; } catch (e) { if (e.status !== 409 || i > 20) throw e; await sleep(300); }
         }
         console.log(`  ${stamp()} ⚡ ${JSON.stringify(step.fault)}`);
+        if (f.kind === 'recover') {
+          // A historical schema does not prove the restarted process is ready.
+          const end = Date.now() + 30000;
+          let ready = false;
+          while (Date.now() < end) {
+            const v = await view();
+            const restart = v.events.findLast(e => e.type === 'fault' && e.fault?.kind === 'recover' && e.fault?.node === f.node);
+            const crash = v.events.findLast(e => e.type === 'node' && e.node === f.node && e.online === false);
+            const after = Math.max(restart?.seq || 0, crash?.seq || 0);
+            if (v.events.some(e => e.type === 'input_schema' && e.node === f.node && e.seq > after)) { ready = true; break; }
+            await sleep(300);
+          }
+          if (!ready) throw new Error(`${f.node}: recovery did not publish a fresh input schema`);
+        }
       }
       if (step.input || step.concurrent) {
         // `concurrent` delivers every input at the same coordinator instant (batch API).
@@ -234,14 +261,14 @@ async function runScenario(folder, protocol, experiment, scenario, keep) {
         for (const it of items) if (!find(it)) throw new Error(`${it.node} 没有声明 ${it.method}`);
         let ids;
         if (step.concurrent) {
-          const r = await api(path + '/commands', { batch: items.map(it => ({ node: it.node, action: find(it).action, values: it.values || {} })) });
+          const r = await api(path + '/commands', { batch: items.map(it => ({ node: it.node, action: find(it).action, values: resolveValues(it.values || {}, v.states) })) });
           const failedItems = r.commands.filter(c => c.error);
           if (failedItems.length) throw new Error(`并发输入失败: ${failedItems.map(c => `${c.node} ${c.error}`).join('; ')}`);
           ids = r.commands.map(c => c.id);
           console.log(`  ${stamp()} ⇉ 同时: ${items.map(it => `${it.node} ${it.method} ${JSON.stringify(it.values || {})}`).join(' | ')}`);
         } else {
           const { node, method, values = {} } = step.input;
-          ids = [(await api(path + '/commands', { node, action: find(step.input).action, values })).id];
+          ids = [(await api(path + '/commands', { node, action: find(step.input).action, values: resolveValues(values, v.states) })).id];
           console.log(`  ${stamp()} → ${node} ${method} ${JSON.stringify(values)}`);
         }
         const waitOne = async ({ node, method }, id) => {
@@ -250,8 +277,8 @@ async function runScenario(folder, protocol, experiment, scenario, keep) {
             const r = (await view()).events.find(e => e.type === 'command_result' && e.commandId === id);
             if (r) {
               console.log(`  ${stamp()} ← ${node} ${method}: ${r.error ? '错误 ' + r.error : JSON.stringify(r.result)}`);
-              if (step.expect === 'ok' && r.error) throw new Error(`${method} 预期成功，实际 ${r.error}`);
-              if (step.expect === 'error' && !r.error) throw new Error(`${method} 预期失败，实际成功`);
+              validateResult(step.expect, r);
+              results.push({ label: `${node} ${method} result (${step.expect || 'ok'})`, ok: true, commandId: id });
               return r;
             }
             await sleep(400);
@@ -288,6 +315,12 @@ async function runScenario(folder, protocol, experiment, scenario, keep) {
     const current = await api(path).catch(() => null);
     if (current?.status === 'running' && !keep) await api(path + '/stop', {}).catch(() => {});
     if (current?.status === 'starting') console.log('  ! 运行仍在 starting，稍后请在平台结束');
+  }
+  if (process.env.DISTVIS_EVIDENCE_DIR) {
+    const directory = resolve(process.env.DISTVIS_EVIDENCE_DIR, folder, scenario.id);
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(join(directory, `run-${run.id}.json`), JSON.stringify(await api(path + '/export')), { flag: 'wx' });
+    writeFileSync(join(directory, `checks-${run.id}.json`), JSON.stringify({ passed: !failed, runId: run.id, experimentId: experiment.id, results }, null, 2), { flag: 'wx' });
   }
   console.log(`  ${failed ? '✗ 失败' : '✓ 通过'} · 回放: ${base}/#experiment/${experiment.id}/history · run ${run.id}`);
   return !failed;

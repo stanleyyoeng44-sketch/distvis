@@ -4,3 +4,11 @@ node_modules/
 .DS_Store
 artifacts/
 **/vendor/
+
+# Local audit backups and intermediate exports; final evidence is in protocols/.
+.lab-backups/
+.lab-evidence/
+.lab-review/
+scripts/__pycache__/
+protocols/bully_election/bully_election
+protocols/two_phase_commit/two_phase_commit

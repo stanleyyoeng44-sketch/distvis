@@ -1,0 +1,63 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "72e42966-686f-4a53-a9a1-a847f622e100",
+    "experimentId": "dfbf3170-08b2-4269-b76d-d9bd6ebbcfa2",
+    "results": [
+      {
+        "label": "node-2 starts more than 500 ms off",
+        "ok": true
+      },
+      {
+        "label": "node-3 starts more than 500 ms off",
+        "ok": true
+      },
+      {
+        "label": "node-1 (server) is the reference",
+        "ok": true
+      },
+      {
+        "label": "node-2 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "after Sync node-2 is within 60 ms of real time",
+        "ok": true
+      },
+      {
+        "label": "RTT is about 2 \u00d7 80 ms",
+        "ok": true
+      },
+      {
+        "label": "node-3 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-23"
+      },
+      {
+        "label": "empty form defaults to node-1 / half and also works",
+        "ok": true
+      },
+      {
+        "label": "node-3 Application.Status result (ok)",
+        "ok": true,
+        "commandId": "input-48"
+      },
+      {
+        "label": "node-2 Application.Status result (ok)",
+        "ok": true,
+        "commandId": "input-51"
+      },
+      {
+        "label": "one successful sync recorded",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "timestampCalculationsChecked": 2,
+    "runId": "72e42966-686f-4a53-a9a1-a847f622e100",
+    "passed": true,
+    "errors": []
+  }
+}

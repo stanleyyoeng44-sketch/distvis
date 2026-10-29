@@ -1,0 +1,116 @@
+{
+  "id": "a-normal",
+  "name": "Cristian A \u00b7 normal sync, symmetric 80 ms links",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "note": "Every client starts with a visible clock error; node-1 is the accurate reference."
+    },
+    {
+      "until": {
+        "node": "node-2",
+        "path": "errorMs",
+        "op": "abs>",
+        "value": 500
+      },
+      "label": "node-2 starts more than 500 ms off"
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "errorMs",
+        "op": "abs>",
+        "value": 500
+      },
+      "label": "node-3 starts more than 500 ms off"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "errorMs",
+        "op": "abs<=",
+        "value": 5
+      },
+      "label": "node-1 (server) is the reference"
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Sync",
+        "values": {
+          "server": "node-1",
+          "mode": "half"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.errorAfterMs",
+        "op": "abs<=",
+        "value": 60
+      },
+      "label": "after Sync node-2 is within 60 ms of real time"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.rttMs",
+        "op": ">=",
+        "value": 150
+      },
+      "label": "RTT is about 2 \u00d7 80 ms"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.Sync",
+        "values": {}
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "lastSync.errorAfterMs",
+        "op": "abs<=",
+        "value": 60
+      },
+      "label": "empty form defaults to node-1 / half and also works"
+    },
+    {
+      "note": "Drift: node-2 gains 1 ms/s, node-3 loses 2 ms/s, so the error slowly grows back."
+    },
+    {
+      "wait": 10000
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.Status",
+        "values": {}
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Status",
+        "values": {}
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "syncs",
+        "value": 1
+      },
+      "label": "one successful sync recorded"
+    }
+  ]
+}

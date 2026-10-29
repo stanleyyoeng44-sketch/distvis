@@ -1,0 +1,893 @@
+{
+  "protocolId": "4e6d7318-63ad-4ef3-856d-700b5598a22f",
+  "scenarios": [
+    {
+      "scenario": "normal",
+      "name": "Lamport A - concurrent requests",
+      "runId": "2e6dce4a-bee5-450f-b103-1cec9cf89d70",
+      "experimentId": "9cea43a5-3320-4126-b7e3-8085c3fcd105",
+      "createdAt": "2026-10-29T06:57:03.281Z",
+      "protocolRevision": 2,
+      "sourceSHA256": "e3a8b4376960b9731c1005b1cbc387e0df5a03b20e420d745a6eedf456e3f99b",
+      "status": "completed",
+      "events": 123,
+      "durationMs": 5234.3393879998475,
+      "algorithmMessages": 12,
+      "methods": {
+        "MutexService.Request": 4,
+        "MutexService.Ack": 4,
+        "MutexService.Release": 4
+      },
+      "maxCritical": 1,
+      "acceptanceMs": [
+        4.2056739998515695,
+        4.2056739998515695
+      ],
+      "criticalEntries": [
+        {
+          "node": "node-1",
+          "seq": 67,
+          "time": 434.8228269999381,
+          "requestTS": 1
+        },
+        {
+          "node": "node-3",
+          "seq": 94,
+          "time": 2522.7595159998164,
+          "requestTS": 1
+        }
+      ],
+      "exits": [
+        {
+          "node": "node-1",
+          "seq": 76,
+          "time": 2436.8842809998896
+        },
+        {
+          "node": "node-3",
+          "seq": 104,
+          "time": 4526.990154999774
+        }
+      ],
+      "faults": [],
+      "states": {
+        "node-1": {
+          "node": "node-1",
+          "algorithm": "lamport",
+          "reportSeq": 15,
+          "clock": 11,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 1,
+          "completed": 1,
+          "lastWaitMs": 170.976,
+          "messagesSent": 5,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "completed",
+          "operationRunning": false,
+          "autoRunning": false
+        },
+        "node-3": {
+          "node": "node-3",
+          "algorithm": "lamport",
+          "reportSeq": 15,
+          "clock": 10,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 1,
+          "completed": 1,
+          "lastWaitMs": 2259.764,
+          "messagesSent": 5,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "completed",
+          "operationRunning": false,
+          "autoRunning": false
+        },
+        "node-2": {
+          "node": "node-2",
+          "algorithm": "lamport",
+          "reportSeq": 7,
+          "clock": 11,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 2,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "none",
+          "operationRunning": false,
+          "autoRunning": false
+        }
+      },
+      "export": "runs/2e6dce4a-bee5-450f-b103-1cec9cf89d70/run.json",
+      "history": "http://127.0.0.1:3000/#experiment/9cea43a5-3320-4126-b7e3-8085c3fcd105/history"
+    },
+    {
+      "scenario": "crash",
+      "name": "Lamport B - idle peer crash",
+      "runId": "6b686149-62d5-4e0b-ade7-97474d444207",
+      "experimentId": "589942b6-9522-4c71-ad6d-7bf40f41ef77",
+      "createdAt": "2026-10-29T06:57:12.506Z",
+      "protocolRevision": 2,
+      "sourceSHA256": "e3a8b4376960b9731c1005b1cbc387e0df5a03b20e420d745a6eedf456e3f99b",
+      "status": "completed",
+      "events": 40,
+      "durationMs": 15123.929915999994,
+      "algorithmMessages": 3,
+      "methods": {
+        "MutexService.Request": 2,
+        "MutexService.Ack": 1
+      },
+      "maxCritical": 0,
+      "acceptanceMs": [
+        6.435320000164211
+      ],
+      "criticalEntries": [],
+      "exits": [],
+      "faults": [
+        {
+          "seq": 13,
+          "time": 692.0417200000957,
+          "fault": {
+            "kind": "crash",
+            "node": "node-3"
+          }
+        }
+      ],
+      "states": {
+        "node-1": {
+          "node": "node-1",
+          "algorithm": "lamport",
+          "reportSeq": 3,
+          "clock": 3,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [
+            {
+              "ts": 1,
+              "node": "node-2"
+            }
+          ],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 1,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "none",
+          "operationRunning": false,
+          "autoRunning": false
+        },
+        "node-2": {
+          "node": "node-2",
+          "algorithm": "lamport",
+          "reportSeq": 6,
+          "clock": 4,
+          "role": "waiting",
+          "myTS": 1,
+          "acksHave": 1,
+          "acksNeed": 2,
+          "missingAcks": [
+            "node-3"
+          ],
+          "queue": [
+            {
+              "ts": 1,
+              "node": "node-2"
+            }
+          ],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 2,
+          "sendErrors": 1,
+          "lastError": "MutexService.Request to node-3: no reply within 3s; remote outcome unknown",
+          "operation": "waiting",
+          "operationRunning": true,
+          "autoRunning": false
+        },
+        "node-3": {
+          "node": "node-3",
+          "algorithm": "lamport",
+          "reportSeq": 1,
+          "clock": 0,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 0,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "none",
+          "operationRunning": false,
+          "autoRunning": false
+        }
+      },
+      "export": "runs/6b686149-62d5-4e0b-ade7-97474d444207/run.json",
+      "history": "http://127.0.0.1:3000/#experiment/589942b6-9522-4c71-ad6d-7bf40f41ef77/history"
+    },
+    {
+      "scenario": "partition",
+      "name": "Lamport C - blocked link and healing",
+      "runId": "758cd9c8-819b-4df1-952c-f7d937c74d1f",
+      "experimentId": "53982495-8e2a-4044-b3d4-b87449cb4aaa",
+      "createdAt": "2026-10-29T06:57:30.596Z",
+      "protocolRevision": 2,
+      "sourceSHA256": "e3a8b4376960b9731c1005b1cbc387e0df5a03b20e420d745a6eedf456e3f99b",
+      "status": "completed",
+      "events": 38,
+      "durationMs": 7768.536250000121,
+      "algorithmMessages": 3,
+      "methods": {
+        "MutexService.Request": 2,
+        "MutexService.Ack": 1
+      },
+      "maxCritical": 0,
+      "acceptanceMs": [
+        1.5717019999865443
+      ],
+      "criticalEntries": [],
+      "exits": [],
+      "faults": [
+        {
+          "seq": 13,
+          "time": 330.8943590000272,
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-3",
+            "blocked": true,
+            "bidirectional": true,
+            "latency": 80,
+            "bandwidth": 128
+          }
+        },
+        {
+          "seq": 37,
+          "time": 3759.9860470001586,
+          "fault": {
+            "kind": "heal"
+          }
+        }
+      ],
+      "states": {
+        "node-1": {
+          "node": "node-1",
+          "algorithm": "lamport",
+          "reportSeq": 3,
+          "clock": 3,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [
+            {
+              "ts": 1,
+              "node": "node-2"
+            }
+          ],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 1,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "none",
+          "operationRunning": false,
+          "autoRunning": false
+        },
+        "node-2": {
+          "node": "node-2",
+          "algorithm": "lamport",
+          "reportSeq": 6,
+          "clock": 4,
+          "role": "waiting",
+          "myTS": 1,
+          "acksHave": 1,
+          "acksNeed": 2,
+          "missingAcks": [
+            "node-3"
+          ],
+          "queue": [
+            {
+              "ts": 1,
+              "node": "node-2"
+            }
+          ],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 2,
+          "sendErrors": 1,
+          "lastError": "MutexService.Request to node-3: no reply within 3s; remote outcome unknown",
+          "operation": "waiting",
+          "operationRunning": true,
+          "autoRunning": false
+        },
+        "node-3": {
+          "node": "node-3",
+          "algorithm": "lamport",
+          "reportSeq": 1,
+          "clock": 0,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 0,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "none",
+          "operationRunning": false,
+          "autoRunning": false
+        }
+      },
+      "export": "runs/758cd9c8-819b-4df1-952c-f7d937c74d1f/run.json",
+      "history": "http://127.0.0.1:3000/#experiment/53982495-8e2a-4044-b3d4-b87449cb4aaa/history"
+    },
+    {
+      "scenario": "lamport-count",
+      "name": "Lamport D - six messages per acquisition",
+      "runId": "c6b766e8-a690-4bd1-b163-0aab39d02b50",
+      "experimentId": "eed790f5-9748-4777-a539-9f6a808d093d",
+      "createdAt": "2026-10-29T06:57:41.584Z",
+      "protocolRevision": 2,
+      "sourceSHA256": "e3a8b4376960b9731c1005b1cbc387e0df5a03b20e420d745a6eedf456e3f99b",
+      "status": "completed",
+      "events": 68,
+      "durationMs": 2609.7736509998795,
+      "algorithmMessages": 6,
+      "methods": {
+        "MutexService.Request": 2,
+        "MutexService.Ack": 2,
+        "MutexService.Release": 2
+      },
+      "maxCritical": 1,
+      "acceptanceMs": [
+        2.1158809999469668
+      ],
+      "criticalEntries": [
+        {
+          "node": "node-1",
+          "seq": 42,
+          "time": 356.0974729999434,
+          "requestTS": 1
+        }
+      ],
+      "exits": [
+        {
+          "node": "node-1",
+          "seq": 49,
+          "time": 2355.420097999973
+        }
+      ],
+      "faults": [],
+      "states": {
+        "node-1": {
+          "node": "node-1",
+          "algorithm": "lamport",
+          "reportSeq": 12,
+          "clock": 6,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 1,
+          "completed": 1,
+          "lastWaitMs": 175.166,
+          "messagesSent": 4,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "completed",
+          "operationRunning": false,
+          "autoRunning": false
+        },
+        "node-2": {
+          "node": "node-2",
+          "algorithm": "lamport",
+          "reportSeq": 4,
+          "clock": 7,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 1,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "none",
+          "operationRunning": false,
+          "autoRunning": false
+        },
+        "node-3": {
+          "node": "node-3",
+          "algorithm": "lamport",
+          "reportSeq": 4,
+          "clock": 7,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 1,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "none",
+          "operationRunning": false,
+          "autoRunning": false
+        }
+      },
+      "export": "runs/c6b766e8-a690-4bd1-b163-0aab39d02b50/run.json",
+      "history": "http://127.0.0.1:3000/#experiment/eed790f5-9748-4777-a539-9f6a808d093d/history"
+    },
+    {
+      "scenario": "ricart-count",
+      "name": "Lamport D variant - Ricart Agrawala four messages",
+      "runId": "a467ce4b-bce7-4c4f-8e33-3973fa0f6e7f",
+      "experimentId": "696da9a5-96d9-41ea-9e37-25d25e7b7973",
+      "createdAt": "2026-10-29T06:57:47.566Z",
+      "protocolRevision": 2,
+      "sourceSHA256": "e3a8b4376960b9731c1005b1cbc387e0df5a03b20e420d745a6eedf456e3f99b",
+      "status": "completed",
+      "events": 61,
+      "durationMs": 3181.0666839999612,
+      "algorithmMessages": 4,
+      "methods": {
+        "MutexService.Request": 2,
+        "MutexService.Ack": 2
+      },
+      "maxCritical": 1,
+      "acceptanceMs": [
+        3.886182999936864,
+        3.886182999936864,
+        6.01864799996838,
+        2.1424529999494553
+      ],
+      "criticalEntries": [
+        {
+          "node": "node-1",
+          "seq": 51,
+          "time": 932.9456650000066,
+          "requestTS": 1
+        }
+      ],
+      "exits": [
+        {
+          "node": "node-1",
+          "seq": 58,
+          "time": 2934.7115249999333
+        }
+      ],
+      "faults": [],
+      "states": {
+        "node-2": {
+          "node": "node-2",
+          "algorithm": "ricart-agrawala",
+          "reportSeq": 4,
+          "clock": 3,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 1,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "none",
+          "operationRunning": false,
+          "autoRunning": false
+        },
+        "node-1": {
+          "node": "node-1",
+          "algorithm": "ricart-agrawala",
+          "reportSeq": 11,
+          "clock": 6,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 1,
+          "completed": 1,
+          "lastWaitMs": 172.965,
+          "messagesSent": 2,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "completed",
+          "operationRunning": false,
+          "autoRunning": false
+        },
+        "node-3": {
+          "node": "node-3",
+          "algorithm": "ricart-agrawala",
+          "reportSeq": 4,
+          "clock": 3,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 1,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "none",
+          "operationRunning": false,
+          "autoRunning": false
+        }
+      },
+      "export": "runs/a467ce4b-bce7-4c4f-8e33-3973fa0f6e7f/run.json",
+      "history": "http://127.0.0.1:3000/#experiment/696da9a5-96d9-41ea-9e37-25d25e7b7973/history"
+    },
+    {
+      "scenario": "long-hold",
+      "name": "Lamport regression - fifteen second hold",
+      "runId": "b39ae41e-1de8-429a-bb18-33b01651d13a",
+      "experimentId": "5d53e4bd-a06d-45f6-8f98-6c171acb364f",
+      "createdAt": "2026-10-29T06:57:53.944Z",
+      "protocolRevision": 2,
+      "sourceSHA256": "e3a8b4376960b9731c1005b1cbc387e0df5a03b20e420d745a6eedf456e3f99b",
+      "status": "completed",
+      "events": 68,
+      "durationMs": 15705.333321999991,
+      "algorithmMessages": 6,
+      "methods": {
+        "MutexService.Request": 2,
+        "MutexService.Ack": 2,
+        "MutexService.Release": 2
+      },
+      "maxCritical": 1,
+      "acceptanceMs": [
+        7.491800999967381
+      ],
+      "criticalEntries": [
+        {
+          "node": "node-1",
+          "seq": 42,
+          "time": 433.67990699992515,
+          "requestTS": 1
+        }
+      ],
+      "exits": [
+        {
+          "node": "node-1",
+          "seq": 49,
+          "time": 15424.800689999945
+        }
+      ],
+      "faults": [],
+      "states": {
+        "node-1": {
+          "node": "node-1",
+          "algorithm": "lamport",
+          "reportSeq": 12,
+          "clock": 6,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 1,
+          "completed": 1,
+          "lastWaitMs": 172.721,
+          "messagesSent": 4,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "completed",
+          "operationRunning": false,
+          "autoRunning": false
+        },
+        "node-2": {
+          "node": "node-2",
+          "algorithm": "lamport",
+          "reportSeq": 4,
+          "clock": 7,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 1,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "none",
+          "operationRunning": false,
+          "autoRunning": false
+        },
+        "node-3": {
+          "node": "node-3",
+          "algorithm": "lamport",
+          "reportSeq": 4,
+          "clock": 7,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 0,
+          "completed": 0,
+          "lastWaitMs": 0,
+          "messagesSent": 1,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "none",
+          "operationRunning": false,
+          "autoRunning": false
+        }
+      },
+      "export": "runs/b39ae41e-1de8-429a-bb18-33b01651d13a/run.json",
+      "history": "http://127.0.0.1:3000/#experiment/5d53e4bd-a06d-45f6-8f98-6c171acb364f/history"
+    },
+    {
+      "scenario": "ricart-contention",
+      "name": "Lamport variant regression - three competing nodes",
+      "runId": "03509414-e905-4a76-9f6a-ff8ef650b214",
+      "experimentId": "64aaf2f3-3370-43ef-8240-74e4be88f2df",
+      "createdAt": "2026-10-29T06:58:12.941Z",
+      "protocolRevision": 2,
+      "sourceSHA256": "e3a8b4376960b9731c1005b1cbc387e0df5a03b20e420d745a6eedf456e3f99b",
+      "status": "completed",
+      "events": 364,
+      "durationMs": 11004.588740000036,
+      "algorithmMessages": 36,
+      "methods": {
+        "MutexService.Request": 18,
+        "MutexService.Ack": 18
+      },
+      "maxCritical": 1,
+      "acceptanceMs": [
+        3.2552070000674576,
+        3.2552070000674576,
+        3.2552070000674576,
+        4.383733000140637,
+        4.383733000140637,
+        4.383733000140637
+      ],
+      "criticalEntries": [
+        {
+          "node": "node-1",
+          "seq": 95,
+          "time": 1139.6689330001827,
+          "requestTS": 1
+        },
+        {
+          "node": "node-2",
+          "seq": 114,
+          "time": 2229.59946100018,
+          "requestTS": 1
+        },
+        {
+          "node": "node-3",
+          "seq": 154,
+          "time": 3313.526555000106,
+          "requestTS": 1
+        },
+        {
+          "node": "node-1",
+          "seq": 188,
+          "time": 4401.20300400001,
+          "requestTS": 10
+        },
+        {
+          "node": "node-2",
+          "seq": 225,
+          "time": 5485.567763000028,
+          "requestTS": 15
+        },
+        {
+          "node": "node-3",
+          "seq": 262,
+          "time": 6574.388850999996,
+          "requestTS": 20
+        },
+        {
+          "node": "node-1",
+          "seq": 302,
+          "time": 7660.499675000086,
+          "requestTS": 25
+        },
+        {
+          "node": "node-2",
+          "seq": 337,
+          "time": 8744.555529000005,
+          "requestTS": 30
+        },
+        {
+          "node": "node-3",
+          "seq": 355,
+          "time": 9828.621057000011,
+          "requestTS": 35
+        }
+      ],
+      "exits": [
+        {
+          "node": "node-1",
+          "seq": 104,
+          "time": 2141.207039000001
+        },
+        {
+          "node": "node-2",
+          "seq": 141,
+          "time": 3227.9349120000843
+        },
+        {
+          "node": "node-3",
+          "seq": 178,
+          "time": 4315.948442000197
+        },
+        {
+          "node": "node-1",
+          "seq": 215,
+          "time": 5399.659607000183
+        },
+        {
+          "node": "node-2",
+          "seq": 252,
+          "time": 6487.465895000147
+        },
+        {
+          "node": "node-3",
+          "seq": 289,
+          "time": 7574.325317000039
+        },
+        {
+          "node": "node-1",
+          "seq": 326,
+          "time": 8659.156228000065
+        },
+        {
+          "node": "node-2",
+          "seq": 347,
+          "time": 9745.148548000026
+        },
+        {
+          "node": "node-3",
+          "seq": 360,
+          "time": 10830.858593000099
+        }
+      ],
+      "faults": [],
+      "states": {
+        "node-1": {
+          "node": "node-1",
+          "algorithm": "ricart-agrawala",
+          "reportSeq": 42,
+          "clock": 39,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 3,
+          "completed": 3,
+          "lastWaitMs": 1960.094,
+          "messagesSent": 12,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "completed",
+          "operationRunning": false,
+          "autoRunning": false
+        },
+        "node-2": {
+          "node": "node-2",
+          "algorithm": "ricart-agrawala",
+          "reportSeq": 42,
+          "clock": 40,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 3,
+          "completed": 3,
+          "lastWaitMs": 1960.114,
+          "messagesSent": 12,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "completed",
+          "operationRunning": false,
+          "autoRunning": false
+        },
+        "node-3": {
+          "node": "node-3",
+          "algorithm": "ricart-agrawala",
+          "reportSeq": 42,
+          "clock": 41,
+          "role": "idle",
+          "myTS": 0,
+          "acksHave": 0,
+          "acksNeed": 2,
+          "missingAcks": [],
+          "queue": [],
+          "deferred": [],
+          "entries": 3,
+          "completed": 3,
+          "lastWaitMs": 1957.504,
+          "messagesSent": 12,
+          "sendErrors": 0,
+          "lastError": "",
+          "operation": "completed",
+          "operationRunning": false,
+          "autoRunning": false
+        }
+      },
+      "export": "runs/03509414-e905-4a76-9f6a-ff8ef650b214/run.json",
+      "history": "http://127.0.0.1:3000/#experiment/64aaf2f3-3370-43ef-8240-74e4be88f2df/history"
+    }
+  ]
+}

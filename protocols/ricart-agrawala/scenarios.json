@@ -1,0 +1,392 @@
+{
+  "scenarios": [
+    {
+      "id": "normal-contention",
+      "name": "RA normal: simultaneous node-1 and node-3",
+      "settings": {
+        "nodeCount": 3,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "concurrent": [
+            {
+              "node": "node-1",
+              "method": "Application.Acquire",
+              "values": {
+                "holdMs": 2000
+              }
+            },
+            {
+              "node": "node-3",
+              "method": "Application.Acquire",
+              "values": {
+                "holdMs": 2000
+              }
+            }
+          ],
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": [
+              "node-1",
+              "node-3"
+            ],
+            "path": "completed",
+            "op": "==",
+            "value": 1
+          },
+          "timeout": 20000
+        },
+        {
+          "check": {
+            "atMostOne": {
+              "path": "role",
+              "value": "critical"
+            }
+          },
+          "label": "No overlapping critical sections in reported history"
+        }
+      ]
+    },
+    {
+      "id": "crash",
+      "name": "RA crash: uninvolved peer blocks",
+      "settings": {
+        "nodeCount": 3,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "fault": {
+            "kind": "crash",
+            "node": "node-2"
+          }
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Acquire",
+            "values": {
+              "holdMs": 200
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "wait": 4000
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "role",
+            "op": "==",
+            "value": "waiting"
+          }
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "entries",
+            "op": "==",
+            "value": 0
+          }
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "missingAcks",
+            "op": "includes",
+            "value": "node-2"
+          }
+        },
+        {
+          "check": {
+            "atMostOne": {
+              "path": "role",
+              "value": "critical"
+            }
+          },
+          "label": "No overlapping critical sections in reported history"
+        }
+      ]
+    },
+    {
+      "id": "partition",
+      "name": "RA partition: no replay after healing",
+      "settings": {
+        "nodeCount": 3,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-3",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Acquire",
+            "values": {
+              "holdMs": 200
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "wait": 4000
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "entries",
+            "op": "==",
+            "value": 0
+          }
+        },
+        {
+          "fault": {
+            "kind": "heal"
+          }
+        },
+        {
+          "wait": 2000
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "entries",
+            "op": "==",
+            "value": 0
+          }
+        },
+        {
+          "check": {
+            "atMostOne": {
+              "path": "role",
+              "value": "critical"
+            }
+          },
+          "label": "No overlapping critical sections in reported history"
+        }
+      ]
+    },
+    {
+      "id": "jitter-fifo",
+      "name": "RA random load: exponential FIFO",
+      "settings": {
+        "nodeCount": 5,
+        "latency": 80,
+        "delayModel": "exponential",
+        "jitter": 80
+      },
+      "steps": [
+        {
+          "concurrent": [
+            {
+              "node": "node-1",
+              "method": "Application.Auto",
+              "values": {
+                "count": 2
+              }
+            },
+            {
+              "node": "node-2",
+              "method": "Application.Auto",
+              "values": {
+                "count": 2
+              }
+            },
+            {
+              "node": "node-3",
+              "method": "Application.Auto",
+              "values": {
+                "count": 2
+              }
+            },
+            {
+              "node": "node-4",
+              "method": "Application.Auto",
+              "values": {
+                "count": 2
+              }
+            },
+            {
+              "node": "node-5",
+              "method": "Application.Auto",
+              "values": {
+                "count": 2
+              }
+            }
+          ],
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "completed",
+            "op": "==",
+            "value": 2
+          },
+          "timeout": 60000
+        },
+        {
+          "check": {
+            "atMostOne": {
+              "path": "role",
+              "value": "critical"
+            }
+          },
+          "label": "No overlapping critical sections in reported history"
+        }
+      ]
+    },
+    {
+      "id": "jitter-unordered",
+      "name": "RA random load: unordered messages",
+      "settings": {
+        "nodeCount": 5,
+        "latency": 80,
+        "delayModel": "exponential",
+        "jitter": 80,
+        "network": {
+          "ordering": "unordered",
+          "reorderRate": 0.5,
+          "reorderMin": 100,
+          "reorderMax": 400
+        }
+      },
+      "steps": [
+        {
+          "concurrent": [
+            {
+              "node": "node-1",
+              "method": "Application.Auto",
+              "values": {
+                "count": 2
+              }
+            },
+            {
+              "node": "node-2",
+              "method": "Application.Auto",
+              "values": {
+                "count": 2
+              }
+            },
+            {
+              "node": "node-3",
+              "method": "Application.Auto",
+              "values": {
+                "count": 2
+              }
+            },
+            {
+              "node": "node-4",
+              "method": "Application.Auto",
+              "values": {
+                "count": 2
+              }
+            },
+            {
+              "node": "node-5",
+              "method": "Application.Auto",
+              "values": {
+                "count": 2
+              }
+            }
+          ],
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "completed",
+            "op": "==",
+            "value": 2
+          },
+          "timeout": 60000
+        },
+        {
+          "check": {
+            "atMostOne": {
+              "path": "role",
+              "value": "critical"
+            }
+          },
+          "label": "No overlapping critical sections in reported history"
+        }
+      ]
+    },
+    {
+      "id": "variant-message-count",
+      "name": "RA design: four messages, no Release",
+      "settings": {
+        "nodeCount": 3,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Acquire",
+            "values": {
+              "holdMs": 200
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "node-1",
+            "path": "completed",
+            "op": "==",
+            "value": 1
+          },
+          "timeout": 20000
+        },
+        {
+          "check": {
+            "messages": {
+              "method": "MutexService.Request",
+              "op": "==",
+              "value": 2
+            }
+          }
+        },
+        {
+          "check": {
+            "messages": {
+              "method": "MutexService.Ack",
+              "op": "==",
+              "value": 2
+            }
+          }
+        },
+        {
+          "check": {
+            "messages": {
+              "method": "MutexService.Release",
+              "op": "==",
+              "value": 0
+            }
+          }
+        },
+        {
+          "check": {
+            "atMostOne": {
+              "path": "role",
+              "value": "critical"
+            }
+          },
+          "label": "No overlapping critical sections in reported history"
+        }
+      ]
+    }
+  ]
+}

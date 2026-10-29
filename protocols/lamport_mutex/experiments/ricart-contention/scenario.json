@@ -1,0 +1,112 @@
+{
+  "id": "ricart-contention",
+  "name": "Lamport variant regression - three competing nodes",
+  "settings": {
+    "runtime": "docker",
+    "nodeCount": 3,
+    "latency": 80,
+    "bandwidth": 128,
+    "seed": 42
+  },
+  "steps": [
+    {
+      "concurrent": [
+        {
+          "node": "node-1",
+          "method": "Application.Configure",
+          "values": {
+            "algorithm": "ricart-agrawala"
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Application.Configure",
+          "values": {
+            "algorithm": "ricart-agrawala"
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Application.Configure",
+          "values": {
+            "algorithm": "ricart-agrawala"
+          }
+        }
+      ],
+      "expect": "ok"
+    },
+    {
+      "concurrent": [
+        {
+          "node": "node-1",
+          "method": "Application.Auto",
+          "values": {
+            "count": 3
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Application.Auto",
+          "values": {
+            "count": 3
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Application.Auto",
+          "values": {
+            "count": 3
+          }
+        }
+      ],
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "completed",
+        "value": 3
+      },
+      "timeout": 30000
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "autoRunning",
+        "value": false
+      }
+    },
+    {
+      "check": {
+        "node": "*",
+        "path": "role",
+        "value": "idle"
+      }
+    },
+    {
+      "check": {
+        "atMostOne": {
+          "path": "role",
+          "value": "critical"
+        }
+      }
+    },
+    {
+      "check": {
+        "messages": {
+          "op": "==",
+          "value": 36
+        }
+      }
+    },
+    {
+      "check": {
+        "messages": {
+          "method": "MutexService.Release",
+          "op": "==",
+          "value": 0
+        }
+      }
+    }
+  ]
+}

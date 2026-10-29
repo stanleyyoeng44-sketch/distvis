@@ -1,0 +1,51 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "ada80ffa-c96a-464f-94c6-a80a7bbc8c58",
+    "experimentId": "f4a70159-3348-444e-96a0-626b927d93cc",
+    "results": [
+      {
+        "label": "node-1 Application.Transfer result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"decision\",\"op\":\"==\",\"value\":\"commit\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"state\",\"op\":\"==\",\"value\":\"committed\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"state\",\"op\":\"==\",\"value\":\"uncertain\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"phase\",\"op\":\"==\",\"value\":\"decided\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"phase\",\"op\":\"==\",\"value\":\"finished\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"balance\",\"op\":\"==\",\"value\":70}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "balances": {
+      "node-2": 70,
+      "node-3": 130
+    },
+    "totalBalance": 200,
+    "transactionDecisions": {
+      "T1": "commit"
+    },
+    "runId": "ada80ffa-c96a-464f-94c6-a80a7bbc8c58",
+    "passed": true,
+    "errors": []
+  }
+}

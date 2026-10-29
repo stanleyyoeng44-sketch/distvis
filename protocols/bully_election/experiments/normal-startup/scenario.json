@@ -1,0 +1,27 @@
+{
+  "id": "normal-startup",
+  "name": "Bully normal: automatic five-node election",
+  "settings": {
+    "nodeCount": 5,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "until": {
+        "node": "*",
+        "path": "coordinator",
+        "op": "==",
+        "value": "node-5"
+      },
+      "timeout": 20000
+    },
+    {
+      "check": {
+        "node": "node-5",
+        "path": "role",
+        "op": "==",
+        "value": "coordinator"
+      }
+    }
+  ]
+}

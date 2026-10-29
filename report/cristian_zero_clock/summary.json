@@ -1,0 +1,308 @@
+{
+  "runId": "86d51cfc-f563-449e-85b0-b40f1dada917",
+  "experimentId": "9b85081b-dc27-4ca7-ac86-55e7181e8a60",
+  "status": "completed",
+  "sourceSha256": "0763042036dc2f729a64c7c68c703f8b4846d9d0070f468815b7548651bc107c",
+  "settings": {
+    "offsetMs": 0,
+    "driftPPM": 0,
+    "noSync": true
+  },
+  "protocolMessages": 0,
+  "nodes": [
+    {
+      "node": "node-1",
+      "resetResult": {
+        "role": "server",
+        "clock": "07:23:08.234",
+        "clockMs": 1793258588234.9,
+        "errorMs": 0,
+        "driftPPM": 0,
+        "serverDelayMs": 0,
+        "served": 0,
+        "syncs": 0,
+        "failedSyncs": 0,
+        "busy": false,
+        "lastSync": null,
+        "lastError": ""
+      },
+      "samples": [
+        {
+          "elapsedSeconds": 1.0875445590000599,
+          "errorMs": 0,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 3.0886548480000346,
+          "errorMs": 0,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 5.089049372000154,
+          "errorMs": 0,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 7.087360228000208,
+          "errorMs": 0,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 9.086152108000126,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 11.087686027000192,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 13.086819145000074,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 15.086542939000298,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 17.0865109290001,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 19.085319738000166,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 21.0847160720001,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 23.08444055100018,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 25.083919852000196,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 27.085386756999885,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 29.08247943599988,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        }
+      ]
+    },
+    {
+      "node": "node-2",
+      "resetResult": {
+        "role": "client",
+        "clock": "07:23:08.234",
+        "clockMs": 1793258588234.9,
+        "errorMs": 0,
+        "driftPPM": 0,
+        "serverDelayMs": 0,
+        "served": 0,
+        "syncs": 0,
+        "failedSyncs": 0,
+        "busy": false,
+        "lastSync": null,
+        "lastError": ""
+      },
+      "samples": [
+        {
+          "elapsedSeconds": 1.1051065320000053,
+          "errorMs": 0,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 3.105955043000169,
+          "errorMs": 0,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 5.104601521000266,
+          "errorMs": 0,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 7.105115077000112,
+          "errorMs": 0,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 9.103200920000207,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 11.10430198100023,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 13.103964846000075,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 15.102724402999971,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 17.10303697700007,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 19.103708461000117,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 21.10138520300016,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 23.101982067000122,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 25.101825134000276,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 27.101064511000178,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        },
+        {
+          "elapsedSeconds": 29.10126881700009,
+          "errorMs": 3,
+          "driftPPM": 0,
+          "syncs": 0
+        }
+      ]
+    }
+  ],
+  "hostProbe": {
+    "goVersion": "go1.27.1 linux/amd64",
+    "samples": 151,
+    "elapsedSeconds": 15.000780949,
+    "errorMs": {
+      "min": -0.0009765625,
+      "max": 0.0009765625
+    },
+    "monotonicMinusWallMs": {
+      "min": -0.000002,
+      "max": 0.000232
+    },
+    "residualMs": {
+      "min": -0.0011435625,
+      "max": 0.0007765625
+    },
+    "wallOnlyErrorMs": {
+      "min": -0.0009765625,
+      "max": 0.000244140625
+    },
+    "control": "CONTROL elapsedNs=200 wallElapsedNs=200 errorMs=-0.000976562500 displayedErrorMs=-0.0"
+  },
+  "dockerProbe": {
+    "image": "distvis-sdk:9a8cdb6224d9288b",
+    "goVersion": "1.24.13",
+    "samples": 151,
+    "elapsedSeconds": 15.000527903,
+    "errorMs": {
+      "min": -0.0009765625,
+      "max": 0.000244140625
+    },
+    "monotonicMinusWallMs": {
+      "min": -0.000036,
+      "max": 0.000331
+    },
+    "residualMs": {
+      "min": -0.0010855625,
+      "max": 0.000247140625
+    },
+    "wallOnlyErrorMs": {
+      "min": -0.0009765625,
+      "max": 0.000244140625
+    },
+    "first": {
+      "elapsedSeconds": 0.025073855,
+      "errorMs": -0.0009765625,
+      "displayedErrorMs": 0,
+      "monotonicMinusWallMs": 0.000048,
+      "residualMs": -0.0010245625,
+      "wallOnlyErrorMs": -0.0009765625
+    },
+    "last": {
+      "elapsedSeconds": 15.000527903,
+      "errorMs": -0.0009765625,
+      "displayedErrorMs": 0,
+      "monotonicMinusWallMs": -0.000036,
+      "residualMs": -0.0009405625,
+      "wallOnlyErrorMs": -0.0009765625
+    }
+  },
+  "observationWindowSeconds": 30,
+  "steps": [
+    "Start the saved Cristian protocol on two Docker nodes.",
+    "Wait for input_schema on both nodes.",
+    "Submit Application.SetClock with offsetMs=0 and driftPPM=0 to both nodes; verify command_result for both.",
+    "Do not call Sync or inject faults. Record periodic node states for 30 seconds after reset.",
+    "Stop this run and export its full event history.",
+    "Run measurement_test.go against an unchanged copy of clock.go on the host and in the Docker SDK image; capture 151 samples over 15 seconds."
+  ],
+  "qualifications": [
+    "The displayed errorMs is rounded to 0.1 ms.",
+    "The +3 ms change in DistVis is consistent with a change between wall and monotonic clock readings; the responsible OS/VM service was not identified.",
+    "The later raw probes did not reproduce the millisecond jump; they measured sub-microsecond errors and a rounding-only control.",
+    "No host clock settings or protocol source were changed."
+  ],
+  "clockSourceSha256": "bde3bc907d90665e34a8cc4ed42c021f9c0585c2a10092e42be4ae749797f6a4"
+}

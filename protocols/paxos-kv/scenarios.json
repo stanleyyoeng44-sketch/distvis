@@ -1,0 +1,743 @@
+{
+  "scenarios": [
+    {
+      "id": "normal",
+      "name": "Paxos KV normal: reads also occupy slots",
+      "settings": {
+        "nodeCount": 5,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Put",
+            "values": {
+              "key": "x",
+              "value": "1"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-2",
+            "method": "Application.Get",
+            "values": {
+              "key": "x"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-3",
+            "method": "Application.Put",
+            "values": {
+              "key": "x",
+              "value": "2"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-4",
+            "method": "Application.Get",
+            "values": {
+              "key": "x"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "applied",
+            "op": "==",
+            "value": 4
+          },
+          "timeout": 20000
+        },
+        {
+          "check": {
+            "node": "node-4",
+            "path": "lastOperation.value",
+            "op": "==",
+            "value": "2"
+          }
+        }
+      ]
+    },
+    {
+      "id": "competing-writes",
+      "name": "Paxos KV: simultaneous slot-one proposals",
+      "settings": {
+        "nodeCount": 5,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "concurrent": [
+            {
+              "node": "node-1",
+              "method": "Application.Put",
+              "values": {
+                "key": "a",
+                "value": "1",
+                "pauseMs": 500
+              }
+            },
+            {
+              "node": "node-2",
+              "method": "Application.Put",
+              "values": {
+                "key": "b",
+                "value": "2",
+                "pauseMs": 500
+              }
+            }
+          ],
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "applied",
+            "op": "==",
+            "value": 2
+          },
+          "timeout": 20000
+        },
+        {
+          "check": {
+            "node": "*",
+            "path": "values.a",
+            "op": "==",
+            "value": "1"
+          }
+        },
+        {
+          "check": {
+            "node": "*",
+            "path": "values.b",
+            "op": "==",
+            "value": "2"
+          }
+        },
+        {
+          "check": {
+            "node": "any",
+            "path": "conflicts",
+            "op": ">=",
+            "value": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "crash-catchup",
+      "name": "Paxos KV crash: no-op hole recovery",
+      "settings": {
+        "nodeCount": 5,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Put",
+            "values": {
+              "key": "x",
+              "value": "1"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "applied",
+            "op": "==",
+            "value": 1
+          },
+          "timeout": 20000
+        },
+        {
+          "fault": {
+            "kind": "crash",
+            "node": "node-5"
+          }
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Put",
+            "values": {
+              "key": "x",
+              "value": "2"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Put",
+            "values": {
+              "key": "x",
+              "value": "3"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Put",
+            "values": {
+              "key": "x",
+              "value": "4"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "fault": {
+            "kind": "recover",
+            "node": "node-5"
+          }
+        },
+        {
+          "wait": 2000
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Put",
+            "values": {
+              "key": "y",
+              "value": "5"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "node-5",
+            "path": "applied",
+            "op": "==",
+            "value": 5
+          },
+          "timeout": 30000
+        },
+        {
+          "check": {
+            "node": "node-5",
+            "path": "values.x",
+            "op": "==",
+            "value": "4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "partition",
+      "name": "Paxos KV partition: minority cannot commit",
+      "settings": {
+        "nodeCount": 5,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-3",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-3",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "input": {
+            "node": "node-4",
+            "method": "Application.Put",
+            "values": {
+              "key": "x",
+              "value": "minority"
+            }
+          },
+          "expect": "error"
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Put",
+            "values": {
+              "key": "x",
+              "value": "majority"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "fault": {
+            "kind": "heal"
+          }
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Get",
+            "values": {
+              "key": "x"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "applied",
+            "op": "==",
+            "value": 2
+          },
+          "timeout": 30000
+        },
+        {
+          "check": {
+            "node": "*",
+            "path": "values.x",
+            "op": "==",
+            "value": "majority"
+          }
+        }
+      ]
+    },
+    {
+      "id": "variant-amnesia",
+      "name": "Paxos KV variant: forgetful intersection accepts conflicting slot",
+      "settings": {
+        "nodeCount": 5,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "input": {
+            "node": "node-3",
+            "method": "Application.Amnesia",
+            "values": {
+              "enabled": true
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-3",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-3",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Put",
+            "values": {
+              "key": "x",
+              "value": "first"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "node-3",
+            "path": "applied",
+            "op": "==",
+            "value": 1
+          },
+          "timeout": 20000
+        },
+        {
+          "fault": {
+            "kind": "crash",
+            "node": "node-3"
+          }
+        },
+        {
+          "fault": {
+            "kind": "heal"
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-3",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-3",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "recover",
+            "node": "node-3"
+          }
+        },
+        {
+          "wait": 2000
+        },
+        {
+          "input": {
+            "node": "node-4",
+            "method": "Application.Put",
+            "values": {
+              "key": "x",
+              "value": "second"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "values.x",
+            "op": "==",
+            "value": "first"
+          }
+        },
+        {
+          "check": {
+            "node": "node-4",
+            "path": "values.x",
+            "op": "==",
+            "value": "second"
+          }
+        }
+      ]
+    },
+    {
+      "id": "persistence-control",
+      "name": "Paxos KV control: intersection remembers chosen value",
+      "settings": {
+        "nodeCount": 5,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-3",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-3",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Put",
+            "values": {
+              "key": "x",
+              "value": "first"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "node-3",
+            "path": "applied",
+            "op": "==",
+            "value": 1
+          },
+          "timeout": 20000
+        },
+        {
+          "fault": {
+            "kind": "crash",
+            "node": "node-3"
+          }
+        },
+        {
+          "fault": {
+            "kind": "heal"
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-3",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-3",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "recover",
+            "node": "node-3"
+          }
+        },
+        {
+          "wait": 2000
+        },
+        {
+          "input": {
+            "node": "node-4",
+            "method": "Application.Put",
+            "values": {
+              "key": "x",
+              "value": "second"
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "check": {
+            "node": "node-4",
+            "path": "log.1.value.value",
+            "op": "==",
+            "value": "first"
+          }
+        },
+        {
+          "check": {
+            "node": "node-4",
+            "path": "log.2.value.value",
+            "op": "==",
+            "value": "second"
+          }
+        }
+      ]
+    }
+  ]
+}

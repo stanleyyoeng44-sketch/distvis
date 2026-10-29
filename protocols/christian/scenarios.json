@@ -1,0 +1,98 @@
+{
+  "scenarios": [
+    {
+      "id": "a-normal",
+      "name": "Cristian A · normal sync, symmetric 80 ms links",
+      "settings": {"nodeCount": 3, "latency": 80},
+      "steps": [
+        {"note": "Every client starts with a visible clock error; node-1 is the accurate reference."},
+        {"until": {"node": "node-2", "path": "errorMs", "op": "abs>", "value": 500}, "label": "node-2 starts more than 500 ms off"},
+        {"check": {"node": "node-3", "path": "errorMs", "op": "abs>", "value": 500}, "label": "node-3 starts more than 500 ms off"},
+        {"check": {"node": "node-1", "path": "errorMs", "op": "abs<=", "value": 5}, "label": "node-1 (server) is the reference"},
+        {"input": {"node": "node-2", "method": "Application.Sync", "values": {"server": "node-1", "mode": "half"}}, "expect": "ok"},
+        {"check": {"node": "node-2", "path": "lastSync.errorAfterMs", "op": "abs<=", "value": 60}, "label": "after Sync node-2 is within 60 ms of real time"},
+        {"check": {"node": "node-2", "path": "lastSync.rttMs", "op": ">=", "value": 150}, "label": "RTT is about 2 × 80 ms"},
+        {"input": {"node": "node-3", "method": "Application.Sync", "values": {}}, "expect": "ok"},
+        {"check": {"node": "node-3", "path": "lastSync.errorAfterMs", "op": "abs<=", "value": 60}, "label": "empty form defaults to node-1 / half and also works"},
+        {"note": "Drift: node-2 gains 1 ms/s, node-3 loses 2 ms/s, so the error slowly grows back."},
+        {"wait": 10000},
+        {"input": {"node": "node-3", "method": "Application.Status", "values": {}}, "expect": "ok"},
+        {"input": {"node": "node-2", "method": "Application.Status", "values": {}}, "expect": "ok"},
+        {"check": {"node": "node-2", "path": "syncs", "value": 1}, "label": "one successful sync recorded"}
+      ]
+    },
+    {
+      "id": "b-crash",
+      "name": "Cristian fault A · time server crashes",
+      "settings": {"nodeCount": 3, "latency": 80},
+      "steps": [
+        {"until": {"node": "node-2", "path": "errorMs", "op": "abs>", "value": 500}, "label": "node-2 starts off"},
+        {"fault": {"kind": "crash", "node": "node-1"}},
+        {"note": "The only time server is gone; the request is dropped and Sync waits for the 10 s RPC timeout."},
+        {"input": {"node": "node-2", "method": "Application.Sync", "values": {"server": "node-1"}}, "expect": "error", "timeout": 20000},
+        {"until": {"node": "node-2", "path": "failedSyncs", "value": 1}, "timeout": 15000, "label": "failure is recorded"},
+        {"check": {"node": "node-2", "path": "errorMs", "op": "abs>", "value": 500}, "label": "clock was NOT changed by the failed sync"},
+        {"check": {"node": "node-2", "path": "lastError", "op": "includes", "value": "clock unchanged"}, "label": "lastError explains the failure"},
+        {"fault": {"kind": "recover", "node": "node-1"}},
+        {"until": {"node": "node-1", "path": "role", "value": "server"}, "timeout": 30000, "label": "node-1 is back"},
+        {"wait": 1500},
+        {"input": {"node": "node-2", "method": "Application.Sync", "values": {"server": "node-1"}}, "expect": "ok", "timeout": 20000},
+        {"check": {"node": "node-2", "path": "lastSync.errorAfterMs", "op": "abs<=", "value": 60}, "label": "after recovery a retried sync works"}
+      ]
+    },
+    {
+      "id": "c-asymmetric",
+      "name": "Cristian fault B · asymmetric link (2000 ms up, 200 ms down)",
+      "settings": {"nodeCount": 3, "latency": 200},
+      "steps": [
+        {"until": {"node": "node-2", "path": "errorMs", "op": "abs>", "value": 500}, "label": "node-2 starts off"},
+        {"fault": {"kind": "link", "from": "node-2", "to": "node-1", "latency": 2000}},
+        {"fault": {"kind": "link", "from": "node-1", "to": "node-2", "latency": 200}},
+        {"note": "Request takes 2000 ms, reply 200 ms. Cristian assumes (2000+200)/2 = 1100 ms for the reply: expected error +900 ms."},
+        {"input": {"node": "node-2", "method": "Application.Sync", "values": {"server": "node-1"}}, "expect": "ok"},
+        {"check": {"node": "node-2", "path": "lastSync.errorAfterMs", "op": ">=", "value": 800}, "label": "node-2 ends up about 900 ms AHEAD"},
+        {"check": {"node": "node-2", "path": "lastSync.errorAfterMs", "op": "<=", "value": 1000}, "label": "error stays inside the ±RTT/2 bound"},
+        {"fault": {"kind": "link", "from": "node-2", "to": "node-1", "latency": 200}},
+        {"fault": {"kind": "link", "from": "node-1", "to": "node-2", "latency": 2000}},
+        {"note": "Reversed: request 200 ms, reply 2000 ms. Expected error -900 ms."},
+        {"input": {"node": "node-2", "method": "Application.Sync", "values": {"server": "node-1"}}, "expect": "ok"},
+        {"check": {"node": "node-2", "path": "lastSync.errorAfterMs", "op": "<=", "value": -800}, "label": "node-2 ends up about 900 ms BEHIND"},
+        {"fault": {"kind": "heal"}},
+        {"input": {"node": "node-2", "method": "Application.Sync", "values": {"server": "node-1"}}, "expect": "ok"},
+        {"check": {"node": "node-2", "path": "lastSync.errorAfterMs", "op": "abs<=", "value": 60}, "label": "symmetric again: error back near 0"}
+      ]
+    },
+    {
+      "id": "d-server-delay",
+      "name": "Cristian C · server queuing delay (1000 ms)",
+      "settings": {"nodeCount": 3, "latency": 80},
+      "steps": [
+        {"until": {"node": "node-2", "path": "errorMs", "op": "abs>", "value": 500}, "label": "node-2 starts off"},
+        {"input": {"node": "node-1", "method": "Application.SetServerDelay", "values": {"delayMs": 1000}}, "expect": "ok"},
+        {"note": "Ts is read after 80 ms + 1000 ms queueing; only 80 ms of the 1160 ms RTT is really the reply. Expected error about +500 ms."},
+        {"input": {"node": "node-2", "method": "Application.Sync", "values": {"server": "node-1"}}, "expect": "ok"},
+        {"check": {"node": "node-2", "path": "lastSync.rttMs", "op": ">=", "value": 1100}, "label": "RTT includes the 1000 ms queue"},
+        {"check": {"node": "node-2", "path": "lastSync.errorAfterMs", "op": ">=", "value": 400}, "label": "node-2 ends up about 500 ms ahead"},
+        {"check": {"node": "node-2", "path": "lastSync.errorAfterMs", "op": "<=", "value": 600}, "label": "error is about delay/2"},
+        {"input": {"node": "node-1", "method": "Application.SetServerDelay", "values": {"delayMs": 0}}, "expect": "ok"},
+        {"input": {"node": "node-2", "method": "Application.Sync", "values": {"server": "node-1"}}, "expect": "ok"},
+        {"check": {"node": "node-2", "path": "lastSync.errorAfterMs", "op": "abs<=", "value": 60}, "label": "without queueing the error is back near 0"}
+      ]
+    },
+    {
+      "id": "e-variant",
+      "name": "Cristian design variant · +0 vs +RTT/2 vs +RTT (200 ms links)",
+      "settings": {"nodeCount": 3, "latency": 200},
+      "steps": [
+        {"until": {"node": "node-2", "path": "errorMs", "op": "abs>", "value": 500}, "label": "node-2 starts off"},
+        {"note": "RTT is about 400 ms. zero ignores the reply delay, full counts the whole round trip, half is Cristian."},
+        {"input": {"node": "node-2", "method": "Application.Sync", "values": {"mode": "zero"}}, "expect": "ok"},
+        {"check": {"node": "node-2", "path": "lastSync.errorAfterMs", "op": "<=", "value": -150}, "label": "zero: about 200 ms BEHIND (missed the reply delay)"},
+        {"input": {"node": "node-2", "method": "Application.Sync", "values": {"mode": "full"}}, "expect": "ok"},
+        {"check": {"node": "node-2", "path": "lastSync.errorAfterMs", "op": ">=", "value": 150}, "label": "full: about 200 ms AHEAD (also counted the request delay)"},
+        {"input": {"node": "node-2", "method": "Application.Sync", "values": {"mode": "half"}}, "expect": "ok"},
+        {"check": {"node": "node-2", "path": "lastSync.errorAfterMs", "op": "abs<=", "value": 60}, "label": "half (Cristian): about 0"}
+      ]
+    }
+  ]
+}

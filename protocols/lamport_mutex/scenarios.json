@@ -1,0 +1,105 @@
+{
+  "scenarios": [
+    {
+      "id": "normal",
+      "name": "Lamport A - concurrent requests",
+      "settings": {"runtime":"docker","nodeCount":3,"latency":80,"bandwidth":128,"seed":42},
+      "steps": [
+        {"concurrent":[{"node":"node-1","method":"Application.Acquire","values":{"holdMs":2000}},{"node":"node-3","method":"Application.Acquire","values":{"holdMs":2000}}],"expect":"ok"},
+        {"until":{"node":["node-1","node-3"],"path":"completed","value":1}},
+        {"until":{"node":"*","path":"queue","value":[]}},
+        {"check":{"node":"*","path":"role","value":"idle"}},
+        {"check":{"atMostOne":{"path":"role","value":"critical"}},"label":"Critical sections never overlap"},
+        {"check":{"messages":{"value":12,"op":"=="}},"label":"Two acquisitions use 12 algorithm messages"}
+      ]
+    },
+    {
+      "id":"crash",
+      "name":"Lamport B - idle peer crash",
+      "settings":{"runtime":"docker","nodeCount":3,"latency":80,"bandwidth":128,"seed":42},
+      "steps":[
+        {"fault":{"kind":"crash","node":"node-3"}},
+        {"input":{"node":"node-2","method":"Application.Acquire","values":{"holdMs":2000}},"expect":"ok"},
+        {"until":{"node":"node-2","path":"lastError","op":"includes","value":"node-3"}},
+        {"wait":11000},
+        {"check":{"all":[{"node":"node-2","path":"operation","value":"waiting"},{"node":"node-2","path":"entries","value":0},{"node":"node-2","path":"missingAcks","value":["node-3"]}]}},
+        {"check":{"atMostOne":{"path":"role","value":"critical"}}}
+      ]
+    },
+    {
+      "id":"partition",
+      "name":"Lamport C - blocked link and healing",
+      "settings":{"runtime":"docker","nodeCount":3,"latency":80,"bandwidth":128,"seed":42},
+      "steps":[
+        {"fault":{"kind":"link","from":"node-2","to":"node-3","blocked":true,"bidirectional":true}},
+        {"input":{"node":"node-2","method":"Application.Acquire","values":{"holdMs":2000}},"expect":"ok"},
+        {"until":{"node":"node-2","path":"lastError","op":"includes","value":"node-3"}},
+        {"check":{"node":"node-2","path":"entries","value":0}},
+        {"fault":{"kind":"heal"}},
+        {"wait":4000},
+        {"check":{"all":[{"node":"node-2","path":"operation","value":"waiting"},{"node":"node-2","path":"missingAcks","value":["node-3"]},{"node":"node-2","path":"entries","value":0}]}},
+        {"check":{"atMostOne":{"path":"role","value":"critical"}}}
+      ]
+    },
+    {
+      "id":"lamport-count",
+      "name":"Lamport D - six messages per acquisition",
+      "settings":{"runtime":"docker","nodeCount":3,"latency":80,"bandwidth":128,"seed":42},
+      "steps":[
+        {"input":{"node":"node-1","method":"Application.Acquire","values":{"holdMs":2000}},"expect":"ok"},
+        {"until":{"node":"node-1","path":"completed","value":1}},
+        {"until":{"node":"*","path":"queue","value":[]}},
+        {"check":{"messages":{"method":"MutexService.Request","op":"==","value":2}}},
+        {"check":{"messages":{"method":"MutexService.Ack","op":"==","value":2}}},
+        {"check":{"messages":{"method":"MutexService.Release","op":"==","value":2}}},
+        {"check":{"messages":{"op":"==","value":6}}},
+        {"check":{"atMostOne":{"path":"role","value":"critical"}}}
+      ]
+    },
+    {
+      "id":"ricart-count",
+      "name":"Lamport D variant - Ricart Agrawala four messages",
+      "settings":{"runtime":"docker","nodeCount":3,"latency":80,"bandwidth":128,"seed":42},
+      "steps":[
+        {"concurrent":[{"node":"node-1","method":"Application.Configure","values":{"algorithm":"ricart-agrawala"}},{"node":"node-2","method":"Application.Configure","values":{"algorithm":"ricart-agrawala"}},{"node":"node-3","method":"Application.Configure","values":{"algorithm":"ricart-agrawala"}}],"expect":"ok"},
+        {"input":{"node":"node-1","method":"Application.Acquire","values":{"holdMs":2000}},"expect":"ok"},
+        {"until":{"node":"node-1","path":"completed","value":1}},
+        {"check":{"messages":{"method":"MutexService.Request","op":"==","value":2}}},
+        {"check":{"messages":{"method":"MutexService.Ack","op":"==","value":2}}},
+        {"check":{"messages":{"method":"MutexService.Release","op":"==","value":0}}},
+        {"check":{"messages":{"op":"==","value":4}}},
+        {"check":{"atMostOne":{"path":"role","value":"critical"}}}
+      ]
+    },
+    {
+      "id":"long-hold",
+      "name":"Lamport regression - fifteen second hold",
+      "settings":{"runtime":"docker","nodeCount":3,"latency":80,"bandwidth":128,"seed":42},
+      "steps":[
+        {"input":{"node":"node-1","method":"Application.Acquire","values":{"holdMs":15000}},"expect":"ok","timeout":3000},
+        {"until":{"node":"node-1","path":"role","value":"critical"}},
+        {"wait":11000},
+        {"check":{"node":"node-1","path":"role","value":"critical"}},
+        {"until":{"node":"node-1","path":"completed","value":1}},
+        {"until":{"node":"*","path":"queue","value":[]}},
+        {"check":{"node":"node-1","path":"operationRunning","value":false}},
+        {"check":{"atMostOne":{"path":"role","value":"critical"}}}
+      ]
+    },
+    {
+      "id":"ricart-contention",
+      "name":"Lamport variant regression - three competing nodes",
+      "settings":{"runtime":"docker","nodeCount":3,"latency":80,"bandwidth":128,"seed":42},
+      "steps":[
+        {"concurrent":[{"node":"node-1","method":"Application.Configure","values":{"algorithm":"ricart-agrawala"}},{"node":"node-2","method":"Application.Configure","values":{"algorithm":"ricart-agrawala"}},{"node":"node-3","method":"Application.Configure","values":{"algorithm":"ricart-agrawala"}}],"expect":"ok"},
+        {"concurrent":[{"node":"node-1","method":"Application.Auto","values":{"count":3}},{"node":"node-2","method":"Application.Auto","values":{"count":3}},{"node":"node-3","method":"Application.Auto","values":{"count":3}}],"expect":"ok"},
+        {"until":{"node":"*","path":"completed","value":3},"timeout":30000},
+        {"until":{"node":"*","path":"autoRunning","value":false}},
+        {"check":{"node":"*","path":"role","value":"idle"}},
+        {"check":{"atMostOne":{"path":"role","value":"critical"}}},
+        {"check":{"messages":{"op":"==","value":36}}},
+        {"check":{"messages":{"method":"MutexService.Release","op":"==","value":0}}}
+      ]
+    }
+  ]
+}

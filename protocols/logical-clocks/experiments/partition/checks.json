@@ -1,0 +1,42 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "2f8f58d3-a77b-446f-a198-e81b81613eb0",
+    "experimentId": "d1cf9b69-273f-40d8-9203-1f0cd3ebd3c4",
+    "results": [
+      {
+        "label": "node-1 Application.Send result (ok)",
+        "ok": true,
+        "commandId": "input-14"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastDelivery.confirmed\",\"op\":\"==\",\"value\":false}",
+        "ok": true
+      },
+      {
+        "label": "node-3 Application.Local result (ok)",
+        "ok": true,
+        "commandId": "input-20"
+      },
+      {
+        "label": "node-1 Application.Send result (ok)",
+        "ok": true,
+        "commandId": "input-24"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastDelivery.confirmed\",\"op\":\"==\",\"value\":true}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "events": 4,
+    "causalPairs": 4,
+    "causalOrderViolations": [],
+    "vectorGraphMismatches": [],
+    "brokenSendReceiveEdges": [],
+    "runId": "2f8f58d3-a77b-446f-a198-e81b81613eb0",
+    "passed": true,
+    "errors": []
+  }
+}
