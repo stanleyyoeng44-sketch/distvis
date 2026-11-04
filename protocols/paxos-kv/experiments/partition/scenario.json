@@ -1,0 +1,118 @@
+{
+  "id": "partition",
+  "name": "Paxos KV partition: minority cannot commit",
+  "settings": {
+    "nodeCount": 5,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-4",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-5",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-4",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-5",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-3",
+        "to": "node-4",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-3",
+        "to": "node-5",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "input": {
+        "node": "node-4",
+        "method": "Application.Put",
+        "values": {
+          "key": "x",
+          "value": "minority"
+        }
+      },
+      "expect": "error"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Put",
+        "values": {
+          "key": "x",
+          "value": "majority"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "fault": {
+        "kind": "heal"
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Get",
+        "values": {
+          "key": "x"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "applied",
+        "op": "==",
+        "value": 2
+      },
+      "timeout": 30000
+    },
+    {
+      "check": {
+        "node": "*",
+        "path": "values.x",
+        "op": "==",
+        "value": "majority"
+      }
+    }
+  ]
+}

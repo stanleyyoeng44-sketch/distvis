@@ -1,0 +1,519 @@
+{
+  "scenarios": [
+    {
+      "id": "normal-periodic",
+      "name": "Berkeley normal: periodic convergence",
+      "settings": {
+        "nodeCount": 3,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "until": {
+            "node": "node-1",
+            "path": "lastAppliedRound",
+            "op": ">=",
+            "value": 2
+          },
+          "timeout": 20000
+        },
+        {
+          "wait": 9000
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Read",
+            "values": {}
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-2",
+            "method": "Application.Read",
+            "values": {}
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-3",
+            "method": "Application.Read",
+            "values": {}
+          },
+          "expect": "ok"
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "errorMs",
+            "op": "<=",
+            "value": 850
+          }
+        },
+        {
+          "check": {
+            "node": "node-2",
+            "path": "errorMs",
+            "op": "<=",
+            "value": 850
+          }
+        },
+        {
+          "check": {
+            "node": "node-3",
+            "path": "errorMs",
+            "op": "<=",
+            "value": 850
+          }
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "errorMs",
+            "op": ">=",
+            "value": 650
+          }
+        },
+        {
+          "check": {
+            "node": "node-2",
+            "path": "errorMs",
+            "op": ">=",
+            "value": 650
+          }
+        },
+        {
+          "check": {
+            "node": "node-3",
+            "path": "errorMs",
+            "op": ">=",
+            "value": 650
+          }
+        },
+        {
+          "check": {
+            "spread": "errorMs",
+            "op": "<",
+            "value": 40
+          }
+        }
+      ]
+    },
+    {
+      "id": "outlier",
+      "name": "Berkeley: discard outlier vote",
+      "settings": {
+        "nodeCount": 3,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Auto",
+            "values": {
+              "enabled": false
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-3",
+            "method": "Application.SetClock",
+            "values": {
+              "offsetMS": 10000
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Sync",
+            "values": {}
+          },
+          "expect": "ok"
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "lastRound.samples.2.included",
+            "op": "==",
+            "value": false
+          }
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "lastRound.meanMS",
+            "op": "<",
+            "value": 500
+          }
+        },
+        {
+          "check": {
+            "node": "node-3",
+            "path": "lastAdjMs",
+            "op": "<",
+            "value": -9000
+          }
+        }
+      ]
+    },
+    {
+      "id": "crash-master",
+      "name": "Berkeley crash: drift while down, converge after recovery",
+      "settings": {
+        "nodeCount": 3,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Auto",
+            "values": {
+              "enabled": false
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "wait": 1000
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.SetClock",
+            "values": {
+              "offsetMS": 750,
+              "driftPPM": 0
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-2",
+            "method": "Application.SetClock",
+            "values": {
+              "offsetMS": 750,
+              "driftPPM": 10000
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-3",
+            "method": "Application.SetClock",
+            "values": {
+              "offsetMS": 750,
+              "driftPPM": -10000
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Auto",
+            "values": {
+              "enabled": true
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "lastAppliedRound",
+            "op": ">=",
+            "value": 2
+          },
+          "timeout": 30000
+        },
+        {
+          "until": {
+            "spread": "errorMs",
+            "op": "<",
+            "value": 100
+          },
+          "timeout": 30000
+        },
+        {
+          "fault": {
+            "kind": "crash",
+            "node": "node-1"
+          }
+        },
+        {
+          "wait": 12000
+        },
+        {
+          "check": {
+            "spread": "errorMs",
+            "nodes": [
+              "node-2",
+              "node-3"
+            ],
+            "op": ">",
+            "value": 150
+          }
+        },
+        {
+          "fault": {
+            "kind": "recover",
+            "node": "node-1"
+          }
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "lastAppliedRound",
+            "op": ">=",
+            "value": 4
+          },
+          "timeout": 45000
+        },
+        {
+          "until": {
+            "spread": "errorMs",
+            "op": "<",
+            "value": 120
+          },
+          "timeout": 45000
+        }
+      ]
+    },
+    {
+      "id": "partition",
+      "name": "Berkeley partition: partial round",
+      "settings": {
+        "nodeCount": 3,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Auto",
+            "values": {
+              "enabled": false
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-3",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Sync",
+            "values": {}
+          },
+          "expect": "ok"
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "lastRound.samples.2.scheduled",
+            "op": "==",
+            "value": false
+          }
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "lastRound.samples.1.scheduled",
+            "op": "==",
+            "value": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "heal"
+          }
+        },
+        {
+          "wait": 5000
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Sync",
+            "values": {}
+          },
+          "expect": "ok"
+        },
+        {
+          "check": {
+            "node": "node-1",
+            "path": "lastRound.samples.2.scheduled",
+            "op": "==",
+            "value": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "variant-jump",
+      "name": "Berkeley variant: jump versus slew",
+      "settings": {
+        "nodeCount": 3,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Auto",
+            "values": {
+              "enabled": false
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Sync",
+            "values": {}
+          },
+          "expect": "ok"
+        },
+        {
+          "check": {
+            "node": "node-3",
+            "path": "slewMsLeft",
+            "op": "<",
+            "value": -500
+          }
+        },
+        {
+          "check": {
+            "node": "node-3",
+            "path": "clockAfterAdjustmentMS",
+            "op": "==",
+            "value": {
+              "$state": {
+                "node": "node-3",
+                "path": "clockBeforeAdjustmentMS"
+              }
+            }
+          }
+        },
+        {
+          "wait": 9000
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.ConfigureClock",
+            "values": {
+              "offsetMS": 0
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-2",
+            "method": "Application.ConfigureClock",
+            "values": {
+              "offsetMS": 750
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-3",
+            "method": "Application.ConfigureClock",
+            "values": {
+              "offsetMS": 1500
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.SetMode",
+            "values": {
+              "step": true
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-2",
+            "method": "Application.SetMode",
+            "values": {
+              "step": true
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-3",
+            "method": "Application.SetMode",
+            "values": {
+              "step": true
+            }
+          },
+          "expect": "ok"
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.Sync",
+            "values": {}
+          },
+          "expect": "ok"
+        },
+        {
+          "check": {
+            "node": "node-3",
+            "path": "slewMsLeft",
+            "op": "==",
+            "value": 0
+          }
+        },
+        {
+          "check": {
+            "node": "node-3",
+            "path": "lastAdjMs",
+            "op": "<",
+            "value": -600
+          }
+        },
+        {
+          "check": {
+            "node": "node-3",
+            "path": "clockAfterAdjustmentMS",
+            "op": "<",
+            "value": {
+              "$state": {
+                "node": "node-3",
+                "path": "clockBeforeAdjustmentMS"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

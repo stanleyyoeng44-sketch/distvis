@@ -1,0 +1,72 @@
+{
+  "id": "participant-recovery-control",
+  "name": "2PC control: prepared log survives participant crash",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Transfer",
+        "values": {
+          "from": "node-2",
+          "to": "node-3",
+          "amount": 30,
+          "pauseAfterDecisionMs": 4000
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "node-1",
+        "path": "decision",
+        "op": "==",
+        "value": "commit"
+      },
+      "timeout": 20000
+    },
+    {
+      "fault": {
+        "kind": "crash",
+        "node": "node-2"
+      }
+    },
+    {
+      "fault": {
+        "kind": "recover",
+        "node": "node-2"
+      }
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "until": {
+        "node": "node-1",
+        "path": "phase",
+        "op": "==",
+        "value": "finished"
+      },
+      "timeout": 20000
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "balance",
+        "op": "==",
+        "value": 70
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "balance",
+        "op": "==",
+        "value": 130
+      }
+    }
+  ]
+}

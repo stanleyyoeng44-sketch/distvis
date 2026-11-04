@@ -1,0 +1,99 @@
+{
+  "id": "ricart-count",
+  "name": "Lamport D variant - Ricart Agrawala four messages",
+  "settings": {
+    "runtime": "docker",
+    "nodeCount": 3,
+    "latency": 80,
+    "bandwidth": 128,
+    "seed": 42
+  },
+  "steps": [
+    {
+      "concurrent": [
+        {
+          "node": "node-1",
+          "method": "Application.Configure",
+          "values": {
+            "algorithm": "ricart-agrawala"
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Application.Configure",
+          "values": {
+            "algorithm": "ricart-agrawala"
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Application.Configure",
+          "values": {
+            "algorithm": "ricart-agrawala"
+          }
+        }
+      ],
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Acquire",
+        "values": {
+          "holdMs": 2000
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "node-1",
+        "path": "completed",
+        "value": 1
+      }
+    },
+    {
+      "check": {
+        "messages": {
+          "method": "MutexService.Request",
+          "op": "==",
+          "value": 2
+        }
+      }
+    },
+    {
+      "check": {
+        "messages": {
+          "method": "MutexService.Ack",
+          "op": "==",
+          "value": 2
+        }
+      }
+    },
+    {
+      "check": {
+        "messages": {
+          "method": "MutexService.Release",
+          "op": "==",
+          "value": 0
+        }
+      }
+    },
+    {
+      "check": {
+        "messages": {
+          "op": "==",
+          "value": 4
+        }
+      }
+    },
+    {
+      "check": {
+        "atMostOne": {
+          "path": "role",
+          "value": "critical"
+        }
+      }
+    }
+  ]
+}

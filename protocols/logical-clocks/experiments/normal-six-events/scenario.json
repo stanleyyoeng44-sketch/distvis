@@ -1,0 +1,232 @@
+{
+  "id": "normal-six-events",
+  "name": "Clocks normal: lecture six events",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Local",
+        "values": {
+          "label": "a"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.Local",
+        "values": {
+          "label": "e"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Send",
+        "values": {
+          "to": "node-2",
+          "label": "b",
+          "receiveLabel": "c"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Send",
+        "values": {
+          "to": "node-3",
+          "label": "d",
+          "receiveLabel": "f"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "events.0.timestamp",
+        "op": "==",
+        "value": {
+          "lamport": 1,
+          "vector": [
+            1,
+            0,
+            0
+          ],
+          "total": 3
+        }
+      }
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "events.1.timestamp",
+        "op": "==",
+        "value": {
+          "lamport": 2,
+          "vector": [
+            2,
+            0,
+            0
+          ],
+          "total": 6
+        }
+      }
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "events.0.timestamp",
+        "op": "==",
+        "value": {
+          "lamport": 3,
+          "vector": [
+            2,
+            1,
+            0
+          ],
+          "total": 10
+        }
+      }
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "events.1.timestamp",
+        "op": "==",
+        "value": {
+          "lamport": 4,
+          "vector": [
+            2,
+            2,
+            0
+          ],
+          "total": 13
+        }
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "events.0.timestamp",
+        "op": "==",
+        "value": {
+          "lamport": 1,
+          "vector": [
+            0,
+            0,
+            1
+          ],
+          "total": 5
+        }
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "events.1.timestamp",
+        "op": "==",
+        "value": {
+          "lamport": 5,
+          "vector": [
+            2,
+            2,
+            2
+          ],
+          "total": 17
+        }
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.CompareEvents",
+        "values": {
+          "left": {
+            "$state": {
+              "node": "node-1",
+              "path": "events.1.timestamp"
+            }
+          },
+          "right": {
+            "$state": {
+              "node": "node-3",
+              "path": "events.0.timestamp"
+            }
+          }
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastCompare.vector",
+        "op": "==",
+        "value": "concurrent"
+      }
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastCompare.agrees",
+        "op": "==",
+        "value": true
+      }
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastCompare.lamport",
+        "op": "==",
+        "value": "a>b"
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.CompareEvents",
+        "values": {
+          "left": {
+            "$state": {
+              "node": "node-1",
+              "path": "events.1.timestamp"
+            }
+          },
+          "right": {
+            "$state": {
+              "node": "node-3",
+              "path": "events.1.timestamp"
+            }
+          }
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastCompare.vector",
+        "op": "==",
+        "value": "happens-before"
+      }
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastCompare.agrees",
+        "op": "==",
+        "value": true
+      }
+    }
+  ]
+}

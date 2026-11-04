@@ -1,0 +1,50 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "a43bfd73-1f63-4129-a4a2-3ba00d949681",
+    "experimentId": "e8c87d43-1caa-416b-b78f-695daca35056",
+    "results": [
+      {
+        "label": "node-2 starts off",
+        "ok": true
+      },
+      {
+        "label": "node-2 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-15"
+      },
+      {
+        "label": "node-2 ends up about 900 ms AHEAD",
+        "ok": true
+      },
+      {
+        "label": "error stays inside the \u00b1RTT/2 bound",
+        "ok": true
+      },
+      {
+        "label": "node-2 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-30"
+      },
+      {
+        "label": "node-2 ends up about 900 ms BEHIND",
+        "ok": true
+      },
+      {
+        "label": "node-2 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-44"
+      },
+      {
+        "label": "symmetric again: error back near 0",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "timestampCalculationsChecked": 3,
+    "runId": "a43bfd73-1f63-4129-a4a2-3ba00d949681",
+    "passed": true,
+    "errors": []
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "7b5de0e3-3e80-4992-9216-7483d829360a",
+    "experimentId": "1dabf1b0-a2c7-4f9e-9e8e-ef48ba4b46d0",
+    "results": [
+      {
+        "label": "node-1 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-23"
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"applied\",\"op\":\"==\",\"value\":1}",
+        "ok": true
+      },
+      {
+        "label": "node-4 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-98"
+      },
+      {
+        "label": "{\"node\":\"node-4\",\"path\":\"log.1.value.value\",\"op\":\"==\",\"value\":\"first\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-4\",\"path\":\"log.2.value.value\",\"op\":\"==\",\"value\":\"second\"}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "decidedSlots": 2,
+    "conflictingSlots": [],
+    "chosenPoints": {
+      "1": {
+        "seq": 58,
+        "timeMs": 812.4808280002326,
+        "ballot": 17,
+        "acceptors": [
+          "node-1",
+          "node-2",
+          "node-3"
+        ]
+      },
+      "2": {
+        "seq": 209,
+        "timeMs": 4893.868364999071,
+        "ballot": 36,
+        "acceptors": [
+          "node-3",
+          "node-4",
+          "node-5"
+        ]
+      }
+    },
+    "finalApplied": {
+      "node-1": 1,
+      "node-4": 2,
+      "node-3": 1,
+      "node-2": 1,
+      "node-5": 1
+    },
+    "prefixExecutionChecked": true,
+    "runId": "7b5de0e3-3e80-4992-9216-7483d829360a",
+    "passed": true,
+    "errors": []
+  }
+}

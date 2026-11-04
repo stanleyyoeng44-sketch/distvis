@@ -1,0 +1,70 @@
+{
+  "id": "long-hold",
+  "name": "Lamport regression - fifteen second hold",
+  "settings": {
+    "runtime": "docker",
+    "nodeCount": 3,
+    "latency": 80,
+    "bandwidth": 128,
+    "seed": 42
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Acquire",
+        "values": {
+          "holdMs": 15000
+        }
+      },
+      "expect": "ok",
+      "timeout": 3000
+    },
+    {
+      "until": {
+        "node": "node-1",
+        "path": "role",
+        "value": "critical"
+      }
+    },
+    {
+      "wait": 11000
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "role",
+        "value": "critical"
+      }
+    },
+    {
+      "until": {
+        "node": "node-1",
+        "path": "completed",
+        "value": 1
+      }
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "queue",
+        "value": []
+      }
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "operationRunning",
+        "value": false
+      }
+    },
+    {
+      "check": {
+        "atMostOne": {
+          "path": "role",
+          "value": "critical"
+        }
+      }
+    }
+  ]
+}

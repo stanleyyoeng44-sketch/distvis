@@ -1,0 +1,3 @@
+fork/exec /tmp/go-build2479145830/b001/probe.test: permission denied
+FAIL	_/probe	0.001s
+FAIL

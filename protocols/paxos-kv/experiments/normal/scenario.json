@@ -1,0 +1,69 @@
+{
+  "id": "normal",
+  "name": "Paxos KV normal: reads also occupy slots",
+  "settings": {
+    "nodeCount": 5,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Put",
+        "values": {
+          "key": "x",
+          "value": "1"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Get",
+        "values": {
+          "key": "x"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.Put",
+        "values": {
+          "key": "x",
+          "value": "2"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-4",
+        "method": "Application.Get",
+        "values": {
+          "key": "x"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "applied",
+        "op": "==",
+        "value": 4
+      },
+      "timeout": 20000
+    },
+    {
+      "check": {
+        "node": "node-4",
+        "path": "lastOperation.value",
+        "op": "==",
+        "value": "2"
+      }
+    }
+  ]
+}

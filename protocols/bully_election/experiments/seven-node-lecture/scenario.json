@@ -1,0 +1,42 @@
+{
+  "id": "seven-node-lecture",
+  "name": "Bully: seven-node lecture trace",
+  "settings": {
+    "nodeCount": 7,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "until": {
+        "node": "*",
+        "path": "coordinator",
+        "op": "==",
+        "value": "node-7"
+      },
+      "timeout": 20000
+    },
+    {
+      "fault": {
+        "kind": "crash",
+        "node": "node-7"
+      }
+    },
+    {
+      "input": {
+        "node": "node-4",
+        "method": "Application.StartElection",
+        "values": {}
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "coordinator",
+        "op": "==",
+        "value": "node-6"
+      },
+      "timeout": 25000
+    }
+  ]
+}

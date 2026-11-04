@@ -1,0 +1,33 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "463aee55-b2df-461f-8668-4a96eb238d17",
+    "experimentId": "67fe7561-61a2-4b8c-9d2f-c8acee09d0e9",
+    "results": [
+      {
+        "label": "node-1 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-17"
+      },
+      {
+        "label": "node-3 Application.Get result (ok)",
+        "ok": true,
+        "commandId": "input-73"
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"lastGet.item.value\",\"op\":\"==\",\"value\":\"1\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"lastGet.stale\",\"op\":\"==\",\"value\":false}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "monotonicReplicaVersionsChecked": 5,
+    "runId": "463aee55-b2df-461f-8668-4a96eb238d17",
+    "passed": true,
+    "errors": []
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "id": "competing-writes",
+  "name": "Paxos KV: simultaneous slot-one proposals",
+  "settings": {
+    "nodeCount": 5,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "concurrent": [
+        {
+          "node": "node-1",
+          "method": "Application.Put",
+          "values": {
+            "key": "a",
+            "value": "1",
+            "pauseMs": 500
+          }
+        },
+        {
+          "node": "node-2",
+          "method": "Application.Put",
+          "values": {
+            "key": "b",
+            "value": "2",
+            "pauseMs": 500
+          }
+        }
+      ],
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "applied",
+        "op": "==",
+        "value": 2
+      },
+      "timeout": 20000
+    },
+    {
+      "check": {
+        "node": "*",
+        "path": "values.a",
+        "op": "==",
+        "value": "1"
+      }
+    },
+    {
+      "check": {
+        "node": "*",
+        "path": "values.b",
+        "op": "==",
+        "value": "2"
+      }
+    },
+    {
+      "check": {
+        "node": "any",
+        "path": "conflicts",
+        "op": ">=",
+        "value": 1
+      }
+    }
+  ]
+}

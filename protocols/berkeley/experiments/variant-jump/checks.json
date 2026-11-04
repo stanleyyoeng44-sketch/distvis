@@ -1,0 +1,86 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "819f169a-204c-430f-9f2e-575b971795f4",
+    "experimentId": "b8a4f0da-fc71-4398-abb6-5fd9ebf754c5",
+    "results": [
+      {
+        "label": "node-1 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "node-1 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-16"
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"slewMsLeft\",\"op\":\"<\",\"value\":-500}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"clockAfterAdjustmentMS\",\"op\":\"==\",\"value\":{\"$state\":{\"node\":\"node-3\",\"path\":\"clockBeforeAdjustmentMS\"}}}",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.ConfigureClock result (ok)",
+        "ok": true,
+        "commandId": "input-76"
+      },
+      {
+        "label": "node-2 Application.ConfigureClock result (ok)",
+        "ok": true,
+        "commandId": "input-79"
+      },
+      {
+        "label": "node-3 Application.ConfigureClock result (ok)",
+        "ok": true,
+        "commandId": "input-85"
+      },
+      {
+        "label": "node-1 Application.SetMode result (ok)",
+        "ok": true,
+        "commandId": "input-88"
+      },
+      {
+        "label": "node-2 Application.SetMode result (ok)",
+        "ok": true,
+        "commandId": "input-91"
+      },
+      {
+        "label": "node-3 Application.SetMode result (ok)",
+        "ok": true,
+        "commandId": "input-97"
+      },
+      {
+        "label": "node-1 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-100"
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"slewMsLeft\",\"op\":\"==\",\"value\":0}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"lastAdjMs\",\"op\":\"<\",\"value\":-600}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"clockAfterAdjustmentMS\",\"op\":\"<\",\"value\":{\"$state\":{\"node\":\"node-3\",\"path\":\"clockBeforeAdjustmentMS\"}}}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "filteredRoundsChecked": 2,
+    "backwardAdjustmentReports": [
+      120,
+      123,
+      125,
+      126
+    ],
+    "runId": "819f169a-204c-430f-9f2e-575b971795f4",
+    "passed": true,
+    "errors": []
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "3ccf62be-75fb-4d1d-803b-7a7778762de5",
+    "experimentId": "a50475cf-3c70-45a8-922d-0227f3d6dd7c",
+    "results": [
+      {
+        "label": "{\"node\":\"*\",\"path\":\"coordinator\",\"op\":\"==\",\"value\":\"node-7\"}",
+        "ok": true
+      },
+      {
+        "label": "node-4 Application.StartElection result (ok)",
+        "ok": true,
+        "commandId": "input-502"
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"coordinator\",\"op\":\"==\",\"value\":\"node-6\"}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "algorithmMessages": {
+      "Election": 27,
+      "Coordinator": 48,
+      "OK": 24
+    },
+    "algorithmMessageTotal": 99,
+    "runId": "3ccf62be-75fb-4d1d-803b-7a7778762de5",
+    "passed": true,
+    "errors": []
+  }
+}

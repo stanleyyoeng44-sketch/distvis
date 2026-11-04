@@ -1,0 +1,55 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "d7be61a4-6a7f-4ff3-8777-1a8108bc1729",
+    "experimentId": "eed790f5-9748-4777-a539-9f6a808d093d",
+    "results": [
+      {
+        "label": "node-1 Application.Acquire result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"completed\",\"value\":1}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"queue\",\"value\":[]}",
+        "ok": true
+      },
+      {
+        "label": "{\"messages\":{\"method\":\"MutexService.Request\",\"op\":\"==\",\"value\":2}}",
+        "ok": true
+      },
+      {
+        "label": "{\"messages\":{\"method\":\"MutexService.Ack\",\"op\":\"==\",\"value\":2}}",
+        "ok": true
+      },
+      {
+        "label": "{\"messages\":{\"method\":\"MutexService.Release\",\"op\":\"==\",\"value\":2}}",
+        "ok": true
+      },
+      {
+        "label": "{\"messages\":{\"op\":\"==\",\"value\":6}}",
+        "ok": true
+      },
+      {
+        "label": "{\"atMostOne\":{\"path\":\"role\",\"value\":\"critical\"}}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "maximumCriticalNodes": 1,
+    "observedEntries": 1,
+    "entryOrder": [
+      [
+        "node-1",
+        1
+      ]
+    ],
+    "runId": "d7be61a4-6a7f-4ff3-8777-1a8108bc1729",
+    "passed": true,
+    "errors": []
+  }
+}

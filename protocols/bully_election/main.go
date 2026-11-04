@@ -1,30 +1,19 @@
 // distvis:name Bully Election
-// distvis:description Manual Bully election: nothing is sent on startup. Trigger Application.StartElection on any node; it sends Election to every higher node, higher nodes answer OK and start their own election, and the highest live node broadcasts Coordinator.
-// distvis:start node-1 Application.StartElection {} Manually start an election on node-1.
+// distvis:description Automatic startup election, coordinator failure detection and recovery takeover by the highest reachable numeric node ID.
 package main
 
 import (
+	"context"
+	lab "distvis/sdk/rpc"
 	"net/rpc"
 	"strconv"
 	"strings"
 	"sync"
-
-	lab "distvis/sdk/rpc"
+	"time"
 )
 
-func main() {
-	lab.Main(configure)
-}
-
-// priority is the numeric part of the node id.
-func priority(id string) int {
-	parts := strings.Split(id, "-")
-	n, err := strconv.Atoi(parts[len(parts)-1])
-	if err != nil {
-		return 0
-	}
-	return n
-}
+func main()                  { lab.Main(configure) }
+func priority(id string) int { n, _ := strconv.Atoi(strings.TrimPrefix(id, "node-")); return n }
 
 const (
 	roleFollower    = "follower"
@@ -32,23 +21,22 @@ const (
 	roleCoordinator = "coordinator"
 )
 
-// ElectionService runs an election only when StartElection is invoked.
 type ElectionService struct {
-	mu            sync.Mutex
-	id            string
-	priority      int
-	members       []string
-	peers         map[string]*rpc.Client
-	report        func(any) error
-	role          string
-	coordinator   string
-	electionRound uint64
-	won           int
-	backedDown    int
-	sent          uint64
-	lastErr       string
+	mu              sync.Mutex
+	id              string
+	priority        int
+	members         []string
+	peers           map[string]*rpc.Client
+	report          func(any) error
+	role            string
+	coordinator     string
+	electionRound   uint64
+	won, backedDown int
+	sent            uint64
+	lastErr         string
+	waitingUntil    time.Time
+	automatic       bool
 }
-
 type Application struct{ service *ElectionService }
 
 func configure(node *lab.Runtime) error {
@@ -56,16 +44,33 @@ func configure(node *lab.Runtime) error {
 	if err != nil {
 		return err
 	}
-	s := &ElectionService{
-		id: node.ID, priority: priority(node.ID), members: node.Nodes,
-		peers: peers, report: node.Report,
-		role: roleFollower,
-	}
-	if err := node.RegisterName("ElectionService", s); err != nil {
+	s := &ElectionService{id: node.ID, priority: priority(node.ID), members: node.Nodes, peers: peers, report: node.Report, role: roleFollower, automatic: true}
+	if err = node.RegisterName("ElectionService", s); err != nil {
 		return err
 	}
-	if err := node.RegisterName("Application", &Application{service: s}, lab.Application()); err != nil {
+	if err = node.RegisterName("Application", &Application{s}, lab.Application()); err != nil {
 		return err
 	}
+	node.OnStart(func(ctx context.Context) error {
+		// Delay the first election briefly so every node has registered its services.
+		timer := time.NewTimer(time.Second)
+		defer timer.Stop()
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-timer.C:
+		}
+		go s.startElection()
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-ticker.C:
+				s.detectFailure()
+			}
+		}
+	})
 	return s.report(s.stateLocked())
 }

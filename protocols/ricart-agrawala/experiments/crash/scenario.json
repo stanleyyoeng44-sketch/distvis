@@ -1,0 +1,62 @@
+{
+  "id": "crash",
+  "name": "RA crash: uninvolved peer blocks",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "fault": {
+        "kind": "crash",
+        "node": "node-2"
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Acquire",
+        "values": {
+          "holdMs": 200
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "wait": 4000
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "role",
+        "op": "==",
+        "value": "waiting"
+      }
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "entries",
+        "op": "==",
+        "value": 0
+      }
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "missingAcks",
+        "op": "includes",
+        "value": "node-2"
+      }
+    },
+    {
+      "check": {
+        "atMostOne": {
+          "path": "role",
+          "value": "critical"
+        }
+      },
+      "label": "No overlapping critical sections in reported history"
+    }
+  ]
+}

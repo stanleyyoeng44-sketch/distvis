@@ -1,0 +1,130 @@
+% =====================================================================
+%  preamble.tex -- packages, colours and helper macros for the report.
+%  You normally do not need to edit this file; edit main.tex instead.
+% =====================================================================
+
+\usepackage[margin=2.2cm]{geometry}
+% lmodern = scalable fonts.  If it is not installed (e.g. a minimal TeX Live),
+% fall back to the default fonts and skip microtype, which needs scalable fonts.
+\IfFileExists{lmodern.sty}
+  {\usepackage[T1]{fontenc}\usepackage{lmodern}\usepackage{microtype}}{}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,tabularx,array,multirow}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption,subcaption}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{siunitx}
+\usepackage[colorlinks=true,linkcolor=accent,urlcolor=RoyalBlue,citecolor=accent]{hyperref}
+\usepackage{xurl} % lets long paths/URLs break at any character
+
+% ---------------------------------------------------------------------
+%  Colours
+% ---------------------------------------------------------------------
+\definecolor{accent}{HTML}{1F4E79}
+\definecolor{codebg}{HTML}{F5F5F5}
+
+% ---------------------------------------------------------------------
+%  Page style
+% ---------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Lab 1 -- Visualizing Distributed Protocols}
+\fancyhead[R]{\small\nouppercase{\leftmark}}
+\fancyfoot[C]{\thepage}
+\setlength{\headheight}{14pt}
+\setlength{\parskip}{0.4em}
+\setlength{\parindent}{0pt}
+
+% ---------------------------------------------------------------------
+%  TODO markers.  Set \showtodosfalse in main.tex before submitting:
+%  every \TODO{...} and \fillin then disappears from the PDF.
+% ---------------------------------------------------------------------
+\newif\ifshowtodos
+\showtodostrue
+\newcommand{\TODO}[1]{\ifshowtodos\leavevmode{\color{red}\textbf{[TODO:} #1\textbf{]}}\fi}
+\newcommand{\fillin}{\ifshowtodos\leavevmode{\color{red}\rule{1.6em}{0.4pt}}\fi}
+
+% ---------------------------------------------------------------------
+%  Links into the repository.
+%  \src{protocols/christian/protocol.go} prints the path and links to it
+%  on GitHub.  Change \repobranch if your code lives on another branch.
+% ---------------------------------------------------------------------
+\newcommand{\repobase}{https://github.com/stanleyyoeng44-sketch/distvis}
+\newcommand{\repobranch}{main}
+\newcommand{\src}[1]{\href{\repobase/blob/\repobranch/#1}{\nolinkurl{#1}}}
+% exported run records (Run history -> Export record) live in report/
+\newcommand{\jsonfile}[1]{\src{report/#1}}
+
+% field / method names, e.g. \fld{lastSync.errorAfterMs}
+\newcommand{\fld}[1]{\texttt{\detokenize{#1}}}
+
+% ---------------------------------------------------------------------
+%  Scenario layout helpers
+% ---------------------------------------------------------------------
+% \scenario{Title}{label}  -> a numbered subsection with a label sec:label
+\newcommand{\scenario}[2]{\subsection{#1}\label{sec:#2}}
+% bold run-in heading inside a scenario ("Setup", "Steps", ...)
+\newcommand{\phead}[1]{\par\medskip\noindent{\color{accent}\textbf{#1}}\par\nopagebreak}
+
+% two-column table describing the experiment settings
+\newenvironment{setuptable}
+  {\par\smallskip\noindent\small\tabularx{\linewidth}{@{}>{\bfseries}p{3.6cm}X@{}}\toprule}
+  {\bottomrule\endtabularx\par\smallskip}
+
+% numbered reproduction steps
+\newlist{steps}{enumerate}{1}
+\setlist[steps]{label=\arabic*.,leftmargin=*,itemsep=1pt,topsep=2pt}
+
+% \screenshot[width]{file.png}{caption}
+% If figures/file.png does not exist yet, a grey placeholder box is drawn,
+% so the report always compiles.
+\newcommand{\screenshot}[3][0.95\linewidth]{%
+  \begin{figure}[H]\centering
+    \IfFileExists{figures/#2}%
+      {\includegraphics[width=#1]{figures/#2}}%
+      {\fcolorbox{gray}{gray!5}{\parbox[c][4.2cm][c]{#1}{\centering\color{gray}%
+        Screenshot placeholder\\[2pt]\small put \nolinkurl{figures/#2} here}}}%
+    \caption{#3}\label{fig:#2}
+  \end{figure}}
+
+% discussion question box: \begin{qa}{question text} answer \end{qa}
+\newtcolorbox{qa}[1]{breakable,enhanced,colback=gray!3,colframe=accent!70,
+  fonttitle=\bfseries,title={#1},left=6pt,right=6pt,top=4pt,bottom=4pt}
+
+% grey "how to use this section" note (hidden together with TODOs)
+\newcommand{\hint}[1]{\ifshowtodos\par{\small\color{gray}\textit{Hint: #1}}\par\fi}
+
+% ---------------------------------------------------------------------
+%  Code listings (Go)
+% ---------------------------------------------------------------------
+\lstdefinelanguage{Go}{
+  morekeywords={break,case,chan,const,continue,default,defer,else,fallthrough,
+    for,func,go,goto,if,import,interface,map,package,range,return,select,struct,
+    switch,type,var,nil,true,false,int64,string,error,bool},
+  sensitive=true, morecomment=[l]{//}, morecomment=[s]{/*}{*/},
+  morestring=[b]", morestring=[b]`}
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{codebg},
+  keywordstyle=\color{accent}\bfseries,commentstyle=\color{gray}\itshape,
+  stringstyle=\color{OliveGreen},frame=single,rulecolor=\color{gray!40},
+  breaklines=true,columns=fullflexible,showstringspaces=false,
+  numbers=left,numberstyle=\tiny\color{gray}}
+
+% ---------------------------------------------------------------------
+%  Space-time diagram helpers (TikZ)
+%  \proc{y}{name}{xmax}  draws one process line at height y
+% ---------------------------------------------------------------------
+\tikzset{
+  msg/.style={-{Stealth[length=2.2mm]},thick,accent},
+  ev/.style={circle,fill=black,inner sep=1.4pt},
+  lbl/.style={font=\scriptsize},
+}
+\newcommand{\proc}[3]{%
+  \draw[gray,thick] (0,#1) node[left,black]{\small #2} -- (#3,#1);}

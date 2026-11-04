@@ -1,0 +1,181 @@
+\section{Ricart--Agrawala mutual exclusion}\label{sec:ra}
+Handout: LAB1 §4.4 \\
+Code: \src{protocols/randa}
+
+% ---------------------------------------------------------------------
+\subsection{Algorithm}
+To enter the critical section (CS), node $i$ stamps a request with its Lamport
+timestamp $(L, i)$ and sends \texttt{Request} to all $n-1$ other nodes. It enters
+when it has received a \texttt{Reply} from all of them. A node receiving a request:
+\begin{itemize}[itemsep=1pt]
+  \item replies at once if it is neither holding nor wanting the CS, or if it wants
+        the CS but the incoming timestamp is smaller (higher priority);
+  \item otherwise \emph{defers} the reply until it leaves the CS.
+\end{itemize}
+There is no \texttt{Release} message: the deferred replies act as the release.
+Messages per CS entry: $2(n-1)$ (Lamport mutual exclusion needs $3(n-1)$).
+
+\TODO{2--4 sentences in your own words: why the timestamp total order prevents
+deadlock and guarantees mutual exclusion.}
+
+% ---------------------------------------------------------------------
+\subsection{Implementation}
+\begin{itemize}[itemsep=2pt]
+  \item Lock state machine (indifferent / waiting / holding):
+        \texttt{ralock} in \src{protocols/randa/locks.go}
+  \item Handling an incoming request (the ``defer'' decision): \texttt{ralock.question}
+        in \src{protocols/randa/locks.go}
+  \item Broadcasting requests and waiting for all replies: \texttt{ralock.lock}
+  \item RPC handlers: \src{protocols/randa/application.go};
+        Lamport clock: \src{protocols/randa/clock.go}
+  \item \TODO{local lock / how concurrent Acquire on the same node is handled}
+\end{itemize}
+
+\phead{State fields reported}
+\hint{LAB1 §4 asks all mutual-exclusion protocols to report \fld{role},
+\fld{entries}, \fld{lastWaitMs}, \fld{messagesSent}. Make sure randa reports these.}
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Field & Meaning \\ \midrule
+\fld{role}         & \TODO{(released / wanted / critical)} \\
+\fld{entries}      & \TODO{} \\
+\fld{lastWaitMs}   & \TODO{} \\
+\fld{messagesSent} & \TODO{} \\
+\fld{deferred}     & \TODO{} \\
+\fld{clock}        & \TODO{} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\phead{Application inputs}
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+\toprule
+Input & Fields & Effect \\ \midrule
+\TODO{\fld{Application.Acquire}} & \fld{holdMs} & \TODO{} \\
+\TODO{\fld{Application.Auto}}    & \TODO{}      & \TODO{} \\
+\fld{Application.Lock} / \fld{Unlock} & --- & \TODO{} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ---------------------------------------------------------------------
+\subsection{Scenario coverage}
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}llXl@{}}
+\toprule
+Report section & Handout & What it shows & Export \\ \midrule
+\ref{sec:ra-normal}  & A         & two simultaneous requests & \TODO{file} \\
+\ref{sec:ra-crash}   & B         & an uninvolved node crashes, everyone blocks & \TODO{file} \\
+\ref{sec:ra-jitter}  & C         & random load, exponential jitter, FIFO vs.\ unordered & \TODO{file} \\
+\ref{sec:ra-variant} & variant   & \TODO{} & \TODO{file} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ---------------------------------------------------------------------
+\scenario{Normal (handout A): two nodes request at the same time}{ra-normal}
+\phead{Setup}
+\begin{setuptable}
+Nodes / latency & 3 nodes, \TODO{}\,ms, Docker \\
+Input           & node-1 and node-3: \fld{Acquire(holdMs=}\fillin\fld{)} concurrently \\
+Export          & \TODO{} \\
+\end{setuptable}
+\phead{Steps}
+\begin{steps}
+  \item \TODO{}
+\end{steps}
+\phead{Result}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Node & request timestamp & entered CS at & \fld{lastWaitMs} & \fld{messagesSent} \\ \midrule
+node-1 & \fillin & \fillin & \fillin & \fillin \\
+node-3 & \fillin & \fillin & \fillin & \fillin \\
+\bottomrule
+\end{tabular}
+\end{table}
+\screenshot{ra-normal.png}{Crossing requests; the higher-priority node replies immediately, the other defers.}
+\phead{Explanation}
+\TODO{3--5 sentences. Point to the deferred reply in the diagram. Count messages:
+is it $2(n-1)$ per entry?}
+
+% ---------------------------------------------------------------------
+\scenario{Fault A (handout B): an uninvolved node crashes}{ra-crash}
+\phead{Steps}
+\begin{steps}
+  \item Crash node-2 while it is not requesting the CS.
+  \item node-1 calls \fld{Acquire}.
+  \item \TODO{recover node-2 and show what happens}
+\end{steps}
+\screenshot{ra-crash.png}{node-1's request to node-2 is dropped; node-1 never enters.}
+\phead{Explanation}
+\TODO{3--5 sentences. Why does one crash block everyone? Compare with Lamport
+mutual exclusion (same weakness).}
+
+% ---------------------------------------------------------------------
+\scenario{Fault B (handout C): random load on an exponentially jittered network}{ra-jitter}
+\phead{Setup}
+\begin{setuptable}
+Nodes / latency & 5 nodes, exponential latency, mean \TODO{}\,ms \\
+Load            & \fld{Auto} on all nodes, \TODO{rate / duration} \\
+Ordering        & run 1: FIFO (default); run 2: \texttt{"ordering": "unordered"} \\
+Export          & \TODO{} \\
+\end{setuptable}
+\phead{Check}
+\fld{atMostOne} on \fld{role == critical} over the whole history
+(\src{scripts/scenarios.mjs}): \TODO{pass/fail for each run}.
+\phead{Result}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}lrrrl@{}}
+\toprule
+Ordering & CS entries & mean wait (ms) & messages / entry & mutual exclusion held? \\ \midrule
+FIFO      & \fillin & \fillin & \fillin & \fillin \\
+unordered & \fillin & \fillin & \fillin & \fillin \\
+\bottomrule
+\end{tabular}
+\end{table}
+\phead{Explanation}
+\TODO{3--5 sentences. Does reordering break mutual exclusion? Why / why not for
+\emph{this} implementation (note: RPC request and reply are paired).}
+
+% ---------------------------------------------------------------------
+\scenario{Design variant: \TODO{name}}{ra-variant}
+\hint{Handout §4.3's variant is the message-count comparison: run the same scenario
+on Lamport mutual exclusion (\nolinkurl{protocols/lamport_mutex}) and on R--A and
+compare \fld{messagesSent} ($3(n-1)$ vs.\ $2(n-1)$). A stronger variant that shows
+\emph{why} a rule is needed: (1) do not defer -- reply immediately even while
+holding the CS -- and show two nodes in \fld{role=critical}; or (2) break ties by
+something other than (timestamp, node id) and show a deadlock.}
+\phead{Code change}
+\TODO{}
+\phead{Result}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+Version & $n$ & messages / CS entry & mutual exclusion held? \\ \midrule
+Ricart--Agrawala (baseline) & \fillin & \fillin & \fillin \\
+\TODO{variant or Lamport ME} & \fillin & \fillin & \fillin \\
+\bottomrule
+\end{tabular}
+\end{table}
+\phead{Explanation}
+\TODO{3--5 sentences.}
+
+% ---------------------------------------------------------------------
+\subsection{Discussion questions}
+\begin{qa}{Why does Ricart--Agrawala need only $2(n-1)$ messages while Lamport needs $3(n-1)$?}
+\TODO{2--4 sentences.}
+\end{qa}
+\begin{qa}{Why does a crash of an uninvolved node block everyone?}
+\TODO{2--4 sentences.}
+\end{qa}
+\begin{qa}{Does message reordering break mutual exclusion?}
+\TODO{2--4 sentences.}
+\end{qa}
+
+\subsection{Boundaries (what is not implemented)}
+\begin{itemize}[itemsep=1pt]
+  \item \TODO{e.g.\ no failure detection, no persistence, fixed membership.}
+\end{itemize}

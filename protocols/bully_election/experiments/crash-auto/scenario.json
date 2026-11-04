@@ -1,0 +1,34 @@
+{
+  "id": "crash-auto",
+  "name": "Bully crash: automatic failure detection",
+  "settings": {
+    "nodeCount": 5,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "until": {
+        "node": "*",
+        "path": "coordinator",
+        "op": "==",
+        "value": "node-5"
+      },
+      "timeout": 20000
+    },
+    {
+      "fault": {
+        "kind": "crash",
+        "node": "node-5"
+      }
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "coordinator",
+        "op": "==",
+        "value": "node-4"
+      },
+      "timeout": 25000
+    }
+  ]
+}

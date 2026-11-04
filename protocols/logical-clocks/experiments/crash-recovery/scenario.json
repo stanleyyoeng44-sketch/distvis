@@ -1,0 +1,93 @@
+{
+  "id": "crash-recovery",
+  "name": "Clocks crash: durable counters",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Local",
+        "values": {
+          "label": "before"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "fault": {
+        "kind": "crash",
+        "node": "node-2"
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Send",
+        "values": {
+          "to": "node-2",
+          "label": "lost",
+          "receiveLabel": "not-received"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastDelivery.confirmed",
+        "op": "==",
+        "value": false
+      }
+    },
+    {
+      "fault": {
+        "kind": "recover",
+        "node": "node-2"
+      }
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Local",
+        "values": {
+          "label": "after"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "clock.lamport",
+        "op": "==",
+        "value": 2
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Send",
+        "values": {
+          "to": "node-2",
+          "label": "retry-new-event",
+          "receiveLabel": "received"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastDelivery.confirmed",
+        "op": "==",
+        "value": true
+      }
+    }
+  ]
+}

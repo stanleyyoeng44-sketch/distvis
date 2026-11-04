@@ -83,12 +83,20 @@ type DiskState struct {
 	Events  []Event   `json:"events"`
 }
 type State struct {
+	Role         string           `json:"role"`
+	AutoRunning  bool             `json:"autoRunning"`
+	LastCompare  *EventComparison `json:"lastCompare"`
+	MessagesSent uint64           `json:"messagesSent"`
 	DiskState
 	LastDelivery *Delivery `json:"lastDelivery"`
 	StorageError string    `json:"storageError"`
 }
 type ClockService struct {
 	mu           sync.Mutex
+	autoRunning  bool
+	lastCompare  *EventComparison
+	messagesSent uint64
+	omitMerge    bool
 	data         DiskState
 	lastDelivery *Delivery
 	storageError string
@@ -141,7 +149,8 @@ func configure(node *lab.Runtime) error {
 // Thus returning a slice header here does not introduce aliasing races with a
 // later RPC serializer, which runs after we release mu.
 func (s *ClockService) stateLocked() State {
-	return State{DiskState: s.data, LastDelivery: s.lastDelivery, StorageError: s.storageError}
+	return State{Role: "clock", AutoRunning: s.autoRunning, LastCompare: s.lastCompare,
+		MessagesSent: s.messagesSent, DiskState: s.data, LastDelivery: s.lastDelivery, StorageError: s.storageError}
 }
 func labelOK(label string) bool { return strings.TrimSpace(label) != "" && len(label) <= 128 }
 
@@ -152,6 +161,9 @@ func (s *ClockService) commitLocked(kind, label, peer, messageID, payload string
 	if s.storageError != "" {
 		return Event{}, fmt.Errorf("node stopped recording after storage failure: %s", s.storageError)
 	}
+	if s.omitMerge {
+		incoming = nil
+	} // Deliberately broken receive rule, only for the design experiment.
 	next, err := advance(s.data.Clock, s.index, incoming)
 	if err != nil {
 		return Event{}, err
@@ -202,6 +214,7 @@ func (a *Application) Send(args SendArgs, reply *SendReply) error {
 		return fmt.Errorf("choose another member, two nonempty labels <=128 bytes, and payload <=512 bytes")
 	}
 	s.mu.Lock()
+	s.messagesSent++
 	event, err := s.commitLocked("send", args.Label, args.To, "", args.Payload, nil)
 	s.mu.Unlock()
 	if err != nil {

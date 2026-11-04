@@ -1,0 +1,42 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "d204d997-f7f9-4b39-a9a6-35d034f76373",
+    "experimentId": "59546d31-a9ee-4408-a87c-a3b62a533cdd",
+    "results": [
+      {
+        "label": "node-1 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "node-1 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-17"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastRound.samples.2.scheduled\",\"op\":\"==\",\"value\":false}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastRound.samples.1.scheduled\",\"op\":\"==\",\"value\":true}",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-61"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastRound.samples.2.scheduled\",\"op\":\"==\",\"value\":true}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "filteredRoundsChecked": 2,
+    "runId": "d204d997-f7f9-4b39-a9a6-35d034f76373",
+    "passed": true,
+    "errors": []
+  }
+}

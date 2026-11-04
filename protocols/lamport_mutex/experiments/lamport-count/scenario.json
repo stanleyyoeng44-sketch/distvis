@@ -1,0 +1,80 @@
+{
+  "id": "lamport-count",
+  "name": "Lamport D - six messages per acquisition",
+  "settings": {
+    "runtime": "docker",
+    "nodeCount": 3,
+    "latency": 80,
+    "bandwidth": 128,
+    "seed": 42
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Acquire",
+        "values": {
+          "holdMs": 2000
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "node-1",
+        "path": "completed",
+        "value": 1
+      }
+    },
+    {
+      "until": {
+        "node": "*",
+        "path": "queue",
+        "value": []
+      }
+    },
+    {
+      "check": {
+        "messages": {
+          "method": "MutexService.Request",
+          "op": "==",
+          "value": 2
+        }
+      }
+    },
+    {
+      "check": {
+        "messages": {
+          "method": "MutexService.Ack",
+          "op": "==",
+          "value": 2
+        }
+      }
+    },
+    {
+      "check": {
+        "messages": {
+          "method": "MutexService.Release",
+          "op": "==",
+          "value": 2
+        }
+      }
+    },
+    {
+      "check": {
+        "messages": {
+          "op": "==",
+          "value": 6
+        }
+      }
+    },
+    {
+      "check": {
+        "atMostOne": {
+          "path": "role",
+          "value": "critical"
+        }
+      }
+    }
+  ]
+}

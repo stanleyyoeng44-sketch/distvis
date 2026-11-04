@@ -35,17 +35,25 @@ test('library discovery and editor snapshots carry distvis:start to the run conf
 
 // Protocols whose nodes stay silent until they get an application input. Each must say in code where
 // traffic begins; tests/idle-traffic-smoke.mjs runs that input against real Go nodes.
-const requestDriven = ['berkeley', 'cristian', 'grpc-broadcast', 'logical-clocks', 'ntp'];
+const requestDriven = ['christian', 'grpc-broadcast', 'logical-clocks', 'ntp', 'lamport_mutex', 'paxos-kv', 'quorum-kv', 'ricart-agrawala', 'two_phase_commit'];
 // Protocols that send messages on their own after start (elections, heartbeats, periodic sync, anti-entropy, token).
-const selfStarting = ['lww-store', 'netrpc-token', 'raft-election'];
+const selfStarting = ['berkeley', 'bully_election', 'lww-store', 'netrpc-token', 'raft-election'];
+// Preserved local prototypes, explicitly excluded by protocols/README.md. They
+// are not bundled teaching implementations or selected assignment submissions.
+const localPrototypes = ['berkeley_new', 'lamport', 'randa', 'ping'];
 
 test('every bundled protocol either starts traffic itself or names its first input with distvis:start', () => {
   const root = fileURLToPath(new URL('../protocols/', import.meta.url));
-  const folders = readdirSync(root).filter(f => existsSync(join(root, f, 'go.mod'))).sort();
+  const folders = readdirSync(root).filter(f => existsSync(join(root, f, 'go.mod')) && !localPrototypes.includes(f)).sort();
   assert.deepEqual(folders, [...requestDriven, ...selfStarting].sort(), 'classify every new protocol in this test');
   for (const folder of folders) {
     const meta = readProtocolMetadata(join(root, folder));
-    if (selfStarting.includes(folder)) { assert.equal(meta.start, undefined, `${folder} starts by itself`); continue; }
+    if (selfStarting.includes(folder)) {
+      // A self-starting protocol may also offer a useful manual trigger.
+      const sources = readdirSync(join(root, folder)).filter(f => f.endsWith('.go')).map(f => readFileSync(join(root, folder, f), 'utf8')).join('\n');
+      assert.match(sources, /OnStart\(/, `${folder}: automatic work has a runtime start hook`);
+      continue;
+    }
     const { node, method, values } = meta.start || assert.fail(`${folder}: add // distvis:start to the Go file header`);
     assert.ok(meta.start.note, `${folder}: explain what the first input does`);
     const sources = readdirSync(join(root, folder), { recursive: true }).filter(f => f.endsWith('.go') || f.endsWith('.proto'))

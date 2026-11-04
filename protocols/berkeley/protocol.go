@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"crypto/rand" // Text creates an unpredictable boot identity; it is not clock synchronization.
 	"fmt"
 	"math"
 	"net/rpc"
+	"os"
+
+	"distvis/sdk"
 	"sort" // Float64s sorts a copy to find the median without rearranging node records.
 	"sync"
 	"time"
@@ -12,9 +16,9 @@ import (
 	lab "distvis/sdk/rpc"
 )
 
-// There is one fixed coordinator, node.Nodes[0]. The lecture mentions election
-// as a possible response to failure; this CLOCK lesson does not implement an
-// election protocol. See README for the explicit crash/restart boundary.
+// There is one fixed coordinator, node.Nodes[0], and no replacement election.
+// Its durable identity and round counter let the SAME coordinator resume after
+// restart without allowing old adjustments to be mistaken for new rounds.
 type Empty struct{}
 type SyncArgs struct {
 	OutlierThresholdMS float64 `json:"outlierThresholdMS"` // Distance from median; zero defaults to 2000.
@@ -106,33 +110,51 @@ func average(samples []Sample, threshold float64) (median, mean float64, err err
 }
 
 type State struct {
-	Node        string    `json:"node"`
-	Role        string    `json:"role"`
-	Coordinator string    `json:"coordinator"`
-	Clock       ClockView `json:"clock"`
-	Busy        bool      `json:"busy"`
-	LastApplied uint64    `json:"lastAppliedRound"`
-	LastDeltaMS float64   `json:"lastDeltaMS"`
-	LastRound   *Round    `json:"lastRound"`
-	LastError   string    `json:"lastError"`
+	Node                    string    `json:"node"`
+	Role                    string    `json:"role"`
+	Coordinator             string    `json:"coordinator"`
+	Clock                   ClockView `json:"clock"`
+	Busy                    bool      `json:"busy"`
+	LastApplied             uint64    `json:"lastAppliedRound"`
+	LastDeltaMS             float64   `json:"lastDeltaMS"`
+	LastRound               *Round    `json:"lastRound"`
+	LastError               string    `json:"lastError"`
+	StepMode                bool      `json:"stepMode"`
+	Auto                    bool      `json:"auto"`
+	LastAdjMs               float64   `json:"lastAdjMs"`
+	ErrorMs                 float64   `json:"errorMs"`
+	SlewMsLeft              float64   `json:"slewMsLeft"`
+	CoordinatorEpoch        string    `json:"coordinatorEpoch"`
+	ClockBeforeAdjustmentMS float64   `json:"clockBeforeAdjustmentMS"`
+	ClockAfterAdjustmentMS  float64   `json:"clockAfterAdjustmentMS"`
+}
+type coordinatorState struct {
+	Identity string `json:"identity"`
+	Round    uint64 `json:"round"`
 }
 type TimeService struct {
-	mu              sync.Mutex
-	clock           clock
-	busy            bool
-	generation      uint64
-	round           uint64
-	lastApplied     uint64
-	lastDeltaMS     float64
-	coordinatorBoot string
-	lastRound       *Round
-	lastError       string
-	id              string
-	coordinator     string
-	instance        string
-	members         []string
-	peers           map[string]*rpc.Client
-	report          func(any) error
+	mu                      sync.Mutex
+	clock                   clock
+	busy                    bool
+	stepMode                bool
+	auto                    bool
+	generation              uint64
+	round                   uint64
+	lastApplied             uint64
+	lastDeltaMS             float64
+	coordinatorBoot         string
+	lastRound               *Round
+	lastError               string
+	id                      string
+	coordinator             string
+	instance                string
+	members                 []string
+	peers                   map[string]*rpc.Client
+	report                  func(any) error
+	save                    func(any) error
+	storageError            string
+	clockBeforeAdjustmentMS float64
+	clockAfterAdjustmentMS  float64
 }
 type Application struct{ service *TimeService }
 
@@ -148,14 +170,49 @@ func configure(node *lab.Runtime) error {
 		}
 	}
 	s := &TimeService{id: node.ID, coordinator: node.Nodes[0], instance: rand.Text(),
-		members: node.Nodes, peers: peers, report: node.Report,
+		members: node.Nodes, peers: peers, report: node.Report, save: sdk.Save,
 		clock: newClock(time.Now(), ClockArgs{OffsetMS: float64(index) * 750})}
+	if s.id == s.coordinator {
+		var durable coordinatorState
+		if err := sdk.Load(&durable); err != nil {
+			if !os.IsNotExist(err) {
+				return fmt.Errorf("restore coordinator: %w", err)
+			}
+			durable.Identity = rand.Text()
+			if err := s.save(durable); err != nil {
+				return err
+			}
+		}
+		if durable.Identity == "" {
+			return fmt.Errorf("missing durable coordinator identity")
+		}
+		s.coordinatorBoot, s.round = durable.Identity, durable.Round
+	}
 	if err := node.RegisterName("TimeService", s); err != nil {
 		return err
 	}
 	if err := node.RegisterName("Application", &Application{service: s}, lab.Application()); err != nil {
 		return err
 	}
+	s.auto = s.id == s.coordinator
+	node.OnStart(func(ctx context.Context) error {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		for tick := 0; ; tick++ {
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-ticker.C:
+				s.mu.Lock()
+				run := s.auto && !s.busy && s.clock.pending(time.Now()) == 0 && tick%3 == 2
+				_ = s.report(s.stateLocked())
+				s.mu.Unlock()
+				if run {
+					_ = (&Application{service: s}).Sync(SyncArgs{}, &Round{})
+				}
+			}
+		}
+	})
 	return s.report(s.stateLocked())
 }
 func (s *TimeService) stateLocked() State {
@@ -165,7 +222,10 @@ func (s *TimeService) stateLocked() State {
 	}
 	return State{Node: s.id, Role: role, Coordinator: s.coordinator, Clock: s.clock.view(time.Now()),
 		Busy: s.busy, LastApplied: s.lastApplied, LastDeltaMS: s.lastDeltaMS,
-		LastRound: s.lastRound, LastError: s.lastError}
+		LastRound: s.lastRound, LastError: s.lastError, StepMode: s.stepMode, Auto: s.auto,
+		LastAdjMs: s.lastDeltaMS, ErrorMs: s.clock.view(time.Now()).HostOffsetMS,
+		SlewMsLeft: s.clock.pending(time.Now()), CoordinatorEpoch: s.coordinatorBoot,
+		ClockBeforeAdjustmentMS: s.clockBeforeAdjustmentMS, ClockAfterAdjustmentMS: s.clockAfterAdjustmentMS}
 }
 func (a *Application) Read(_ Empty, reply *State) error {
 	s := a.service
@@ -214,7 +274,7 @@ func (s *TimeService) Adjust(args AdjustArgs, reply *AdjustReply) error {
 		return fmt.Errorf("invalid coordinator, round or correction")
 	}
 	if s.coordinatorBoot != "" && s.coordinatorBoot != args.CoordinatorBoot {
-		return fmt.Errorf("coordinator restarted; start a fresh experiment (no failover protocol)")
+		return fmt.Errorf("coordinator identity changed; refusing an unrelated coordinator")
 	}
 	if args.Instance != s.instance || args.Generation != s.generation || args.Round <= s.lastApplied {
 		return fmt.Errorf("stale/duplicate adjustment or clock changed since poll")
@@ -223,7 +283,14 @@ func (s *TimeService) Adjust(args AdjustArgs, reply *AdjustReply) error {
 	if s.clock.pending(now) != 0 {
 		return fmt.Errorf("previous correction is still slewing")
 	}
-	s.clock.slew(args.DeltaMS, now)
+	s.clockBeforeAdjustmentMS = s.clock.read(now)
+	if s.stepMode {
+		s.clock.baseMS = s.clock.read(now) + args.DeltaMS
+		s.clock.anchor, s.clock.correction = now, 0
+	} else {
+		s.clock.slew(args.DeltaMS, now)
+	}
+	s.clockAfterAdjustmentMS = s.clock.read(now)
 	s.generation++
 	s.coordinatorBoot, s.lastApplied, s.lastDeltaMS = args.CoordinatorBoot, args.Round, args.DeltaMS
 	*reply = AdjustReply{Scheduled: true, Clock: s.clock.view(now)}
@@ -272,8 +339,20 @@ func (a *Application) Sync(args SyncArgs, reply *Round) (err error) {
 		s.mu.Unlock()
 		return fmt.Errorf("a round or gradual correction is still in progress")
 	}
+	if s.storageError != "" {
+		s.mu.Unlock()
+		return fmt.Errorf("coordinator storage stopped: %s", s.storageError)
+	}
+	// Reserve each round durably BEFORE any adjustment can leave this process.
+	if err := s.save(coordinatorState{Identity: s.coordinatorBoot, Round: s.round + 1}); err != nil {
+		s.storageError, s.lastError = err.Error(), err.Error()
+		_ = s.report(s.stateLocked())
+		s.mu.Unlock()
+		return err
+	}
 	s.busy = true
 	s.round++
+	identity := s.coordinatorBoot
 	round := Round{Number: s.round, ThresholdMS: threshold, Samples: make([]Sample, len(s.members))}
 	// The first member is ourselves: no network call or synthetic RTT needed.
 	round.Samples[0] = Sample{Node: s.id, Instance: s.instance, Generation: s.generation}
@@ -319,7 +398,7 @@ func (a *Application) Sync(args SyncArgs, reply *Round) (err error) {
 		go func(index int) {
 			defer workers.Done()
 			sample := &round.Samples[index]
-			request := AdjustArgs{Coordinator: s.id, CoordinatorBoot: s.instance, Round: round.Number,
+			request := AdjustArgs{Coordinator: s.id, CoordinatorBoot: identity, Round: round.Number,
 				Instance: sample.Instance, Generation: sample.Generation, DeltaMS: sample.DeltaMS}
 			var response AdjustReply
 			var callErr error

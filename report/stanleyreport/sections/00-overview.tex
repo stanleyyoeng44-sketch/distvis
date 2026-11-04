@@ -1,0 +1,60 @@
+\section{Overview}
+
+\subsection{Goal of this report}
+This report covers my part of Lab~1 (\src{docs/LAB1.en.md}): four protocols, each
+implemented as a Go module in \nolinkurl{protocols/} and run on the DistVis platform.
+For every protocol I show the normal behaviour, a crash scenario, a partition or
+high-latency scenario, and a design variant, as required by §2.1 of the handout.
+
+\TODO{One or two sentences: which teammates cover the remaining required protocols
+(Berkeley, Bully, Lamport mutual exclusion, 2PC, \dots) and where their part is.}
+
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}llXl@{}}
+\toprule
+Module & Protocol & Code directory & Handout \\
+\midrule
+L03 Clocks & Cristian          & \src{protocols/christian}      & §3.1 \\
+L03 Clocks & NTP               & \src{protocols/ntp}            & §3.2 \\
+L03 Clocks & Lamport + vector  & \src{protocols/logical-clocks} \TODO{or \nolinkurl{protocols/lamport}?} & §3.4 \\
+L04 Mutual exclusion & Ricart--Agrawala & \src{protocols/randa} & §4.4 \\
+\bottomrule
+\end{tabularx}
+\caption{Protocols covered in this report.}
+\end{table}
+
+\subsection{Environment}
+\begin{setuptable}
+Platform     & DistVis, started with \texttt{npm start}, UI at \url{http://localhost:3000} \\
+Node.js      & \TODO{version} \\
+Go           & \TODO{version} \\
+Docker       & \TODO{version} \\
+Runtime mode & Docker (real Go nodes) for every result in this report, unless stated otherwise \\
+Machine / OS & \TODO{CPU, OS} \\
+\end{setuptable}
+
+\hint{The built-in simulation does not run your Go code (LAB1 §1.3). Say clearly
+which mode each run used.}
+
+\subsection{How the evidence is presented}
+\begin{itemize}[itemsep=2pt]
+  \item \textbf{Space-time diagrams.} Screenshots from the platform. Horizontal axis
+        is time, one row per node; solid arrow = delivered message, dashed = in flight,
+        red $\times$ = dropped, coloured square = a \fld{node.Report(...)} state report.
+  \item \textbf{Exported runs.} JSON files from ``Run history $\rightarrow$ Export record'',
+        stored in \src{report}. Each scenario names its file.
+  \item \textbf{Automated scenarios.} Where a protocol has a \nolinkurl{scenarios.json},
+        the scenario can be replayed with
+        \texttt{node scripts/scenarios.mjs run <protocol> <scenario-id>}
+        (\src{scripts/scenarios.mjs}).
+\end{itemize}
+
+\subsection{Conventions}
+\begin{itemize}[itemsep=2pt]
+  \item \fld{errorMs} = (node's simulated clock) $-$ (real time), in milliseconds.
+        Positive means the node is ahead. The algorithms never read it; it exists only
+        so an observer can judge accuracy.
+  \item Nodes are called \texttt{node-1}, \dots, \texttt{node-n}. Link delays are written
+        \texttt{node-a$\to$node-b = 200\,ms} (one direction only unless stated).
+  \item \TODO{any other convention you use, e.g.\ rounding of numbers}
+\end{itemize}

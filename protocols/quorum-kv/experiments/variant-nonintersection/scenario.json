@@ -1,0 +1,139 @@
+{
+  "id": "variant-nonintersection",
+  "name": "Quorum variant: W=R=1 stale read",
+  "settings": {
+    "nodeCount": 5,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Mode",
+        "values": {
+          "w": 1,
+          "r": 1
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Mode",
+        "values": {
+          "w": 1,
+          "r": 1
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.Mode",
+        "values": {
+          "w": 1,
+          "r": 1
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-4",
+        "method": "Application.Mode",
+        "values": {
+          "w": 1,
+          "r": 1
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-5",
+        "method": "Application.Mode",
+        "values": {
+          "w": 1,
+          "r": 1
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-2",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-3",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-4",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-5",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Put",
+        "values": {
+          "key": "x",
+          "value": "1"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.Get",
+        "values": {
+          "key": "x",
+          "minCounter": 1
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "lastGet.stale",
+        "op": "==",
+        "value": true
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "lastGet.item.version.counter",
+        "op": "==",
+        "value": 0
+      }
+    }
+  ]
+}

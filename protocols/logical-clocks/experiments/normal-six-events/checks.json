@@ -1,0 +1,93 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "5dc078ea-f3a4-4026-84eb-850f8cb30847",
+    "experimentId": "ae9b023a-a3e4-4514-bf54-1bb44c24496b",
+    "results": [
+      {
+        "label": "node-1 Application.Local result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "node-3 Application.Local result (ok)",
+        "ok": true,
+        "commandId": "input-16"
+      },
+      {
+        "label": "node-1 Application.Send result (ok)",
+        "ok": true,
+        "commandId": "input-19"
+      },
+      {
+        "label": "node-2 Application.Send result (ok)",
+        "ok": true,
+        "commandId": "input-30"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"events.0.timestamp\",\"op\":\"==\",\"value\":{\"lamport\":1,\"vector\":[1,0,0],\"total\":3}}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"events.1.timestamp\",\"op\":\"==\",\"value\":{\"lamport\":2,\"vector\":[2,0,0],\"total\":6}}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"events.0.timestamp\",\"op\":\"==\",\"value\":{\"lamport\":3,\"vector\":[2,1,0],\"total\":10}}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"events.1.timestamp\",\"op\":\"==\",\"value\":{\"lamport\":4,\"vector\":[2,2,0],\"total\":13}}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"events.0.timestamp\",\"op\":\"==\",\"value\":{\"lamport\":1,\"vector\":[0,0,1],\"total\":5}}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"events.1.timestamp\",\"op\":\"==\",\"value\":{\"lamport\":5,\"vector\":[2,2,2],\"total\":17}}",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.CompareEvents result (ok)",
+        "ok": true,
+        "commandId": "input-41"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastCompare.vector\",\"op\":\"==\",\"value\":\"concurrent\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastCompare.agrees\",\"op\":\"==\",\"value\":true}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastCompare.lamport\",\"op\":\"==\",\"value\":\"a>b\"}",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.CompareEvents result (ok)",
+        "ok": true,
+        "commandId": "input-44"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastCompare.vector\",\"op\":\"==\",\"value\":\"happens-before\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastCompare.agrees\",\"op\":\"==\",\"value\":true}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "events": 6,
+    "causalPairs": 11,
+    "causalOrderViolations": [],
+    "vectorGraphMismatches": [],
+    "brokenSendReceiveEdges": [],
+    "runId": "5dc078ea-f3a4-4026-84eb-850f8cb30847",
+    "passed": true,
+    "errors": []
+  }
+}

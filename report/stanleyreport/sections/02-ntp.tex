@@ -1,0 +1,217 @@
+\section{NTP (Network Time Protocol)}\label{sec:ntp}
+Handout: LAB1 §3.2 \\
+Code: \src{protocols/ntp} \\
+README: \src{protocols/ntp/README.md}
+
+% ---------------------------------------------------------------------
+\subsection{Algorithm}
+Four timestamps per exchange: $t_0$ client send, $t_1$ server receive, $t_2$ server
+send, $t_3$ client receive.
+\[
+  \mathit{offset} = \frac{(t_1 - t_0) + (t_2 - t_3)}{2}, \qquad
+  \mathit{delay}  = (t_3 - t_0) - (t_2 - t_1).
+\]
+Out of several samples, the client uses the \emph{offset} of the sample with the
+\emph{smallest delay}. A node's \fld{stratum} is its upstream's stratum $+1$.
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \proc{1.6}{server}{10}
+  \proc{0}{client}{10}
+  \node[ev,label=below:{\scriptsize $t_0$}] (a) at (1,0) {};
+  \node[ev,label=above:{\scriptsize $t_1$}] (b) at (3.5,1.6) {};
+  \node[ev,label=above:{\scriptsize $t_2$}] (c) at (6.5,1.6) {};
+  \node[ev,label=below:{\scriptsize $t_3$}] (d) at (9,0) {};
+  \draw[msg] (a) -- (b);
+  \draw[msg] (c) -- (d);
+  \draw[<->,gray] (3.5,2.3) -- node[above,lbl]{processing $t_2-t_1$} (6.5,2.3);
+\end{tikzpicture}
+\caption{One NTP exchange. The processing interval is removed from \emph{delay}.}
+\end{figure}
+
+\TODO{2--4 sentences in your own words: how the four timestamps improve on Cristian
+(Section~\ref{sec:cr-queue}) and what they still cannot fix (asymmetry).}
+
+% ---------------------------------------------------------------------
+\subsection{Implementation}
+\begin{itemize}[itemsep=2pt]
+  \item Offset/delay formulas: \TODO{function} in \src{protocols/ntp/protocol.go}
+  \item Minimum-delay filter: \TODO{function}
+  \item Stratum / upstream selection: \TODO{function}
+  \item RPC wiring: \src{protocols/ntp/rpc.go}; clock model: \src{protocols/ntp/clock.go}
+  \item Tests: \src{protocols/ntp/protocol_test.go}
+\end{itemize}
+
+\phead{State fields reported}
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Field & Meaning \\ \midrule
+\fld{stratum} / \fld{upstream} & \TODO{} \\
+\fld{last.samples}             & \TODO{(per sample: $t_0..t_3$, delay, offset, error)} \\
+\fld{last.selected}            & \TODO{(zero-based index; $-1$ = no valid sample)} \\
+\fld{lastError}                & \TODO{} \\
+\TODO{more}                    & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\phead{Application inputs}
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+\toprule
+Input & Fields & Effect \\ \midrule
+\fld{Application.Sync}           & \fld{servers}, \fld{samples}, \fld{processingMS} & \TODO{} \\
+\fld{Application.ConfigureClock} & \fld{offsetMS}, \fld{driftPPM} & \TODO{} \\
+\fld{Application.Read}           & --- & \TODO{} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ---------------------------------------------------------------------
+\subsection{Scenario coverage}
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}llXl@{}}
+\toprule
+Report section & Handout & What it shows & Export \\ \midrule
+\ref{sec:ntp-normal}  & A         & processing time $t_2-t_1$ is subtracted & \TODO{file} \\
+\ref{sec:ntp-filter}  & B         & minimum-delay filtering (8 samples, jitter) & \TODO{file} \\
+\ref{sec:ntp-stratum} & C         & error accumulates with stratum & \TODO{file} \\
+\ref{sec:ntp-crash}   & (fault A) & upstream crashes & \TODO{file} \\
+\ref{sec:ntp-part}    & (fault B) & partition / asymmetric link & \TODO{file} \\
+\ref{sec:ntp-variant} & variant   & \TODO{your choice} & \TODO{file} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ---------------------------------------------------------------------
+\scenario{Normal (handout A): server processing time is subtracted}{ntp-normal}
+\phead{Setup}
+\begin{setuptable}
+Nodes / latency & 3 nodes, \TODO{80}\,ms, Docker \\
+Input           & node-2: \fld{Sync} \fld{servers=["node-1"]}, \fld{samples=}\fillin, \fld{processingMS=200} \\
+Export          & \TODO{} \\
+\end{setuptable}
+\phead{Steps}
+\begin{steps}
+  \item \TODO{}
+\end{steps}
+\phead{Result (one sample)}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+$t_0$ & $t_1$ & $t_2$ & $t_3$ & $t_2-t_1$ & delay & offset \\ \midrule
+\fillin & \fillin & \fillin & \fillin & \fillin & \fillin & \fillin \\
+\bottomrule
+\end{tabular}
+\end{table}
+\screenshot{ntp-normal.png}{NTP exchange; the gap on node-1 between receive and reply is the processing time.}
+\phead{Explanation}
+\TODO{3--5 sentences. Compare the measured send/receive times in the diagram with
+$t_0..t_3$; show $t_2-t_1 \approx$ processingMS and that \emph{delay} excludes it.}
+
+% ---------------------------------------------------------------------
+\scenario{Handout B: minimum-delay filtering}{ntp-filter}
+\phead{Setup}
+\begin{setuptable}
+Nodes / latency & 3 nodes, \TODO{}\,ms with jitter \TODO{distribution / amount} \\
+Input           & \fld{Sync} with \fld{samples=8} \\
+Export          & \TODO{} \\
+\end{setuptable}
+\phead{Result}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}rrrl@{}}
+\toprule
+\# & delay (ms) & offset (ms) & selected? \\ \midrule
+0 & \fillin & \fillin & \\
+1 & \fillin & \fillin & \\
+\multicolumn{4}{c}{\TODO{\dots up to 7}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\screenshot{ntp-filter.png}{Eight samples under jitter.}
+\phead{Explanation}
+\TODO{3--5 sentences. Why pick the smallest delay and not the smallest offset?}
+
+% ---------------------------------------------------------------------
+\scenario{Handout C: error accumulates with stratum}{ntp-stratum}
+\phead{Setup}
+\begin{setuptable}
+Nodes / latency & 3 nodes, \TODO{}\,ms \\
+Chain           & node-1 (stratum 1) $\to$ node-2 $\to$ node-3 \\
+Export          & \TODO{} \\
+\end{setuptable}
+\phead{Steps}
+\begin{steps}
+  \item On node-3, try \fld{Sync} from node-2 \emph{before} node-2 is synchronised (expect failure).
+  \item Sync node-2 from node-1, then node-3 from node-2.
+  \item \TODO{}
+\end{steps}
+\phead{Result}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}lrlr@{}}
+\toprule
+Node & stratum & upstream & final \fld{errorMs} \\ \midrule
+node-1 & 1 & ---    & \fillin \\
+node-2 & \fillin & node-1 & \fillin \\
+node-3 & \fillin & node-2 & \fillin \\
+\bottomrule
+\end{tabular}
+\end{table}
+\phead{Explanation}
+\TODO{3--5 sentences.}
+
+% ---------------------------------------------------------------------
+\scenario{Fault A: an upstream server crashes}{ntp-crash}
+\phead{Setup and steps}
+\begin{steps}
+  \item \TODO{e.g.\ crash node-1 and sync node-2 from node-1 (it fails). Then sync
+        node-3 from both node-1 and node-2 and show that node-2 still supplies a sample.}
+\end{steps}
+\screenshot{ntp-crash.png}{\TODO{caption}}
+\phead{Explanation}
+\TODO{3--5 sentences. Is the clock left unchanged on failure? What does
+\fld{selected} show?}
+
+% ---------------------------------------------------------------------
+\scenario{Fault B: partition or asymmetric link}{ntp-part}
+\phead{Setup and steps}
+\begin{steps}
+  \item \TODO{e.g.\ set node-2$\to$node-1 = 2000\,ms, node-1$\to$node-2 = 200\,ms and sync;
+        compare with Cristian's error in Section~\ref{sec:cr-asym}.}
+\end{steps}
+\phead{Result}
+\TODO{table: predicted bias $(d_\text{fwd} - d_\text{rev})/2$ vs.\ measured}
+\phead{Explanation}
+\TODO{3--5 sentences. Four timestamps remove server work, but not asymmetric network delay.}
+
+% ---------------------------------------------------------------------
+\scenario{Design variant: \TODO{name}}{ntp-variant}
+\hint{The handout gives no fixed NTP variant. Ideas: (1) choose the sample with the
+smallest |offset| instead of the smallest delay; (2) do not subtract $t_2-t_1$
+(i.e.\ fall back to Cristian); (3) average all offsets. Pick one, describe the code
+change, and show the error it causes.}
+\phead{Code change}
+\TODO{what you changed, with a link to the line}
+\phead{Result}
+\TODO{baseline vs.\ variant, same scenario}
+\phead{Explanation}
+\TODO{3--5 sentences: why the original design is needed.}
+
+% ---------------------------------------------------------------------
+\subsection{Discussion questions}
+\begin{qa}{Why pick the smallest delay rather than the smallest offset?}
+\TODO{2--4 sentences.}
+\end{qa}
+\begin{qa}{Why does error accumulate with stratum?}
+\TODO{2--4 sentences.}
+\end{qa}
+\begin{qa}{\TODO{other question}}
+\TODO{2--4 sentences.}
+\end{qa}
+
+\subsection{Boundaries (what is not implemented)}
+\begin{itemize}[itemsep=1pt]
+  \item \TODO{e.g.\ no NTP packet format/UDP, no periodic polling, no falseticker
+        rejection, steps instead of slewing, no external UTC.}
+\end{itemize}

@@ -1,0 +1,127 @@
+{
+  "id": "partition",
+  "name": "Quorum partition: minority unavailable",
+  "settings": {
+    "nodeCount": 5,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-3",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-4",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-5",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-3",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-4",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-5",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Put",
+        "values": {
+          "key": "minority",
+          "value": "no"
+        }
+      },
+      "expect": "error"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.Put",
+        "values": {
+          "key": "x",
+          "value": "majority"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-4",
+        "method": "Application.Get",
+        "values": {
+          "key": "x"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-4",
+        "path": "lastGet.item.value",
+        "op": "==",
+        "value": "majority"
+      }
+    },
+    {
+      "fault": {
+        "kind": "heal"
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Get",
+        "values": {
+          "key": "x"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastGet.item.value",
+        "op": "==",
+        "value": "majority"
+      }
+    }
+  ]
+}

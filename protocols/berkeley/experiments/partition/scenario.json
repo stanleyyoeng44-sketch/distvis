@@ -1,0 +1,77 @@
+{
+  "id": "partition",
+  "name": "Berkeley partition: partial round",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Auto",
+        "values": {
+          "enabled": false
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-3",
+        "blocked": true,
+        "bidirectional": true
+      }
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Sync",
+        "values": {}
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastRound.samples.2.scheduled",
+        "op": "==",
+        "value": false
+      }
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastRound.samples.1.scheduled",
+        "op": "==",
+        "value": true
+      }
+    },
+    {
+      "fault": {
+        "kind": "heal"
+      }
+    },
+    {
+      "wait": 5000
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Sync",
+        "values": {}
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastRound.samples.2.scheduled",
+        "op": "==",
+        "value": true
+      }
+    }
+  ]
+}

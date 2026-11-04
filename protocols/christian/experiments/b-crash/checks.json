@@ -1,0 +1,49 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "ffd3c8ce-e252-49da-9e34-7b99afec69f1",
+    "experimentId": "1c420899-2f60-4c0e-afe0-82e7ecced46b",
+    "results": [
+      {
+        "label": "node-2 starts off",
+        "ok": true
+      },
+      {
+        "label": "node-2 Application.Sync result (error)",
+        "ok": true,
+        "commandId": "input-15"
+      },
+      {
+        "label": "failure is recorded",
+        "ok": true
+      },
+      {
+        "label": "clock was NOT changed by the failed sync",
+        "ok": true
+      },
+      {
+        "label": "lastError explains the failure",
+        "ok": true
+      },
+      {
+        "label": "node-1 is back",
+        "ok": true
+      },
+      {
+        "label": "node-2 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-38"
+      },
+      {
+        "label": "after recovery a retried sync works",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "timestampCalculationsChecked": 1,
+    "runId": "ffd3c8ce-e252-49da-9e34-7b99afec69f1",
+    "passed": true,
+    "errors": []
+  }
+}

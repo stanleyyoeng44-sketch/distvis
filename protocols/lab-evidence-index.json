@@ -1,0 +1,646 @@
+[
+  {
+    "protocol": "berkeley",
+    "scenario": "normal-periodic",
+    "runId": "cc969303-3627-4672-b044-0981cd154246",
+    "experimentId": "78c91bef-d630-48b0-b005-506b6ed6e59c",
+    "passed": true,
+    "eventCount": 228,
+    "requestCounts": {
+      "TimeService.Poll": 10,
+      "TimeService.Adjust": 10
+    }
+  },
+  {
+    "protocol": "berkeley",
+    "scenario": "outlier",
+    "runId": "085ba2da-689f-4f8d-9fc6-98e412d7822d",
+    "experimentId": "eede1acf-d1ae-447c-8693-655dd333cf7f",
+    "passed": true,
+    "eventCount": 52,
+    "requestCounts": {
+      "TimeService.Poll": 2,
+      "TimeService.Adjust": 2
+    }
+  },
+  {
+    "protocol": "berkeley",
+    "scenario": "crash-master",
+    "runId": "cf505e6d-b045-4137-b0d3-9eb920fa8e54",
+    "experimentId": "cb8607b9-45c3-49a8-a4f3-d075a5e33002",
+    "passed": true,
+    "eventCount": 229,
+    "requestCounts": {
+      "TimeService.Poll": 8,
+      "TimeService.Adjust": 8
+    }
+  },
+  {
+    "protocol": "berkeley",
+    "scenario": "partition",
+    "runId": "d204d997-f7f9-4b39-a9a6-35d034f76373",
+    "experimentId": "59546d31-a9ee-4408-a87c-a3b62a533cdd",
+    "passed": true,
+    "eventCount": 94,
+    "requestCounts": {
+      "TimeService.Poll": 4,
+      "TimeService.Adjust": 3
+    }
+  },
+  {
+    "protocol": "berkeley",
+    "scenario": "variant-jump",
+    "runId": "819f169a-204c-430f-9f2e-575b971795f4",
+    "experimentId": "b8a4f0da-fc71-4398-abb6-5fd9ebf754c5",
+    "passed": true,
+    "eventCount": 133,
+    "requestCounts": {
+      "TimeService.Poll": 4,
+      "TimeService.Adjust": 4
+    }
+  },
+  {
+    "protocol": "logical-clocks",
+    "scenario": "normal-six-events",
+    "runId": "5dc078ea-f3a4-4026-84eb-850f8cb30847",
+    "experimentId": "ae9b023a-a3e4-4514-bf54-1bb44c24496b",
+    "passed": true,
+    "eventCount": 47,
+    "requestCounts": {
+      "ClockService.Deliver": 2
+    }
+  },
+  {
+    "protocol": "logical-clocks",
+    "scenario": "equal-concurrent",
+    "runId": "7ff081fc-6826-418c-af5c-e4ccd204e427",
+    "experimentId": "afd82763-b2b7-46d7-b33f-7d8560dcf8d6",
+    "passed": true,
+    "eventCount": 31,
+    "requestCounts": {}
+  },
+  {
+    "protocol": "logical-clocks",
+    "scenario": "auto-invariant",
+    "runId": "176f4f3a-9dba-4526-8767-64e924d3821a",
+    "experimentId": "49eeffea-acc3-42e4-bd7f-c7c949c88e9b",
+    "passed": true,
+    "eventCount": 162,
+    "requestCounts": {
+      "ClockService.Deliver": 13
+    }
+  },
+  {
+    "protocol": "logical-clocks",
+    "scenario": "crash-recovery",
+    "runId": "16db3b16-c633-4696-a4bb-fa902d563ba0",
+    "experimentId": "dadc4d21-6108-4877-a0a8-532b26ab8913",
+    "passed": true,
+    "eventCount": 42,
+    "requestCounts": {
+      "ClockService.Deliver": 2
+    }
+  },
+  {
+    "protocol": "logical-clocks",
+    "scenario": "partition",
+    "runId": "2f8f58d3-a77b-446f-a198-e81b81613eb0",
+    "experimentId": "d1cf9b69-273f-40d8-9203-1f0cd3ebd3c4",
+    "passed": true,
+    "eventCount": 35,
+    "requestCounts": {
+      "ClockService.Deliver": 2
+    }
+  },
+  {
+    "protocol": "logical-clocks",
+    "scenario": "variant-no-merge",
+    "runId": "a7ffc329-97cd-48ee-b58f-8f735b707fcf",
+    "experimentId": "c5e86c67-d7cd-4abd-9276-624d005f09ea",
+    "passed": true,
+    "eventCount": 33,
+    "requestCounts": {
+      "ClockService.Deliver": 1
+    }
+  },
+  {
+    "protocol": "lamport_mutex",
+    "scenario": "normal",
+    "runId": "f26fa1e8-9a25-42e3-99ac-496dcae25790",
+    "experimentId": "9cea43a5-3320-4126-b7e3-8085c3fcd105",
+    "passed": true,
+    "eventCount": 123,
+    "requestCounts": {
+      "MutexService.Request": 4,
+      "MutexService.Ack": 4,
+      "MutexService.Release": 4
+    }
+  },
+  {
+    "protocol": "lamport_mutex",
+    "scenario": "crash",
+    "runId": "17e07f10-0dbf-45cf-bc02-0aee96a101ec",
+    "experimentId": "589942b6-9522-4c71-ad6d-7bf40f41ef77",
+    "passed": true,
+    "eventCount": 40,
+    "requestCounts": {
+      "MutexService.Request": 2,
+      "MutexService.Ack": 1
+    }
+  },
+  {
+    "protocol": "lamport_mutex",
+    "scenario": "partition",
+    "runId": "120ed65d-5de4-4f6a-be5c-a04390743634",
+    "experimentId": "53982495-8e2a-4044-b3d4-b87449cb4aaa",
+    "passed": true,
+    "eventCount": 38,
+    "requestCounts": {
+      "MutexService.Request": 2,
+      "MutexService.Ack": 1
+    }
+  },
+  {
+    "protocol": "lamport_mutex",
+    "scenario": "lamport-count",
+    "runId": "d7be61a4-6a7f-4ff3-8777-1a8108bc1729",
+    "experimentId": "eed790f5-9748-4777-a539-9f6a808d093d",
+    "passed": true,
+    "eventCount": 68,
+    "requestCounts": {
+      "MutexService.Request": 2,
+      "MutexService.Ack": 2,
+      "MutexService.Release": 2
+    }
+  },
+  {
+    "protocol": "lamport_mutex",
+    "scenario": "ricart-count",
+    "runId": "cf8236dd-6cdb-43e9-aef1-32549d8c79ba",
+    "experimentId": "696da9a5-96d9-41ea-9e37-25d25e7b7973",
+    "passed": true,
+    "eventCount": 61,
+    "requestCounts": {
+      "MutexService.Request": 2,
+      "MutexService.Ack": 2
+    }
+  },
+  {
+    "protocol": "lamport_mutex",
+    "scenario": "long-hold",
+    "runId": "731cf150-3abc-4b59-817d-39add1b8ff89",
+    "experimentId": "5d53e4bd-a06d-45f6-8f98-6c171acb364f",
+    "passed": true,
+    "eventCount": 68,
+    "requestCounts": {
+      "MutexService.Request": 2,
+      "MutexService.Ack": 2,
+      "MutexService.Release": 2
+    }
+  },
+  {
+    "protocol": "lamport_mutex",
+    "scenario": "ricart-contention",
+    "runId": "a2871177-ea11-45a2-8c12-b120fa4070f1",
+    "experimentId": "64aaf2f3-3370-43ef-8240-74e4be88f2df",
+    "passed": true,
+    "eventCount": 364,
+    "requestCounts": {
+      "MutexService.Request": 18,
+      "MutexService.Ack": 18
+    }
+  },
+  {
+    "protocol": "ricart-agrawala",
+    "scenario": "normal-contention",
+    "runId": "d92c98f3-afb4-45bc-9e94-f87967543d30",
+    "experimentId": "a3d3a576-7200-440d-8a5c-d729089196ad",
+    "passed": true,
+    "eventCount": 91,
+    "requestCounts": {
+      "MutexService.Request": 4,
+      "MutexService.Ack": 4
+    }
+  },
+  {
+    "protocol": "ricart-agrawala",
+    "scenario": "crash",
+    "runId": "ea805f80-9426-4cb8-bd9f-9c85f3369e72",
+    "experimentId": "e125cdf2-5c60-4016-9822-3e38ae6ca54b",
+    "passed": true,
+    "eventCount": 38,
+    "requestCounts": {
+      "MutexService.Request": 2,
+      "MutexService.Ack": 1
+    }
+  },
+  {
+    "protocol": "ricart-agrawala",
+    "scenario": "partition",
+    "runId": "a4edab5f-e88d-4d55-9ac4-95706b613609",
+    "experimentId": "51aaf8e4-e84e-493a-a049-bfafe670eccb",
+    "passed": true,
+    "eventCount": 38,
+    "requestCounts": {
+      "MutexService.Request": 2,
+      "MutexService.Ack": 1
+    }
+  },
+  {
+    "protocol": "ricart-agrawala",
+    "scenario": "jitter-fifo",
+    "runId": "91cb04d2-b120-4a87-831a-483216079c73",
+    "experimentId": "7020254c-c5b7-4ced-bcc6-f3aa2129d869",
+    "passed": true,
+    "eventCount": 722,
+    "requestCounts": {
+      "MutexService.Request": 40,
+      "MutexService.Ack": 40
+    }
+  },
+  {
+    "protocol": "ricart-agrawala",
+    "scenario": "jitter-unordered",
+    "runId": "c9af5fef-8b91-402f-8880-b1902de63c17",
+    "experimentId": "b5fe57fd-c7b1-42df-a34a-ce0befebd3e3",
+    "passed": true,
+    "eventCount": 722,
+    "requestCounts": {
+      "MutexService.Request": 40,
+      "MutexService.Ack": 40
+    }
+  },
+  {
+    "protocol": "ricart-agrawala",
+    "scenario": "variant-message-count",
+    "runId": "0120ce39-976a-4499-8a8b-5a5579092526",
+    "experimentId": "6291c014-e0f4-4a2b-958f-a384cee22aa9",
+    "passed": true,
+    "eventCount": 52,
+    "requestCounts": {
+      "MutexService.Request": 2,
+      "MutexService.Ack": 2
+    }
+  },
+  {
+    "protocol": "bully_election",
+    "scenario": "normal-startup",
+    "runId": "1449649c-ab65-438d-8907-752b9219fb58",
+    "experimentId": "4e0e9826-6e1a-4c1a-b985-b3fb4839d8ce",
+    "passed": true,
+    "eventCount": 239,
+    "requestCounts": {
+      "ElectionService.Election": 10,
+      "ElectionService.Coordinator": 20
+    }
+  },
+  {
+    "protocol": "bully_election",
+    "scenario": "crash-auto",
+    "runId": "32bf8da4-c2a4-4e67-95ef-494d7ce6c478",
+    "experimentId": "d6614aad-cd28-4f77-8e99-6f42dd8354c6",
+    "passed": true,
+    "eventCount": 399,
+    "requestCounts": {
+      "ElectionService.Election": 21,
+      "ElectionService.Coordinator": 28,
+      "ElectionService.Heartbeat": 7
+    }
+  },
+  {
+    "protocol": "bully_election",
+    "scenario": "seven-node-lecture",
+    "runId": "3ccf62be-75fb-4d1d-803b-7a7778762de5",
+    "experimentId": "a50475cf-3c70-45a8-922d-0227f3d6dd7c",
+    "passed": true,
+    "eventCount": 593,
+    "requestCounts": {
+      "ElectionService.Election": 27,
+      "ElectionService.Coordinator": 48,
+      "ElectionService.Heartbeat": 3
+    }
+  },
+  {
+    "protocol": "bully_election",
+    "scenario": "two-crashes",
+    "runId": "21f006b7-ced1-42e9-8302-6f9efef4ebc2",
+    "experimentId": "e1c0ea07-b08e-4deb-8cde-297d54168966",
+    "passed": true,
+    "eventCount": 628,
+    "requestCounts": {
+      "ElectionService.Election": 41,
+      "ElectionService.Coordinator": 42,
+      "ElectionService.Heartbeat": 10
+    }
+  },
+  {
+    "protocol": "bully_election",
+    "scenario": "partition",
+    "runId": "28dfcc7f-45ae-41d9-9b4b-1e3b9367e402",
+    "experimentId": "18192f2b-26f3-4888-88a1-3047c934e7b5",
+    "passed": true,
+    "eventCount": 618,
+    "requestCounts": {
+      "ElectionService.Election": 27,
+      "ElectionService.Coordinator": 49,
+      "ElectionService.Heartbeat": 18
+    }
+  },
+  {
+    "protocol": "bully_election",
+    "scenario": "variant-recovery-takeover",
+    "runId": "81b92639-7600-4eec-b364-a88d4812eedf",
+    "experimentId": "7affacc4-6209-4178-81ff-b45d4803aefe",
+    "passed": true,
+    "eventCount": 859,
+    "requestCounts": {
+      "ElectionService.Election": 42,
+      "ElectionService.Coordinator": 54,
+      "ElectionService.Heartbeat": 28
+    }
+  },
+  {
+    "protocol": "quorum-kv",
+    "scenario": "normal",
+    "runId": "463aee55-b2df-461f-8668-4a96eb238d17",
+    "experimentId": "67fe7561-61a2-4b8c-9d2f-c8acee09d0e9",
+    "passed": true,
+    "eventCount": 129,
+    "requestCounts": {
+      "Replica.Fetch": 8,
+      "Replica.Store": 8
+    }
+  },
+  {
+    "protocol": "quorum-kv",
+    "scenario": "slow-replica",
+    "runId": "11ce421e-b32b-4c4a-bb00-f81be2da4acc",
+    "experimentId": "f8c6c967-83f9-439a-aa7d-5a912a3e1e6f",
+    "passed": true,
+    "eventCount": 133,
+    "requestCounts": {
+      "Replica.Fetch": 8,
+      "Replica.Store": 8
+    }
+  },
+  {
+    "protocol": "quorum-kv",
+    "scenario": "crash",
+    "runId": "6dd9f85c-5501-4920-9266-3d9a8f332dfa",
+    "experimentId": "f1bfad0a-6bea-45b3-990f-410fbfae6ded",
+    "passed": true,
+    "eventCount": 173,
+    "requestCounts": {
+      "Replica.Fetch": 12,
+      "Replica.Store": 12
+    }
+  },
+  {
+    "protocol": "quorum-kv",
+    "scenario": "partition",
+    "runId": "13abd5a6-e7b5-4ebc-bf04-f358b6386344",
+    "experimentId": "1ee9dec6-f06a-4736-81cc-102a834bfd31",
+    "passed": true,
+    "eventCount": 171,
+    "requestCounts": {
+      "Replica.Fetch": 16,
+      "Replica.Store": 12
+    }
+  },
+  {
+    "protocol": "quorum-kv",
+    "scenario": "variant-nonintersection",
+    "runId": "aaca5306-1249-4d96-93e4-74870854e0bb",
+    "experimentId": "910ada43-63a6-47ce-8288-74202194744f",
+    "passed": true,
+    "eventCount": 103,
+    "requestCounts": {
+      "Replica.Fetch": 8,
+      "Replica.Store": 8
+    }
+  },
+  {
+    "protocol": "paxos-kv",
+    "scenario": "normal",
+    "runId": "4923e01c-8c5f-4925-b636-8859bcd2736a",
+    "experimentId": "0d825339-1510-4ce9-b08f-38512a5bc717",
+    "passed": true,
+    "eventCount": 504,
+    "requestCounts": {
+      "Paxos.Prepare": 24,
+      "Paxos.Accept": 20,
+      "Paxos.Decide": 20
+    }
+  },
+  {
+    "protocol": "paxos-kv",
+    "scenario": "competing-writes",
+    "runId": "57857500-d1d0-4c66-911d-cd42c2aacfb4",
+    "experimentId": "88d0b236-2ce6-4401-8845-ff06ef617a94",
+    "passed": true,
+    "eventCount": 320,
+    "requestCounts": {
+      "Paxos.Prepare": 16,
+      "Paxos.Accept": 12,
+      "Paxos.Decide": 12
+    }
+  },
+  {
+    "protocol": "paxos-kv",
+    "scenario": "crash-catchup",
+    "runId": "87c72f4a-6b91-4a56-a5e0-5a10de9da513",
+    "experimentId": "1b37a1c7-5686-43ed-b7b5-e5fd4fd4d626",
+    "passed": true,
+    "eventCount": 771,
+    "requestCounts": {
+      "Paxos.Prepare": 44,
+      "Paxos.Accept": 32,
+      "Paxos.Decide": 32
+    }
+  },
+  {
+    "protocol": "paxos-kv",
+    "scenario": "partition",
+    "runId": "755309e4-9c1b-47bd-93e5-276399fe2b76",
+    "experimentId": "bad279e6-d81a-4060-b8f2-81b43ebb24a5",
+    "passed": true,
+    "eventCount": 456,
+    "requestCounts": {
+      "Paxos.Prepare": 40,
+      "Paxos.Accept": 16,
+      "Paxos.Decide": 16
+    }
+  },
+  {
+    "protocol": "paxos-kv",
+    "scenario": "variant-amnesia",
+    "runId": "58ff85df-be79-4220-8634-e250a66fbbb4",
+    "experimentId": "343f7b1b-1c3a-40d8-bbd2-112e00ea0f44",
+    "passed": true,
+    "eventCount": 151,
+    "requestCounts": {
+      "Paxos.Prepare": 8,
+      "Paxos.Accept": 8,
+      "Paxos.Decide": 8
+    }
+  },
+  {
+    "protocol": "paxos-kv",
+    "scenario": "persistence-control",
+    "runId": "7b5de0e3-3e80-4992-9216-7483d829360a",
+    "experimentId": "1dabf1b0-a2c7-4f9e-9e8e-ef48ba4b46d0",
+    "passed": true,
+    "eventCount": 243,
+    "requestCounts": {
+      "Paxos.Prepare": 16,
+      "Paxos.Accept": 16,
+      "Paxos.Decide": 12
+    }
+  },
+  {
+    "protocol": "two_phase_commit",
+    "scenario": "normal-two-transfers",
+    "runId": "4a412695-0ccf-4eb3-9ac1-19fc25a52215",
+    "experimentId": "8a5d4b5c-4e4e-48ef-aec6-11106292249f",
+    "passed": true,
+    "eventCount": 107,
+    "requestCounts": {
+      "RM.Prepare": 4,
+      "TM.Status": 4,
+      "RM.Commit": 4
+    }
+  },
+  {
+    "protocol": "two_phase_commit",
+    "scenario": "veto",
+    "runId": "e2cc197c-d835-47ca-9517-b56706dbaaf4",
+    "experimentId": "bf09d417-ab4a-4393-8f94-43749233f775",
+    "passed": true,
+    "eventCount": 54,
+    "requestCounts": {
+      "RM.Prepare": 2,
+      "TM.Status": 1,
+      "RM.Abort": 2
+    }
+  },
+  {
+    "protocol": "two_phase_commit",
+    "scenario": "crash-before-decision",
+    "runId": "b77b97bf-ad4b-4182-8224-ec233b0a7c2a",
+    "experimentId": "971f85c5-af08-417f-a3e5-c52925102969",
+    "passed": true,
+    "eventCount": 71,
+    "requestCounts": {
+      "RM.Prepare": 2,
+      "TM.Status": 4,
+      "RM.Abort": 2
+    }
+  },
+  {
+    "protocol": "two_phase_commit",
+    "scenario": "crash-after-decision",
+    "runId": "521c0713-14f1-45af-bc27-c5ea78424075",
+    "experimentId": "763a3abd-561d-4d0b-be38-b5c16ba12411",
+    "passed": true,
+    "eventCount": 72,
+    "requestCounts": {
+      "RM.Prepare": 2,
+      "TM.Status": 4,
+      "RM.Commit": 2
+    }
+  },
+  {
+    "protocol": "two_phase_commit",
+    "scenario": "partition",
+    "runId": "ada80ffa-c96a-464f-94c6-a80a7bbc8c58",
+    "experimentId": "f4a70159-3348-444e-96a0-626b927d93cc",
+    "passed": true,
+    "eventCount": 80,
+    "requestCounts": {
+      "RM.Prepare": 2,
+      "TM.Status": 5,
+      "RM.Commit": 3
+    }
+  },
+  {
+    "protocol": "two_phase_commit",
+    "scenario": "variant-no-prepare-log",
+    "runId": "471491e4-cf53-445c-b649-ff473cf3295b",
+    "experimentId": "9cf8ad37-5ccb-4a4a-8fb3-e0687036442a",
+    "passed": true,
+    "eventCount": 73,
+    "requestCounts": {
+      "RM.Prepare": 2,
+      "TM.Status": 3,
+      "RM.Commit": 2
+    }
+  },
+  {
+    "protocol": "two_phase_commit",
+    "scenario": "participant-recovery-control",
+    "runId": "e2b342eb-cde7-4cdf-9145-ad1351d03c7f",
+    "experimentId": "c7be7db7-727f-4c45-8036-7ebd302595f0",
+    "passed": true,
+    "eventCount": 84,
+    "requestCounts": {
+      "RM.Prepare": 2,
+      "TM.Status": 5,
+      "RM.Commit": 2
+    }
+  },
+  {
+    "protocol": "christian",
+    "scenario": "a-normal",
+    "runId": "72e42966-686f-4a53-a9a1-a847f622e100",
+    "experimentId": "dfbf3170-08b2-4269-b76d-d9bd6ebbcfa2",
+    "passed": true,
+    "eventCount": 55,
+    "requestCounts": {
+      "TimeService.Ask": 2
+    }
+  },
+  {
+    "protocol": "christian",
+    "scenario": "b-crash",
+    "runId": "ffd3c8ce-e252-49da-9e34-7b99afec69f1",
+    "experimentId": "1c420899-2f60-4c0e-afe0-82e7ecced46b",
+    "passed": true,
+    "eventCount": 49,
+    "requestCounts": {
+      "TimeService.Ask": 2
+    }
+  },
+  {
+    "protocol": "christian",
+    "scenario": "c-asymmetric",
+    "runId": "a43bfd73-1f63-4129-a4a2-3ba00d949681",
+    "experimentId": "e8c87d43-1caa-416b-b78f-695daca35056",
+    "passed": true,
+    "eventCount": 57,
+    "requestCounts": {
+      "TimeService.Ask": 3
+    }
+  },
+  {
+    "protocol": "christian",
+    "scenario": "d-server-delay",
+    "runId": "d05330b4-91bc-440a-8add-6930c6dca9ae",
+    "experimentId": "ee2926ba-5ba8-43b0-b4a0-1cd91dfaa087",
+    "passed": true,
+    "eventCount": 42,
+    "requestCounts": {
+      "TimeService.Ask": 2
+    }
+  },
+  {
+    "protocol": "christian",
+    "scenario": "e-variant",
+    "runId": "2189eaee-537c-4f0f-b033-cafed3b72af1",
+    "experimentId": "e0d1cfd7-98ab-4af4-b7d8-bb4a15b6dbb5",
+    "passed": true,
+    "eventCount": 46,
+    "requestCounts": {
+      "TimeService.Ask": 3
+    }
+  }
+]

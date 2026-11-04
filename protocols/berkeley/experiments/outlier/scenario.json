@@ -1,0 +1,62 @@
+{
+  "id": "outlier",
+  "name": "Berkeley: discard outlier vote",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Auto",
+        "values": {
+          "enabled": false
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.SetClock",
+        "values": {
+          "offsetMS": 10000
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Sync",
+        "values": {}
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastRound.samples.2.included",
+        "op": "==",
+        "value": false
+      }
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "lastRound.meanMS",
+        "op": "<",
+        "value": 500
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "lastAdjMs",
+        "op": "<",
+        "value": -9000
+      }
+    }
+  ]
+}

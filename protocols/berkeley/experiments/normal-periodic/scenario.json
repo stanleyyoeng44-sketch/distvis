@@ -1,0 +1,101 @@
+{
+  "id": "normal-periodic",
+  "name": "Berkeley normal: periodic convergence",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "until": {
+        "node": "node-1",
+        "path": "lastAppliedRound",
+        "op": ">=",
+        "value": 2
+      },
+      "timeout": 20000
+    },
+    {
+      "wait": 9000
+    },
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Read",
+        "values": {}
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Read",
+        "values": {}
+      },
+      "expect": "ok"
+    },
+    {
+      "input": {
+        "node": "node-3",
+        "method": "Application.Read",
+        "values": {}
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "errorMs",
+        "op": "<=",
+        "value": 850
+      }
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "errorMs",
+        "op": "<=",
+        "value": 850
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "errorMs",
+        "op": "<=",
+        "value": 850
+      }
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "errorMs",
+        "op": ">=",
+        "value": 650
+      }
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "errorMs",
+        "op": ">=",
+        "value": 650
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "errorMs",
+        "op": ">=",
+        "value": 650
+      }
+    },
+    {
+      "check": {
+        "spread": "errorMs",
+        "op": "<",
+        "value": 40
+      }
+    }
+  ]
+}

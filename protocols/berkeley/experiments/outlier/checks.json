@@ -1,0 +1,42 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "085ba2da-689f-4f8d-9fc6-98e412d7822d",
+    "experimentId": "eede1acf-d1ae-447c-8693-655dd333cf7f",
+    "results": [
+      {
+        "label": "node-1 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "node-3 Application.SetClock result (ok)",
+        "ok": true,
+        "commandId": "input-16"
+      },
+      {
+        "label": "node-1 Application.Sync result (ok)",
+        "ok": true,
+        "commandId": "input-19"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastRound.samples.2.included\",\"op\":\"==\",\"value\":false}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastRound.meanMS\",\"op\":\"<\",\"value\":500}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-3\",\"path\":\"lastAdjMs\",\"op\":\"<\",\"value\":-9000}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "filteredRoundsChecked": 1,
+    "runId": "085ba2da-689f-4f8d-9fc6-98e412d7822d",
+    "passed": true,
+    "errors": []
+  }
+}

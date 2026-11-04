@@ -1,0 +1,80 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "176f4f3a-9dba-4526-8767-64e924d3821a",
+    "experimentId": "49eeffea-acc3-42e4-bd7f-c7c949c88e9b",
+    "results": [
+      {
+        "label": "node-1 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "node-2 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-14"
+      },
+      {
+        "label": "node-3 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-15"
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"autoRunning\",\"op\":\"==\",\"value\":false}",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.Read result (ok)",
+        "ok": true,
+        "commandId": "input-144"
+      },
+      {
+        "label": "node-2 Application.Read result (ok)",
+        "ok": true,
+        "commandId": "input-147"
+      },
+      {
+        "label": "node-3 Application.Read result (ok)",
+        "ok": true,
+        "commandId": "input-150"
+      },
+      {
+        "label": "node-1 Application.CompareEvents result (ok)",
+        "ok": true,
+        "commandId": "input-153"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastCompare.agrees\",\"op\":\"==\",\"value\":true}",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.CompareEvents result (ok)",
+        "ok": true,
+        "commandId": "input-156"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastCompare.agrees\",\"op\":\"==\",\"value\":true}",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.CompareEvents result (ok)",
+        "ok": true,
+        "commandId": "input-159"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastCompare.agrees\",\"op\":\"==\",\"value\":true}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "events": 31,
+    "causalPairs": 369,
+    "causalOrderViolations": [],
+    "vectorGraphMismatches": [],
+    "brokenSendReceiveEdges": [],
+    "runId": "176f4f3a-9dba-4526-8767-64e924d3821a",
+    "passed": true,
+    "errors": []
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "a2871177-ea11-45a2-8c12-b120fa4070f1",
+    "experimentId": "64aaf2f3-3370-43ef-8240-74e4be88f2df",
+    "results": [
+      {
+        "label": "node-1 Application.Configure result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "node-2 Application.Configure result (ok)",
+        "ok": true,
+        "commandId": "input-14"
+      },
+      {
+        "label": "node-3 Application.Configure result (ok)",
+        "ok": true,
+        "commandId": "input-15"
+      },
+      {
+        "label": "node-1 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-22"
+      },
+      {
+        "label": "node-2 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-23"
+      },
+      {
+        "label": "node-3 Application.Auto result (ok)",
+        "ok": true,
+        "commandId": "input-24"
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"completed\",\"value\":3}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"autoRunning\",\"value\":false}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"role\",\"value\":\"idle\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"atMostOne\":{\"path\":\"role\",\"value\":\"critical\"}}",
+        "ok": true
+      },
+      {
+        "label": "{\"messages\":{\"op\":\"==\",\"value\":36}}",
+        "ok": true
+      },
+      {
+        "label": "{\"messages\":{\"method\":\"MutexService.Release\",\"op\":\"==\",\"value\":0}}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "maximumCriticalNodes": 1,
+    "observedEntries": 9,
+    "entryOrder": [
+      [
+        "node-1",
+        1
+      ],
+      [
+        "node-2",
+        1
+      ],
+      [
+        "node-3",
+        1
+      ],
+      [
+        "node-1",
+        9
+      ],
+      [
+        "node-2",
+        14
+      ],
+      [
+        "node-3",
+        19
+      ],
+      [
+        "node-1",
+        24
+      ],
+      [
+        "node-2",
+        29
+      ],
+      [
+        "node-3",
+        34
+      ]
+    ],
+    "runId": "a2871177-ea11-45a2-8c12-b120fa4070f1",
+    "passed": true,
+    "errors": []
+  }
+}

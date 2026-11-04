@@ -1,0 +1,51 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "731cf150-3abc-4b59-817d-39add1b8ff89",
+    "experimentId": "5d53e4bd-a06d-45f6-8f98-6c171acb364f",
+    "results": [
+      {
+        "label": "node-1 Application.Acquire result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"role\",\"value\":\"critical\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"role\",\"value\":\"critical\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"completed\",\"value\":1}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"queue\",\"value\":[]}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"operationRunning\",\"value\":false}",
+        "ok": true
+      },
+      {
+        "label": "{\"atMostOne\":{\"path\":\"role\",\"value\":\"critical\"}}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "maximumCriticalNodes": 1,
+    "observedEntries": 1,
+    "entryOrder": [
+      [
+        "node-1",
+        1
+      ]
+    ],
+    "runId": "731cf150-3abc-4b59-817d-39add1b8ff89",
+    "passed": true,
+    "errors": []
+  }
+}

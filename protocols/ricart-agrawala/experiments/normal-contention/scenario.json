@@ -1,0 +1,50 @@
+{
+  "id": "normal-contention",
+  "name": "RA normal: simultaneous node-1 and node-3",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "concurrent": [
+        {
+          "node": "node-1",
+          "method": "Application.Acquire",
+          "values": {
+            "holdMs": 2000
+          }
+        },
+        {
+          "node": "node-3",
+          "method": "Application.Acquire",
+          "values": {
+            "holdMs": 2000
+          }
+        }
+      ],
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": [
+          "node-1",
+          "node-3"
+        ],
+        "path": "completed",
+        "op": "==",
+        "value": 1
+      },
+      "timeout": 20000
+    },
+    {
+      "check": {
+        "atMostOne": {
+          "path": "role",
+          "value": "critical"
+        }
+      },
+      "label": "No overlapping critical sections in reported history"
+    }
+  ]
+}

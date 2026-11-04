@@ -1,0 +1,41 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "28dfcc7f-45ae-41d9-9b4b-1e3b9367e402",
+    "experimentId": "18192f2b-26f3-4888-88a1-3047c934e7b5",
+    "results": [
+      {
+        "label": "{\"node\":\"*\",\"path\":\"coordinator\",\"op\":\"==\",\"value\":\"node-5\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"coordinator\",\"op\":\"==\",\"value\":\"node-2\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-5\",\"path\":\"coordinator\",\"op\":\"==\",\"value\":\"node-5\"}",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.StartElection result (ok)",
+        "ok": true,
+        "commandId": "input-359"
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"coordinator\",\"op\":\"==\",\"value\":\"node-5\"}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "algorithmMessages": {
+      "Election": 27,
+      "Coordinator": 49,
+      "OK": 21
+    },
+    "algorithmMessageTotal": 97,
+    "runId": "28dfcc7f-45ae-41d9-9b4b-1e3b9367e402",
+    "passed": true,
+    "errors": []
+  }
+}

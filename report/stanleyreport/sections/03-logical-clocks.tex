@@ -1,0 +1,211 @@
+\section{Lamport clocks and vector clocks}\label{sec:lc}
+Handout: LAB1 §3.4 \\
+Code: \TODO{\src{protocols/logical-clocks} or \src{protocols/lamport}}
+
+% ---------------------------------------------------------------------
+\subsection{Algorithm}
+Every node $i$ keeps a scalar $L$ and a vector $V$ of length $n$.
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Event at node $i$ & Lamport & Vector \\ \midrule
+local or send & $L \leftarrow L+1$ & $V[i] \leftarrow V[i]+1$ \\
+receive $(L_m, V_m)$ & $L \leftarrow \max(L, L_m)+1$ &
+  $V[k] \leftarrow \max(V[k], V_m[k])\ \forall k$, then $V[i] \leftarrow V[i]+1$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Total-order timestamp: \TODO{$L.i$, or $n\cdot L + i$ -- write the one your code uses}.
+
+Properties to verify:
+\begin{itemize}[itemsep=1pt]
+  \item $e \to e' \Rightarrow L(e) < L(e')$, but not the converse.
+  \item $V(e) < V(e') \iff e \to e'$; otherwise the events are concurrent ($e \parallel e'$).
+  \item The total order is arbitrary for concurrent events.
+\end{itemize}
+
+% ---------------------------------------------------------------------
+\subsection{Implementation}
+\begin{itemize}[itemsep=2pt]
+  \item Clock update rules: \TODO{function names + links}
+  \item Message piggybacking (what is sent with each message): \TODO{}
+  \item \fld{Compare}: \TODO{where, and what it returns}
+  \item Concurrency: \TODO{which mutex protects the clock; see the variant in
+        Section~\ref{sec:lc-variant}}
+\end{itemize}
+
+\phead{State fields and inputs}
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Field / input & Meaning \\ \midrule
+\TODO{\fld{lamport}}  & \TODO{} \\
+\TODO{\fld{vector}}   & \TODO{} \\
+\TODO{\fld{events}}   & \TODO{} \\
+\TODO{\fld{Local}}    & \TODO{} \\
+\TODO{\fld{Send}}     & \TODO{} \\
+\TODO{\fld{Compare}}  & \TODO{} \\
+\TODO{\fld{Auto}}     & \TODO{} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ---------------------------------------------------------------------
+\subsection{Scenario coverage}
+\begin{table}[H]\centering\small
+\begin{tabularx}{\linewidth}{@{}llXl@{}}
+\toprule
+Report section & Handout & What it shows & Export \\ \midrule
+\ref{sec:lc-slide}  & A         & lecture slide 37: $L(b) > L(e)$ but $b \parallel e$ & \TODO{file} \\
+\ref{sec:lc-equal}  & B         & three concurrent events with equal $L$ & \TODO{file} \\
+\ref{sec:lc-auto}   & C         & invariant over random events (\fld{Auto}) & \TODO{file} \\
+\ref{sec:lc-crash}  & (fault A) & node crash and recovery & \TODO{file} \\
+\ref{sec:lc-part}   & (fault B) & blocked link: send without receive & \TODO{file} \\
+\ref{sec:lc-variant}& variant   & \TODO{} & \TODO{file} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ---------------------------------------------------------------------
+\scenario{Normal (handout A): the example on lecture slide 37}{lc-slide}
+\phead{Setup}
+\begin{setuptable}
+Nodes / latency & 3 nodes, \TODO{}\,ms, Docker \\
+Export          & \TODO{} \\
+\end{setuptable}
+\phead{Steps}
+\begin{steps}
+  \item \TODO{the exact sequence of Local / Send inputs that reproduces the figure}
+\end{steps}
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}[x=1cm,y=0.9cm]
+  \proc{3}{node-1}{10}
+  \proc{1.5}{node-2}{10}
+  \proc{0}{node-3}{10}
+  % TODO: adjust positions/labels to match your run
+  \node[ev,label=above:{\scriptsize a}] (a) at (1,3) {};
+  \node[ev,label=above:{\scriptsize b}] (b) at (3,3) {};
+  \node[ev,label=above:{\scriptsize c}] (c) at (5,1.5) {};
+  \node[ev,label=above:{\scriptsize d}] (d) at (6.5,1.5) {};
+  \node[ev,label=below:{\scriptsize e}] (e) at (2,0) {};
+  \node[ev,label=below:{\scriptsize f}] (f) at (8.5,0) {};
+  \draw[msg] (b) -- node[lbl,above right]{m1} (c);
+  \draw[msg] (d) -- node[lbl,above right]{m2} (f);
+\end{tikzpicture}
+\caption{Expected event structure (\TODO{check against slide 37}).}
+\end{figure}
+
+\phead{Result}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}llllrl@{}}
+\toprule
+Event & Node & Kind & $L$ & $V$ & total order \\ \midrule
+a & node-1 & local   & \fillin & \fillin & \fillin \\
+b & node-1 & send    & \fillin & \fillin & \fillin \\
+c & node-2 & receive & \fillin & \fillin & \fillin \\
+d & node-2 & send    & \fillin & \fillin & \fillin \\
+e & node-3 & local   & \fillin & \fillin & \fillin \\
+f & node-3 & receive & \fillin & \fillin & \fillin \\
+\bottomrule
+\end{tabular}
+\end{table}
+\phead{\fld{Compare} results}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Pair & Lamport says & Vector says & Agree? \\ \midrule
+$(b, e)$ & \fillin & \fillin & \fillin \\
+$(b, f)$ & \fillin & \fillin & \fillin \\
+\TODO{} & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+\screenshot{lc-slide37.png}{Space-time diagram reproducing slide 37.}
+\phead{Explanation}
+\TODO{3--5 sentences. Why $L(b) > L(e)$ does not mean $e \to b$.}
+
+% ---------------------------------------------------------------------
+\scenario{Handout B: concurrent events with equal Lamport values}{lc-equal}
+\phead{Steps}
+\begin{steps}
+  \item On a fresh run, have node-1, node-2, node-3 each produce one local event (no messages).
+  \item \fld{Compare} each pair.
+\end{steps}
+\phead{Result}
+\TODO{table: three events, $L=1$, vectors, total-order numbers, pairwise comparison}
+\phead{Explanation}
+\TODO{3--5 sentences. Does the order 1.1 $<$ 1.2 $<$ 1.3 have any physical meaning?}
+
+% ---------------------------------------------------------------------
+\scenario{Handout C: invariant after random events}{lc-auto}
+\phead{Setup}
+\begin{setuptable}
+Nodes / latency & \TODO{} \\
+Auto settings   & \TODO{rate, duration} \\
+Export          & \TODO{} \\
+\end{setuptable}
+\phead{Result}
+\begin{table}[H]\centering\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Event 1 & Event 2 & Lamport order & Vector relation & \fld{agrees} \\ \midrule
+\fillin & \fillin & \fillin & \fillin & \fillin \\
+\fillin & \fillin & \fillin & \fillin & \fillin \\
+\fillin & \fillin & \fillin & \fillin & \fillin \\
+\bottomrule
+\end{tabular}
+\end{table}
+\phead{Explanation}
+\TODO{3--5 sentences. Every causal pair agrees; some Lamport-ordered pairs are concurrent.}
+
+% ---------------------------------------------------------------------
+\scenario{Fault A: a node crashes and recovers}{lc-crash}
+\phead{Steps}
+\begin{steps}
+  \item \TODO{produce events, crash node-2, send to it, recover, produce more events}
+\end{steps}
+\phead{Explanation}
+\TODO{3--5 sentences. Are the counters restored (\fld{sdk.Save}/\fld{sdk.Load})?
+What would go wrong if a recovered node restarted at $L=0$?}
+
+% ---------------------------------------------------------------------
+\scenario{Fault B: blocked link or high latency}{lc-part}
+\phead{Steps}
+\begin{steps}
+  \item \TODO{block node-1$\to$node-2, Send, heal, Send again}
+\end{steps}
+\phead{Explanation}
+\TODO{3--5 sentences. A send event exists without a receive event; the vector
+clocks still describe causality correctly.}
+
+% ---------------------------------------------------------------------
+\scenario{Design variant: \TODO{name}}{lc-variant}
+\hint{The handout gives no fixed variant here. Options: (1) on receive, skip the
+$\max$ and just increment -- then $e \to e'$ no longer implies $L(e) < L(e')$;
+(2) merge vectors without $\max$ (copy the incoming vector) -- causality is lost;
+(3) remove the mutex around the clock (your \nolinkurl{protocols/lamport} code has
+this experiment commented in) and show the corrupted state under concurrent sends.}
+\phead{Code change}
+\TODO{}
+\phead{Result}
+\TODO{baseline vs.\ variant}
+\phead{Explanation}
+\TODO{3--5 sentences.}
+
+% ---------------------------------------------------------------------
+\subsection{Discussion questions}
+\begin{qa}{Why does $L(e) < L(e')$ not imply $e \to e'$?}
+\TODO{2--4 sentences.}
+\end{qa}
+\begin{qa}{Does the total order among concurrent events have physical meaning?}
+\TODO{2--4 sentences.}
+\end{qa}
+\begin{qa}{What does a vector clock cost compared with a Lamport clock?}
+\TODO{2--4 sentences (message size $O(n)$, fixed membership).}
+\end{qa}
+
+\subsection{Boundaries (what is not implemented)}
+\begin{itemize}[itemsep=1pt]
+  \item \TODO{e.g.\ fixed membership, no causal-delivery buffer, no total-order broadcast.}
+\end{itemize}

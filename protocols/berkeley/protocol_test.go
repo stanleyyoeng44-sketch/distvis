@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"math"
 	"net"
 	"net/rpc"
@@ -69,7 +71,7 @@ func TestConfigurationValidation(t *testing.T) {
 func participant(index int) *TimeService {
 	members := []string{"node-1", "node-2", "node-3"}
 	return &TimeService{id: members[index], coordinator: members[0], members: members,
-		instance: members[index] + "-boot", peers: map[string]*rpc.Client{},
+		instance: members[index] + "-boot", coordinatorBoot: "original", save: func(any) error { return nil }, peers: map[string]*rpc.Client{},
 		clock:  newClock(time.Now(), ClockArgs{OffsetMS: float64(index) * 100}),
 		report: func(any) error { return nil }}
 }
@@ -97,6 +99,39 @@ func TestAdjustRejectsStaleDuplicateAndNewCoordinator(t *testing.T) {
 		t.Fatal("coordinator restart must not silently reset round ordering")
 	}
 }
+func TestCoordinatorRecoveryPreservesIdentityAndRound(t *testing.T) {
+	master := participant(0)
+	master.members = master.members[:1]
+	var disk []byte
+	master.save = func(v any) error { disk, _ = json.Marshal(v); return nil }
+	// Even a failed one-member round reserves its number before any traffic.
+	_ = (&Application{service: master}).Sync(SyncArgs{}, &Round{})
+	var durable coordinatorState
+	if err := json.Unmarshal(disk, &durable); err != nil {
+		t.Fatal(err)
+	}
+	if durable.Identity != "original" || durable.Round != 1 {
+		t.Fatal(durable)
+	}
+	peer := participant(1)
+	peer.lastApplied = 1
+	request := AdjustArgs{Coordinator: "node-1", CoordinatorBoot: durable.Identity,
+		Round: durable.Round + 1, Instance: peer.instance, Generation: peer.generation, DeltaMS: -10}
+	if err := peer.Adjust(request, &AdjustReply{}); err != nil {
+		t.Fatal("recovered coordinator rejected:", err)
+	}
+	if peer.clockBeforeAdjustmentMS != peer.clockAfterAdjustmentMS {
+		t.Fatal("slew jumped")
+	}
+	master.save = func(any) error { return errors.New("disk unavailable") }
+	if err := (&Application{service: master}).Sync(SyncArgs{}, &Round{}); err == nil {
+		t.Fatal("unsaved round allowed")
+	}
+	if master.round != 1 || master.storageError == "" {
+		t.Fatal("storage failure did not stop round")
+	}
+}
+
 func TestRealRPCPollingAndScheduling(t *testing.T) {
 	master := participant(0)
 	for i := 1; i < 3; i++ {

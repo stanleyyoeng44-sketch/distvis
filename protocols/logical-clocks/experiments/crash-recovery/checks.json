@@ -1,0 +1,51 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "16db3b16-c633-4696-a4bb-fa902d563ba0",
+    "experimentId": "dadc4d21-6108-4877-a0a8-532b26ab8913",
+    "results": [
+      {
+        "label": "node-2 Application.Local result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "node-1 Application.Send result (ok)",
+        "ok": true,
+        "commandId": "input-18"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastDelivery.confirmed\",\"op\":\"==\",\"value\":false}",
+        "ok": true
+      },
+      {
+        "label": "node-2 Application.Local result (ok)",
+        "ok": true,
+        "commandId": "input-28"
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"clock.lamport\",\"op\":\"==\",\"value\":2}",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.Send result (ok)",
+        "ok": true,
+        "commandId": "input-31"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastDelivery.confirmed\",\"op\":\"==\",\"value\":true}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "events": 5,
+    "causalPairs": 6,
+    "causalOrderViolations": [],
+    "vectorGraphMismatches": [],
+    "brokenSendReceiveEdges": [],
+    "runId": "16db3b16-c633-4696-a4bb-fa902d563ba0",
+    "passed": true,
+    "errors": []
+  }
+}

@@ -1,0 +1,72 @@
+% =====================================================================
+%  Lab 1 report -- Cristian, NTP, Lamport + vector clocks, Ricart-Agrawala
+%
+%  Build:   cd report/stanleyreport && latexmk -pdf main.tex
+%  Clean:   latexmk -C
+%
+%  How this template is organised
+%    preamble.tex                  packages + helper macros (\TODO, \src, ...)
+%    sections/00-overview.tex      environment, protocol list, conventions
+%    sections/01-cristian.tex      §3.1 of LAB1.en.md
+%    sections/02-ntp.tex           §3.2
+%    sections/03-logical-clocks.tex  §3.4
+%    sections/04-ricart-agrawala.tex §4.4
+%    sections/05-summary.tex       cross-protocol comparison, lessons, bonus
+%    sections/A-reproduce.tex      appendix: index of runs / JSON / figures
+%    figures/                      put your space-time-diagram screenshots here
+%
+%  Every protocol section has the same shape (what LAB1 §2.1 and §6.2 ask):
+%    algorithm -> implementation -> scenario coverage table ->
+%    normal / fault A (crash) / fault B (partition or latency) /
+%    extra handout scenarios / design variant -> discussion -> boundaries
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+\input{preamble}
+
+% ------------------------- fill these in -----------------------------
+\newcommand{\authorname}{Stanley \TODO{full name}}
+\newcommand{\studentid}{\TODO{student ID}}
+\newcommand{\coursename}{Operating Systems and Distributed Systems}
+\newcommand{\submitdate}{\today}
+
+% Set to \showtodosfalse to hide every red TODO / blank / hint before submitting.
+\showtodostrue
+% ---------------------------------------------------------------------
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+  {\Large \coursename\par}
+  \vspace{1cm}
+  {\Huge\bfseries Lab 1: Visualizing Distributed Protocols\par}
+  \vspace{0.6cm}
+  {\Large Cristian $\cdot$ NTP $\cdot$ Lamport \& vector clocks $\cdot$ Ricart--Agrawala\par}
+  \vspace{2cm}
+  {\large \authorname\par}
+  {\large \studentid\par}
+  \vfill
+  {\large \submitdate\par}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+\input{sections/00-overview}
+\clearpage
+\input{sections/01-cristian}
+\clearpage
+\input{sections/02-ntp}
+\clearpage
+\input{sections/03-logical-clocks}
+\clearpage
+\input{sections/04-ricart-agrawala}
+\clearpage
+\input{sections/05-summary}
+
+\appendix
+\clearpage
+\input{sections/A-reproduce}
+
+\end{document}

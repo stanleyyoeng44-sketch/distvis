@@ -1,0 +1,311 @@
+{
+  "scenarios": [
+    {
+      "id": "normal-startup",
+      "name": "Bully normal: automatic five-node election",
+      "settings": {
+        "nodeCount": 5,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "until": {
+            "node": "*",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-5"
+          },
+          "timeout": 20000
+        },
+        {
+          "check": {
+            "node": "node-5",
+            "path": "role",
+            "op": "==",
+            "value": "coordinator"
+          }
+        }
+      ]
+    },
+    {
+      "id": "crash-auto",
+      "name": "Bully crash: automatic failure detection",
+      "settings": {
+        "nodeCount": 5,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "until": {
+            "node": "*",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-5"
+          },
+          "timeout": 20000
+        },
+        {
+          "fault": {
+            "kind": "crash",
+            "node": "node-5"
+          }
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-4"
+          },
+          "timeout": 25000
+        }
+      ]
+    },
+    {
+      "id": "seven-node-lecture",
+      "name": "Bully: seven-node lecture trace",
+      "settings": {
+        "nodeCount": 7,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "until": {
+            "node": "*",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-7"
+          },
+          "timeout": 20000
+        },
+        {
+          "fault": {
+            "kind": "crash",
+            "node": "node-7"
+          }
+        },
+        {
+          "input": {
+            "node": "node-4",
+            "method": "Application.StartElection",
+            "values": {}
+          },
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-6"
+          },
+          "timeout": 25000
+        }
+      ]
+    },
+    {
+      "id": "two-crashes",
+      "name": "Bully: two highest nodes crash",
+      "settings": {
+        "nodeCount": 7,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "until": {
+            "node": "*",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-7"
+          },
+          "timeout": 20000
+        },
+        {
+          "fault": {
+            "kind": "crash",
+            "node": "node-7"
+          }
+        },
+        {
+          "fault": {
+            "kind": "crash",
+            "node": "node-6"
+          }
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-5"
+          },
+          "timeout": 25000
+        }
+      ]
+    },
+    {
+      "id": "partition",
+      "name": "Bully partition: two component coordinators",
+      "settings": {
+        "nodeCount": 5,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "until": {
+            "node": "*",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-5"
+          },
+          "timeout": 20000
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-3",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-1",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-3",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-4",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "fault": {
+            "kind": "link",
+            "from": "node-2",
+            "to": "node-5",
+            "blocked": true,
+            "bidirectional": true
+          }
+        },
+        {
+          "until": {
+            "node": "node-2",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-2"
+          },
+          "timeout": 25000
+        },
+        {
+          "check": {
+            "node": "node-5",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-5"
+          }
+        },
+        {
+          "fault": {
+            "kind": "heal"
+          }
+        },
+        {
+          "input": {
+            "node": "node-1",
+            "method": "Application.StartElection",
+            "values": {}
+          },
+          "expect": "ok"
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-5"
+          },
+          "timeout": 20000
+        }
+      ]
+    },
+    {
+      "id": "variant-recovery-takeover",
+      "name": "Bully variant: recovered highest node takes over",
+      "settings": {
+        "nodeCount": 7,
+        "latency": 80
+      },
+      "steps": [
+        {
+          "until": {
+            "node": "*",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-7"
+          },
+          "timeout": 20000
+        },
+        {
+          "fault": {
+            "kind": "crash",
+            "node": "node-7"
+          }
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-6"
+          },
+          "timeout": 25000
+        },
+        {
+          "fault": {
+            "kind": "recover",
+            "node": "node-7"
+          }
+        },
+        {
+          "wait": 2000
+        },
+        {
+          "until": {
+            "node": "*",
+            "path": "coordinator",
+            "op": "==",
+            "value": "node-7"
+          },
+          "timeout": 25000
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "4923e01c-8c5f-4925-b636-8859bcd2736a",
+    "experimentId": "0d825339-1510-4ce9-b08f-38512a5bc717",
+    "results": [
+      {
+        "label": "node-1 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-17"
+      },
+      {
+        "label": "node-2 Application.Get result (ok)",
+        "ok": true,
+        "commandId": "input-85"
+      },
+      {
+        "label": "node-3 Application.Put result (ok)",
+        "ok": true,
+        "commandId": "input-266"
+      },
+      {
+        "label": "node-4 Application.Get result (ok)",
+        "ok": true,
+        "commandId": "input-404"
+      },
+      {
+        "label": "{\"node\":\"*\",\"path\":\"applied\",\"op\":\"==\",\"value\":4}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-4\",\"path\":\"lastOperation.value\",\"op\":\"==\",\"value\":\"2\"}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "decidedSlots": 4,
+    "conflictingSlots": [],
+    "chosenPoints": {
+      "1": {
+        "seq": 63,
+        "timeMs": 451.37945299968123,
+        "ballot": 17,
+        "acceptors": [
+          "node-1",
+          "node-3",
+          "node-5"
+        ]
+      },
+      "2": {
+        "seq": 245,
+        "timeMs": 1239.8411779999733,
+        "ballot": 34,
+        "acceptors": [
+          "node-2",
+          "node-3",
+          "node-5"
+        ]
+      },
+      "3": {
+        "seq": 366,
+        "timeMs": 2028.36177300103,
+        "ballot": 35,
+        "acceptors": [
+          "node-1",
+          "node-2",
+          "node-3"
+        ]
+      },
+      "4": {
+        "seq": 459,
+        "timeMs": 2507.4202490001917,
+        "ballot": 20,
+        "acceptors": [
+          "node-3",
+          "node-4",
+          "node-5"
+        ]
+      }
+    },
+    "finalApplied": {
+      "node-1": 4,
+      "node-2": 4,
+      "node-3": 4,
+      "node-4": 4,
+      "node-5": 4
+    },
+    "prefixExecutionChecked": true,
+    "runId": "4923e01c-8c5f-4925-b636-8859bcd2736a",
+    "passed": true,
+    "errors": []
+  }
+}

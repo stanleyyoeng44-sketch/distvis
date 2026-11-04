@@ -1,0 +1,74 @@
+{
+  "scenario": {
+    "passed": true,
+    "runId": "a7ffc329-97cd-48ee-b58f-8f735b707fcf",
+    "experimentId": "c5e86c67-d7cd-4abd-9276-624d005f09ea",
+    "results": [
+      {
+        "label": "node-2 Application.Variant result (ok)",
+        "ok": true,
+        "commandId": "input-13"
+      },
+      {
+        "label": "node-1 Application.Local result (ok)",
+        "ok": true,
+        "commandId": "input-16"
+      },
+      {
+        "label": "node-1 Application.Send result (ok)",
+        "ok": true,
+        "commandId": "input-19"
+      },
+      {
+        "label": "{\"node\":\"node-2\",\"path\":\"clock.lamport\",\"op\":\"==\",\"value\":1}",
+        "ok": true
+      },
+      {
+        "label": "node-1 Application.CompareEvents result (ok)",
+        "ok": true,
+        "commandId": "input-30"
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastCompare.vector\",\"op\":\"==\",\"value\":\"concurrent\"}",
+        "ok": true
+      },
+      {
+        "label": "{\"node\":\"node-1\",\"path\":\"lastCompare.lamport\",\"op\":\"==\",\"value\":\"a>b\"}",
+        "ok": true
+      }
+    ]
+  },
+  "independent": {
+    "events": 3,
+    "causalPairs": 1,
+    "causalOrderViolations": [
+      [
+        "node-1:1",
+        "node-2:1"
+      ],
+      [
+        "node-1:2",
+        "node-2:1"
+      ]
+    ],
+    "vectorGraphMismatches": [
+      [
+        "node-1:1",
+        "node-2:1"
+      ],
+      [
+        "node-1:2",
+        "node-2:1"
+      ]
+    ],
+    "brokenSendReceiveEdges": [
+      [
+        "node-1:2",
+        "node-2:1"
+      ]
+    ],
+    "runId": "a7ffc329-97cd-48ee-b58f-8f735b707fcf",
+    "passed": true,
+    "errors": []
+  }
+}

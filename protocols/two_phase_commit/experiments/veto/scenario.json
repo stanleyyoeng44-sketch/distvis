@@ -1,0 +1,63 @@
+{
+  "id": "veto",
+  "name": "2PC: insufficient balance veto",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 80
+  },
+  "steps": [
+    {
+      "input": {
+        "node": "node-1",
+        "method": "Application.Transfer",
+        "values": {
+          "from": "node-2",
+          "to": "node-3",
+          "amount": 150
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "until": {
+        "node": "node-1",
+        "path": "phase",
+        "op": "==",
+        "value": "finished"
+      },
+      "timeout": 20000
+    },
+    {
+      "check": {
+        "node": "node-1",
+        "path": "decision",
+        "op": "==",
+        "value": "abort"
+      }
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "balance",
+        "op": "==",
+        "value": 100
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "balance",
+        "op": "==",
+        "value": 100
+      }
+    },
+    {
+      "check": {
+        "node": "node-3",
+        "path": "state",
+        "op": "==",
+        "value": "aborted"
+      }
+    }
+  ]
+}
