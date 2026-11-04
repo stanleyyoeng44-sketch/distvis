@@ -121,17 +121,16 @@ type coordinatorLog struct {
 }
 
 type Coordinator struct {
-	mu            sync.Mutex
-	id            string
-	rms           []string
-	peers         map[string]*rpc.Client
-	save          func(any) error
-	report        func(any) error
-	log           coordinatorLog
-	announced     bool
-	lastErr       string
-	storageFailed bool
-	recovery      sync.Once
+	mu        sync.Mutex
+	id        string
+	rms       []string
+	peers     map[string]*rpc.Client
+	save      func(any) error
+	report    func(any) error
+	log       coordinatorLog
+	announced bool
+	lastErr   string
+	recovery  sync.Once
 }
 
 func newCoordinator(id string, members []string, peers map[string]*rpc.Client, d deps) (*Coordinator, error) {
@@ -164,11 +163,7 @@ func (c *Coordinator) isRM(id string) bool {
 }
 
 func (c *Coordinator) persistLocked() error {
-	if c.storageFailed {
-		return fmt.Errorf("storage failed; restart required")
-	}
 	if err := c.save(c.log); err != nil {
-		c.storageFailed = true
 		c.lastErr = err.Error()
 		return err
 	}
@@ -213,10 +208,6 @@ func (c *Coordinator) transfer(args TransferArgs, reply *State) error {
 	}
 
 	c.mu.Lock()
-	if c.storageFailed {
-		c.mu.Unlock()
-		return fmt.Errorf("storage failed; restart required")
-	}
 	if c.log.Txn != "" && c.log.Phase != phaseFinished {
 		txn := c.log.Txn
 		c.mu.Unlock()
@@ -250,18 +241,8 @@ func (c *Coordinator) transfer(args TransferArgs, reply *State) error {
 	txnID := c.log.Txn
 	from, to, amount := c.log.From, c.log.To, c.log.Amount
 	c.reportLocked()
-	*reply = c.stateLocked()
 	c.mu.Unlock()
-	go c.runTransfer(args, txnID, from, to, amount)
-	return nil
-}
 
-// Application acceptance is separate from transaction completion; long pauses
-// and blocked participants must not turn an accepted transfer into an RPC timeout.
-func (c *Coordinator) runTransfer(args TransferArgs, txnID, from, to string, amount int) {
-	_ = c.completeTransfer(args, txnID, from, to, amount)
-}
-func (c *Coordinator) completeTransfer(args TransferArgs, txnID, from, to string, amount int) error {
 	deltas := map[string]int{from: -amount, to: +amount}
 	votes := c.collectVotes(txnID, deltas)
 
@@ -315,6 +296,7 @@ func (c *Coordinator) completeTransfer(args TransferArgs, txnID, from, to string
 	c.deliver(txnID)
 
 	c.mu.Lock()
+	*reply = c.stateLocked()
 	c.reportLocked()
 	c.mu.Unlock()
 	return nil
@@ -428,9 +410,7 @@ func (c *Coordinator) finishLocked(txnID string) {
 		return
 	}
 	c.log.Phase = phaseFinished
-	if err := c.persistLocked(); err != nil {
-		c.log.Phase = phaseDecided // Do not advertise an undurable completion.
-	}
+	_ = c.persistLocked()
 }
 
 // startRecovery restores an unfinished transaction from the log on startup.
@@ -447,9 +427,6 @@ func (c *Coordinator) startRecovery(_ context.Context) {
 			c.log.Reason = "presumed abort: TM restarted before writing its decision to the log"
 			if err := c.persistLocked(); err != nil {
 				c.lastErr = err.Error()
-				c.reportLocked()
-				c.mu.Unlock()
-				return // Do not announce an unlogged recovery decision.
 			}
 		}
 		c.announced = true
@@ -474,9 +451,8 @@ func (c *Coordinator) Status(args StatusArgs, reply *StatusReply) error {
 }
 
 type participantLog struct {
-	Balance int              `json:"balance"`
-	Txn     *rmTxn           `json:"txn,omitempty"`
-	History map[string]rmTxn `json:"history,omitempty"`
+	Balance int    `json:"balance"`
+	Txn     *rmTxn `json:"txn,omitempty"`
 }
 
 type rmTxn struct {
@@ -487,17 +463,15 @@ type rmTxn struct {
 }
 
 type ResourceManager struct {
-	mu                    sync.Mutex
-	id                    string
-	peers                 map[string]*rpc.Client
-	save                  func(any) error
-	report                func(any) error
-	log                   participantLog
-	uncertain             bool
-	lastErr               string
-	recovery              sync.Once
-	unsafeSkipPrepareSave bool
-	storageFailed         bool
+	mu        sync.Mutex
+	id        string
+	peers     map[string]*rpc.Client
+	save      func(any) error
+	report    func(any) error
+	log       participantLog
+	uncertain bool
+	lastErr   string
+	recovery  sync.Once
 }
 
 func newResourceManager(id string, peers map[string]*rpc.Client, d deps) (*ResourceManager, error) {
@@ -512,11 +486,7 @@ func newResourceManager(id string, peers map[string]*rpc.Client, d deps) (*Resou
 }
 
 func (rm *ResourceManager) persistLocked() error {
-	if rm.storageFailed {
-		return fmt.Errorf("storage failed; restart required")
-	}
 	if err := rm.save(rm.log); err != nil {
-		rm.storageFailed = true
 		rm.lastErr = err.Error()
 		return err
 	}
@@ -547,15 +517,8 @@ func (rm *ResourceManager) stateLocked() State {
 func (rm *ResourceManager) Prepare(args PrepareArgs, reply *PrepareReply) error {
 	rm.mu.Lock()
 	defer rm.mu.Unlock()
-	if rm.storageFailed {
-		return fmt.Errorf("storage failed; restart required")
-	}
 	if args.Txn == "" {
 		return fmt.Errorf("txn is required")
-	}
-	if prior, ok := rm.log.History[args.Txn]; ok {
-		reply.Vote = prior.Vote
-		return nil
 	}
 	if existing := rm.log.Txn; existing != nil {
 		if existing.ID == args.Txn {
@@ -580,18 +543,10 @@ func (rm *ResourceManager) Prepare(args PrepareArgs, reply *PrepareReply) error 
 	if vote == voteNo {
 		state = stateAborted
 	}
-	if rm.log.History == nil {
-		rm.log.History = map[string]rmTxn{}
-	}
-	if old := rm.log.Txn; old != nil {
-		rm.log.History[old.ID] = *old
-	}
 	rm.log.Txn = &rmTxn{ID: args.Txn, Delta: args.Delta, Vote: vote, State: state}
 
-	if !rm.unsafeSkipPrepareSave {
-		if err := rm.persistLocked(); err != nil {
-			return err
-		}
+	if err := rm.persistLocked(); err != nil {
+		return err
 	}
 
 	reply.Vote = vote
@@ -606,18 +561,11 @@ func (rm *ResourceManager) Prepare(args PrepareArgs, reply *PrepareReply) error 
 func (rm *ResourceManager) Commit(args DecideArgs, reply *DecideReply) error {
 	rm.mu.Lock()
 	defer rm.mu.Unlock()
-	if rm.storageFailed {
-		return fmt.Errorf("storage failed; restart required")
-	}
 	if args.Decision != decisionCommit {
 		return fmt.Errorf("Commit called with decision %q", args.Decision)
 	}
 	txn := rm.log.Txn
 	if txn == nil || txn.ID != args.Txn {
-		if prior, ok := rm.log.History[args.Txn]; ok && prior.State == stateCommitted {
-			reply.OK = true
-			return nil
-		}
 		return fmt.Errorf("no prepared record for %s", args.Txn)
 	}
 	if txn.State == stateCommitted {
@@ -631,10 +579,6 @@ func (rm *ResourceManager) Commit(args DecideArgs, reply *DecideReply) error {
 	txn.State = stateCommitted
 	rm.uncertain = false
 	if err := rm.persistLocked(); err != nil {
-		rm.log.Balance -= txn.Delta
-		txn.State = statePrepared
-		rm.uncertain = true
-		rm.reportLocked()
 		return err
 	}
 	rm.reportLocked()
@@ -645,39 +589,21 @@ func (rm *ResourceManager) Commit(args DecideArgs, reply *DecideReply) error {
 func (rm *ResourceManager) Abort(args DecideArgs, reply *DecideReply) error {
 	rm.mu.Lock()
 	defer rm.mu.Unlock()
-	if rm.storageFailed {
-		return fmt.Errorf("storage failed; restart required")
-	}
 	if args.Decision != decisionAbort {
 		return fmt.Errorf("Abort called with decision %q", args.Decision)
 	}
 	txn := rm.log.Txn
 	if txn == nil || txn.ID != args.Txn {
-		// Keep an abort tombstone even if Abort overtakes Prepare. Otherwise a
-		// late Prepare could acquire a lock after the TM already finished.
-		if rm.log.History == nil {
-			rm.log.History = map[string]rmTxn{}
-		}
-		if prior, ok := rm.log.History[args.Txn]; ok && prior.State == stateCommitted {
-			return fmt.Errorf("already committed")
-		}
-		rm.log.History[args.Txn] = rmTxn{ID: args.Txn, Vote: voteNo, State: stateAborted}
-		if err := rm.persistLocked(); err != nil {
-			return err
-		}
-		reply.OK = true
+		reply.OK = true // nothing to release
 		return nil
 	}
 	if txn.State == stateCommitted {
-		return fmt.Errorf("already committed") // Never acknowledge a conflicting abort.
+		reply.OK = true // never undo a committed transfer
+		return nil
 	}
-	previous := txn.State
 	txn.State = stateAborted
 	rm.uncertain = false
 	if err := rm.persistLocked(); err != nil {
-		txn.State = previous
-		rm.uncertain = previous == statePrepared
-		rm.reportLocked()
 		return err
 	}
 	rm.reportLocked()
@@ -711,16 +637,20 @@ func (rm *ResourceManager) monitor(id string) {
 				rm.uncertain = true
 				rm.reportLocked()
 			}
-		case reply.Found && (reply.Decision == decisionCommit || reply.Decision == decisionAbort):
-			// Use the same durable transition as a direct notification. Polling must
-			// not bypass storage failure handling or publish an unsaved outcome.
+		case reply.Found && reply.Decision == decisionCommit:
+			rm.log.Balance += txn.Delta
+			txn.State = stateCommitted
+			rm.uncertain = false
+			_ = rm.persistLocked()
+			rm.reportLocked()
 			rm.mu.Unlock()
-			decision := DecideArgs{Txn: id, Decision: reply.Decision}
-			if reply.Decision == decisionCommit {
-				_ = rm.Commit(decision, &DecideReply{})
-			} else {
-				_ = rm.Abort(decision, &DecideReply{})
-			}
+			return
+		case reply.Found && reply.Decision == decisionAbort:
+			txn.State = stateAborted
+			rm.uncertain = false
+			_ = rm.persistLocked()
+			rm.reportLocked()
+			rm.mu.Unlock()
 			return
 		default:
 			if rm.uncertain {

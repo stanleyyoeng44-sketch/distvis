@@ -67,7 +67,6 @@ func (s *ElectionService) stateLocked() State {
 func (s *ElectionService) bump() {
 	s.mu.Lock()
 	s.sent++
-	_ = s.report(s.stateLocked())
 	s.mu.Unlock()
 }
 
@@ -80,10 +79,7 @@ func (s *ElectionService) sendElection(to string, msg ElectionMsg) (ElectionRepl
 	s.bump()
 	var reply ElectionReply
 	err := call(client, "ElectionService.Election", msg, &reply)
-	if err != nil {
-		return ElectionReply{}, err
-	} // Never read a reply still owned by a timed-out decoder.
-	return reply, nil
+	return reply, err
 }
 
 // sendCoordinator broadcasts the winner announcement.
@@ -106,9 +102,9 @@ func (s *ElectionService) startElection() {
 	s.electionRound++
 	round := s.electionRound
 	s.role = roleCandidate
-	s.coordinator = ""
-	_ = s.report(s.stateLocked())
+	st := s.stateLocked()
 	s.mu.Unlock()
+	_ = s.report(st)
 	s.campaign(round)
 }
 
@@ -152,10 +148,10 @@ func (s *ElectionService) campaign(round uint64) {
 	}
 	if okCount > 0 {
 		s.role = roleFollower
-		s.waitingUntil = time.Now().Add(5 * time.Second)
 		s.backedDown++
-		_ = s.report(s.stateLocked())
+		st := s.stateLocked()
 		s.mu.Unlock()
+		_ = s.report(st)
 		return
 	}
 
@@ -165,8 +161,9 @@ func (s *ElectionService) campaign(round uint64) {
 	s.won++
 	victory := CoordinatorMsg{From: s.id, ID: s.priority}
 	peers := append([]string(nil), s.members...)
-	_ = s.report(s.stateLocked())
+	st := s.stateLocked()
 	s.mu.Unlock()
+	_ = s.report(st)
 
 	var deliver sync.WaitGroup
 	for _, peer := range peers {
@@ -195,20 +192,12 @@ func (s *ElectionService) Election(args ElectionMsg, reply *ElectionReply) error
 		return nil
 	}
 	reply.OK = true
-	s.sent++ // OK is an algorithm message carried by the RPC response.
-	_ = s.report(s.stateLocked())
 
 	if s.role == roleCoordinator {
 		coord := s.coordinator
 		s.mu.Unlock()
-		if coord != "" {
-			// Reannounce to every member, not only the initiator. After healing,
-			// another component may still believe its lower coordinator won.
-			for _, peer := range s.members {
-				if peer != s.id {
-					go s.sendCoordinator(peer, CoordinatorMsg{From: coord, ID: priority(coord)})
-				}
-			}
+		if coord != "" && coord != args.From {
+			go s.sendCoordinator(args.From, CoordinatorMsg{From: coord, ID: priority(coord)})
 		}
 		return nil
 	}
@@ -221,10 +210,11 @@ func (s *ElectionService) Election(args ElectionMsg, reply *ElectionReply) error
 		go s.campaign(round)
 		started = true
 	}
-	if started {
-		_ = s.report(s.stateLocked())
-	}
+	st := s.stateLocked()
 	s.mu.Unlock()
+	if started {
+		_ = s.report(st)
+	}
 	return nil
 }
 
@@ -253,17 +243,18 @@ func (s *ElectionService) Coordinator(args CoordinatorMsg, reply *CoordinatorRep
 		s.backedDown++
 	}
 	s.role = roleFollower
-	if changed {
-		_ = s.report(s.stateLocked())
-	}
+	st := s.stateLocked()
 	s.mu.Unlock()
+	if changed {
+		_ = s.report(st)
+	}
 	return nil
 }
 
 // StartElection runs one round from this node.
 func (a *Application) StartElection(_ Empty, reply *State) error {
 	s := a.service
-	go s.startElection()
+	s.startElection()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	*reply = s.stateLocked()
