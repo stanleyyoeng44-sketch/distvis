@@ -1,0 +1,128 @@
+{
+  "id": "c-asymmetric",
+  "name": "Cristian fault B \u00b7 asymmetric link (2000 ms up, 200 ms down)",
+  "settings": {
+    "nodeCount": 3,
+    "latency": 200
+  },
+  "steps": [
+    {
+      "until": {
+        "node": "node-2",
+        "path": "errorMs",
+        "op": "abs>",
+        "value": 500
+      },
+      "label": "node-2 starts off"
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-1",
+        "latency": 2000
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-2",
+        "latency": 200
+      }
+    },
+    {
+      "note": "Request takes 2000 ms, reply 200 ms. Cristian assumes (2000+200)/2 = 1100 ms for the reply: expected error +900 ms."
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Sync",
+        "values": {
+          "server": "node-1"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.errorAfterMs",
+        "op": ">=",
+        "value": 800
+      },
+      "label": "node-2 ends up about 900 ms AHEAD"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.errorAfterMs",
+        "op": "<=",
+        "value": 1000
+      },
+      "label": "error stays inside the \u00b1RTT/2 bound"
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-2",
+        "to": "node-1",
+        "latency": 200
+      }
+    },
+    {
+      "fault": {
+        "kind": "link",
+        "from": "node-1",
+        "to": "node-2",
+        "latency": 2000
+      }
+    },
+    {
+      "note": "Reversed: request 200 ms, reply 2000 ms. Expected error -900 ms."
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Sync",
+        "values": {
+          "server": "node-1"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.errorAfterMs",
+        "op": "<=",
+        "value": -800
+      },
+      "label": "node-2 ends up about 900 ms BEHIND"
+    },
+    {
+      "fault": {
+        "kind": "heal"
+      }
+    },
+    {
+      "input": {
+        "node": "node-2",
+        "method": "Application.Sync",
+        "values": {
+          "server": "node-1"
+        }
+      },
+      "expect": "ok"
+    },
+    {
+      "check": {
+        "node": "node-2",
+        "path": "lastSync.errorAfterMs",
+        "op": "abs<=",
+        "value": 60
+      },
+      "label": "symmetric again: error back near 0"
+    }
+  ]
+}
